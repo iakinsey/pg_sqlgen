@@ -1,5 +1,7 @@
 use pgrx::prelude::*;
 
+mod types;
+
 ::pgrx::pg_module_magic!(name, version);
 
 #[pg_extern]
