@@ -1,5 +1,6 @@
 use pgrx::prelude::*;
 
+mod drivers;
 mod types;
 
 ::pgrx::pg_module_magic!(name, version);
@@ -18,7 +19,6 @@ mod tests {
     fn test_hello_pg_sqlgen() {
         assert_eq!("Hello, pg_sqlgen", crate::hello_pg_sqlgen());
     }
-
 }
 
 /// This module is required by `cargo pgrx test` invocations.
