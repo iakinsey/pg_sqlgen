@@ -1,7 +1,7 @@
 use serde_json::Value;
 
 pub struct ModelProfile {
-    name: String,
-    driver_name: String,
-    config: Value,
+    pub name: String,
+    pub driver_name: String,
+    pub profile: Value,
 }

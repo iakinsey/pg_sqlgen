@@ -8,7 +8,9 @@ use crate::types::{errors::ModelDriverError, structs::ModelProfile};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalBertProfile {
+    #[serde(default = "default_model_name")]
     pub model_name: String,
+    #[serde(default = "default_revision")]
     pub revision: String,
     #[serde(default = "default_config_filename")]
     pub config_filename: String,
@@ -18,6 +20,14 @@ pub struct LocalBertProfile {
     pub weights_filename: String,
     #[serde(default = "default_compute_device")]
     pub compute_device: String,
+}
+
+fn default_model_name() -> String {
+    "sentence-transformers/multi-qa-MiniLM-L6-cos-v1".to_string()
+}
+
+fn default_revision() -> String {
+    "b207367332321f8e44f96e224ef15bc607f4dbf0".to_string()
 }
 
 fn default_config_filename() -> String {
@@ -43,10 +53,6 @@ fn default_compute_device() -> String {
 }
 
 impl LocalBertProfile {
-    pub fn from_model_profile(profile: ModelProfile) -> Result<Self, ModelDriverError> {
-        unimplemented!();
-    }
-
     pub fn get_device(&self) -> Result<Device, ModelDriverError> {
         match self.compute_device.as_str() {
             "cpu" => Ok(Device::Cpu),

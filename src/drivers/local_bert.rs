@@ -6,7 +6,7 @@ use candle_core::Tensor;
 use candle_nn::VarBuilder;
 use candle_transformers::models::bert::{BertModel, Config, DTYPE};
 use hf_hub::{api::sync::Api, Repo};
-use serde_json::from_str;
+use serde_json::{from_str, from_value};
 use tokenizers::Tokenizer;
 
 use crate::{
@@ -22,11 +22,12 @@ pub struct LocalBertDriver {
     profile: LocalBertProfile,
     model: BertModel,
     tokenizer: Tokenizer,
+    hidden_size: usize,
 }
 
 impl LocalBertDriver {
     pub fn new(profile: ModelProfile) -> Result<Self, ModelDriverError> {
-        let profile = LocalBertProfile::from_model_profile(profile)?;
+        let profile: LocalBertProfile = from_value(profile.profile)?;
         let param_profile = profile.clone();
         let device = profile.get_device()?;
         let repo = Repo::with_revision(
@@ -49,6 +50,7 @@ impl LocalBertDriver {
             profile: param_profile,
             model,
             tokenizer,
+            hidden_size: config.hidden_size,
         })
     }
 }
@@ -69,6 +71,10 @@ impl ModelDriver for LocalBertDriver {
     }
 }
 impl TextEncoderDriver for LocalBertDriver {
+    fn dimensions(&self) -> Result<usize, ModelDriverError> {
+        Ok(self.hidden_size)
+    }
+
     fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
         self.encode_many(&[input]).and_then(|mut results| {
             results
@@ -107,5 +113,64 @@ impl TextEncoderDriver for LocalBertDriver {
         (0..inputs.len())
             .map(|i| Ok(embeddings.get(i)?.to_vec1::<f32>()?))
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use serde_json::{from_str, to_value};
+
+    use crate::{
+        drivers::LocalBertDriver,
+        types::{
+            structs::{profiles::LocalBertProfile, ModelProfile},
+            traits::driver::{ModelDriver, TextEncoderDriver},
+        },
+    };
+
+    #[test]
+    fn test_encode_success() {
+        let examples = vec![
+            "The quick brown fox jumps over the lazy dog",
+            "Quick zephyrs blow, vexing daft Jim",
+            "Bright vixens jump; dozy fowl quack.",
+            "John quickly extemporized five tow bags.",
+            "By Jove, my quick study of lexicography won a prize!",
+        ];
+        let bert_profile: LocalBertProfile = from_str("{}").unwrap();
+        let bert_profile_val = to_value(&bert_profile).unwrap();
+        let profile = ModelProfile {
+            name: "test-bert".to_string(),
+            driver_name: LocalBertDriver::NAME.to_string(),
+            profile: bert_profile_val,
+        };
+        let model = LocalBertDriver::new(profile).unwrap();
+        let encodings = model.encode_many(&examples).unwrap();
+        let mut unique_set = HashSet::new();
+
+        for encoding in encodings {
+            assert_eq!(encoding.len(), model.dimensions().unwrap());
+            let hex_encoding = encoding
+                .iter()
+                .flat_map(|f| f.to_le_bytes())
+                .map(|b| format!("{:02x}", b))
+                .collect::<String>();
+
+            unique_set.insert(hex_encoding);
+        }
+
+        assert_eq!(unique_set.len(), examples.len())
+    }
+
+    #[test]
+    fn test_encode_many_success() {
+        let sentence = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+    }
+
+    #[test]
+    fn test_embeddings_distance() {
+        unimplemented!();
     }
 }
