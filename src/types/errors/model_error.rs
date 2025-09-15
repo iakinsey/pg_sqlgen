@@ -1,6 +1,8 @@
 use hf_hub::api::sync::ApiError;
 use thiserror::Error;
 
+use crate::types::errors::UtilError;
+
 #[derive(Error, Debug)]
 pub enum ModelDriverError {
     #[error("{0}")]
@@ -19,4 +21,6 @@ pub enum ModelDriverError {
     IoError(#[from] std::io::Error),
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
+    #[error(transparent)]
+    UtilError(#[from] UtilError),
 }

@@ -2,16 +2,20 @@
 
 use std::fs::read_to_string;
 
+use candle_core::Tensor;
 use candle_nn::VarBuilder;
 use candle_transformers::models::bert::{BertModel, Config, DTYPE};
 use hf_hub::{api::sync::Api, Repo};
 use serde_json::from_str;
 use tokenizers::Tokenizer;
 
-use crate::types::{
-    errors::ModelDriverError,
-    structs::{model_profile::ModelProfile, profiles::LocalBertProfile},
-    traits::driver::{ModelDriver, TextEncoderDriver},
+use crate::{
+    types::{
+        errors::ModelDriverError,
+        structs::{model_profile::ModelProfile, profiles::LocalBertProfile},
+        traits::driver::{ModelDriver, TextEncoderDriver},
+    },
+    utils::math::l2_norm,
 };
 
 pub struct LocalBertDriver {
@@ -70,6 +74,33 @@ impl TextEncoderDriver for LocalBertDriver {
     }
 
     fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
-        unimplemented!();
+        let tokens = self.tokenizer.encode_batch(inputs.to_vec(), true)?;
+        let device = self.profile.get_device()?;
+        let (token_ids, attention_mask) = tokens.iter().try_fold(
+            (Vec::new(), Vec::new()),
+            |(mut token_ids, mut attention_mask), t| {
+                let ids_tensor = Tensor::new(t.get_ids().to_vec().as_slice(), &device)?;
+                let attn_tensor = Tensor::new(t.get_attention_mask().to_vec().as_slice(), &device)?;
+
+                token_ids.push(ids_tensor);
+                attention_mask.push(attn_tensor);
+
+                Ok::<(Vec<Tensor>, Vec<Tensor>), ModelDriverError>((token_ids, attention_mask))
+            },
+        )?;
+
+        let token_ids = Tensor::stack(&token_ids, 0)?;
+        let attention_mask = Tensor::stack(&attention_mask, 0)?;
+        let token_type_ids = token_ids.zeros_like()?;
+        let embeddings = self
+            .model
+            .forward(&token_ids, &token_type_ids, Some(&attention_mask))?;
+        let (_, n_tokens, _) = embeddings.dims3()?;
+        let embeddings = (embeddings.sum(1)? / (n_tokens as f64))?;
+        let embeddings = l2_norm(&embeddings)?;
+
+        (0..inputs.len())
+            .map(|i| Ok(embeddings.get(i)?.to_vec1::<f32>()?))
+            .collect()
     }
 }

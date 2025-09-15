@@ -2,6 +2,7 @@ use pgrx::prelude::*;
 
 mod drivers;
 mod types;
+mod utils;
 
 ::pgrx::pg_module_magic!(name, version);
 
