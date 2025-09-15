@@ -11,6 +11,8 @@ pub enum ModelDriverError {
     DeviceError(String),
     #[error("unknown device: {0}")]
     UnknownDevice(String),
+    #[error("model encoding error: {0}")]
+    EncodeError(String),
     #[error(transparent)]
     ApiError(#[from] ApiError),
     #[error(transparent)]

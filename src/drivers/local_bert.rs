@@ -70,10 +70,15 @@ impl ModelDriver for LocalBertDriver {
 }
 impl TextEncoderDriver for LocalBertDriver {
     fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
-        unimplemented!();
+        self.encode_many(&[input]).and_then(|mut results| {
+            results
+                .pop()
+                .ok_or_else(|| ModelDriverError::EncodeError("no output".into()))
+        })
     }
 
     fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
+        // Largely ripped from https://github.com/huggingface/candle/blob/main/candle-examples/examples/bert/main.rs
         let tokens = self.tokenizer.encode_batch(inputs.to_vec(), true)?;
         let device = self.profile.get_device()?;
         let (token_ids, attention_mask) = tokens.iter().try_fold(
