@@ -128,7 +128,20 @@ mod tests {
             structs::{profiles::LocalBertProfile, ModelProfile},
             traits::driver::{ModelDriver, TextEncoderDriver},
         },
+        utils::math::cosine_similarity,
     };
+
+    fn setup_scenario() -> LocalBertDriver {
+        let bert_profile: LocalBertProfile = from_str("{}").unwrap();
+        let bert_profile_val = to_value(&bert_profile).unwrap();
+        let profile = ModelProfile {
+            name: "test-bert".to_string(),
+            driver_name: LocalBertDriver::NAME.to_string(),
+            profile: bert_profile_val,
+        };
+
+        LocalBertDriver::new(profile).unwrap()
+    }
 
     #[test]
     fn test_encode_success() {
@@ -139,14 +152,7 @@ mod tests {
             "John quickly extemporized five tow bags.",
             "By Jove, my quick study of lexicography won a prize!",
         ];
-        let bert_profile: LocalBertProfile = from_str("{}").unwrap();
-        let bert_profile_val = to_value(&bert_profile).unwrap();
-        let profile = ModelProfile {
-            name: "test-bert".to_string(),
-            driver_name: LocalBertDriver::NAME.to_string(),
-            profile: bert_profile_val,
-        };
-        let model = LocalBertDriver::new(profile).unwrap();
+        let model = setup_scenario();
         let encodings = model.encode_many(&examples).unwrap();
         let mut unique_set = HashSet::new();
 
@@ -167,10 +173,45 @@ mod tests {
     #[test]
     fn test_encode_many_success() {
         let sentence = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+        let model = setup_scenario();
+        let encoding = model.encode(sentence).unwrap();
+
+        assert_eq!(encoding.len(), model.dimensions().unwrap());
     }
 
     #[test]
     fn test_embeddings_distance() {
-        unimplemented!();
+        let scenarios: Vec<[&str; 3]> = vec![
+            ["emperor", "king", "keyboard"],
+            ["cat", "dog", "planet"],
+            ["iron", "steel", "david"],
+            ["yellow", "red", "joystick"],
+        ];
+        let model = setup_scenario();
+
+        for scenario in scenarios {
+            let e = model.encode_many(&scenario).unwrap();
+            let (closer_1, closer_2, farther) = (e[0].clone(), e[1].clone(), e[2].clone());
+            let closer = cosine_similarity(&closer_1, &closer_2);
+            let farther_1 = cosine_similarity(&closer_1, &farther);
+            let farther_2 = cosine_similarity(&closer_2, &farther);
+
+            assert!(
+                closer > farther_1,
+                "1: ({}, {}) > ({}, {})",
+                scenario[0],
+                scenario[1],
+                scenario[0],
+                scenario[2]
+            );
+            assert!(
+                closer > farther_2,
+                "2: ({}, {}) > ({}, {})",
+                scenario[0],
+                scenario[1],
+                scenario[1],
+                scenario[2]
+            );
+        }
     }
 }
