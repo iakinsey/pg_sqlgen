@@ -6,13 +6,13 @@ use candle_core::Tensor;
 use candle_nn::VarBuilder;
 use candle_transformers::models::bert::{BertModel, Config, DTYPE};
 use hf_hub::{api::sync::Api, Repo};
-use serde_json::{from_str, from_value};
+use serde_json::from_str;
 use tokenizers::Tokenizer;
 
 use crate::{
     types::{
         errors::ModelDriverError,
-        structs::{model_profile::ModelProfile, profiles::LocalBertConfig},
+        structs::profiles::LocalBertConfig,
         traits::driver::{ModelDriver, TextEncoderDriver},
     },
     utils::{math::l2_norm, model::get_device},
@@ -108,14 +108,11 @@ impl TextEncoderDriver for LocalBertDriver {
 mod tests {
     use std::collections::HashSet;
 
-    use serde_json::{from_str, to_value};
+    use serde_json::from_str;
 
     use crate::{
         drivers::LocalBertDriver,
-        types::{
-            structs::{profiles::LocalBertConfig, ModelProfile},
-            traits::driver::{ModelDriver, TextEncoderDriver},
-        },
+        types::{structs::profiles::LocalBertConfig, traits::driver::TextEncoderDriver},
         utils::math::cosine_similarity,
     };
 

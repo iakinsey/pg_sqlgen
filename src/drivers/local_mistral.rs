@@ -3,7 +3,7 @@
 use crate::types::{
     errors::ModelDriverError,
     structs::{profiles::LocalMistralConfig, ModelProfile},
-    traits::driver::{ModelDriver, TextDecoderDriver},
+    traits::driver::{ModelDriver, TextInstructDriver},
 };
 
 pub struct LocalMistralDriver {}
@@ -19,12 +19,16 @@ impl LocalMistralDriver {
     }
 }
 
-impl TextDecoderDriver for LocalMistralDriver {
-    fn decode(&self, input: &str) -> Result<String, ModelDriverError> {
+impl TextInstructDriver for LocalMistralDriver {
+    fn instruct(&self, system_prompt: &str, user_prompt: &str) -> Result<String, ModelDriverError> {
         unimplemented!()
     }
 
-    fn decode_many(&self, inputs: &[&str]) -> Result<Vec<String>, ModelDriverError> {
+    fn instruct_many(
+        &self,
+        system_prompt: &str,
+        user_prompts: &[&str],
+    ) -> Result<Vec<String>, ModelDriverError> {
         unimplemented!()
     }
 }
