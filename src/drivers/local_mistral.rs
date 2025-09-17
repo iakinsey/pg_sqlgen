@@ -1,5 +1,7 @@
 // Mistral 7b
 
+use hf_hub::{api::sync::Api, Repo};
+
 use crate::types::{
     errors::ModelDriverError,
     structs::{profiles::LocalMistralConfig, ModelProfile},
@@ -15,7 +17,13 @@ impl ModelDriver for LocalMistralDriver {
 
 impl LocalMistralDriver {
     pub fn new(mistral_config: LocalMistralConfig) -> Result<Self, ModelDriverError> {
-        unimplemented!()
+        let repo = Repo::with_revision(
+            mistral_config.model_name.clone(),
+            hf_hub::RepoType::Model,
+            mistral_config.revision.clone(),
+        );
+        let api = Api::new()?.repo(repo);
+        let tokenizer_file = api.get(&mistral_config.tokenizer_filename)?;
     }
 }
 
