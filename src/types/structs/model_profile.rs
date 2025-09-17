@@ -1,7 +1,12 @@
-use serde_json::Value;
+use crate::types::structs::profiles::{LocalBertConfig, LocalMistralConfig};
 
 pub struct ModelProfile {
     pub name: String,
     pub driver_name: String,
-    pub profile: Value,
+    pub config: ModelConfig,
+}
+
+pub enum ModelConfig {
+    LocalBert(LocalBertConfig),
+    LocalMistral(LocalMistralConfig),
 }

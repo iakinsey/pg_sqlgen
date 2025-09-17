@@ -12,33 +12,36 @@ use tokenizers::Tokenizer;
 use crate::{
     types::{
         errors::ModelDriverError,
-        structs::{model_profile::ModelProfile, profiles::LocalBertProfile},
+        structs::{model_profile::ModelProfile, profiles::LocalBertConfig},
         traits::driver::{ModelDriver, TextEncoderDriver},
     },
-    utils::math::l2_norm,
+    utils::{math::l2_norm, model::get_device},
 };
 
 pub struct LocalBertDriver {
-    profile: LocalBertProfile,
     model: BertModel,
     tokenizer: Tokenizer,
     hidden_size: usize,
+    config: LocalBertConfig,
+}
+
+impl ModelDriver for LocalBertDriver {
+    const NAME: &'static str = "Local BERT";
+    const DESCRIPTION: &'static str = "A classic and lightweight text encoder that runs locally.";
 }
 
 impl LocalBertDriver {
-    pub fn new(profile: ModelProfile) -> Result<Self, ModelDriverError> {
-        let profile: LocalBertProfile = from_value(profile.profile)?;
-        let param_profile = profile.clone();
-        let device = profile.get_device()?;
+    pub fn new(bert_config: &LocalBertConfig) -> Result<Self, ModelDriverError> {
+        let device = get_device(&bert_config.compute_device)?;
         let repo = Repo::with_revision(
-            profile.model_name,
+            bert_config.model_name.clone(),
             hf_hub::RepoType::Model,
-            profile.revision,
+            bert_config.revision.clone(),
         );
         let api = Api::new()?.repo(repo);
-        let config_file = api.get(&profile.config_filename)?;
-        let tokenizer_file = api.get(&profile.tokenizer_filename)?;
-        let weights_file = api.get(&profile.weights_filename)?;
+        let config_file = api.get(&bert_config.config_filename)?;
+        let tokenizer_file = api.get(&bert_config.tokenizer_filename)?;
+        let weights_file = api.get(&bert_config.weights_filename)?;
         let config_json = read_to_string(config_file)?;
         let config: Config = from_str(&config_json)?;
         let tokenizer = Tokenizer::from_file(tokenizer_file)?;
@@ -47,7 +50,7 @@ impl LocalBertDriver {
         let model = BertModel::load(var_builder, &config)?;
 
         Ok(LocalBertDriver {
-            profile: param_profile,
+            config: bert_config.clone(),
             model,
             tokenizer,
             hidden_size: config.hidden_size,
@@ -55,21 +58,6 @@ impl LocalBertDriver {
     }
 }
 
-impl ModelDriver for LocalBertDriver {
-    const NAME: &'static str = "Local BERT";
-    const DESCRIPTION: &'static str = "A classic and lightweight text encoder that runs locally.";
-
-    fn initialize(profile: ModelProfile) -> Result<(), ModelDriverError> {
-        // Run the constructor in order to initiate downloading the model
-        Self::new(profile)?;
-
-        Ok(())
-    }
-
-    fn destroy(profile: ModelProfile) -> Result<(), ModelDriverError> {
-        unimplemented!();
-    }
-}
 impl TextEncoderDriver for LocalBertDriver {
     fn dimensions(&self) -> Result<usize, ModelDriverError> {
         Ok(self.hidden_size)
@@ -86,7 +74,7 @@ impl TextEncoderDriver for LocalBertDriver {
     fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
         // Largely ripped from https://github.com/huggingface/candle/blob/main/candle-examples/examples/bert/main.rs
         let tokens = self.tokenizer.encode_batch(inputs.to_vec(), true)?;
-        let device = self.profile.get_device()?;
+        let device = get_device(&self.config.compute_device)?;
         let (token_ids, attention_mask) = tokens.iter().try_fold(
             (Vec::new(), Vec::new()),
             |(mut token_ids, mut attention_mask), t| {
@@ -125,22 +113,16 @@ mod tests {
     use crate::{
         drivers::LocalBertDriver,
         types::{
-            structs::{profiles::LocalBertProfile, ModelProfile},
+            structs::{profiles::LocalBertConfig, ModelProfile},
             traits::driver::{ModelDriver, TextEncoderDriver},
         },
         utils::math::cosine_similarity,
     };
 
     fn setup_scenario() -> LocalBertDriver {
-        let bert_profile: LocalBertProfile = from_str("{}").unwrap();
-        let bert_profile_val = to_value(&bert_profile).unwrap();
-        let profile = ModelProfile {
-            name: "test-bert".to_string(),
-            driver_name: LocalBertDriver::NAME.to_string(),
-            profile: bert_profile_val,
-        };
+        let bert_config: LocalBertConfig = from_str("{}").unwrap();
 
-        LocalBertDriver::new(profile).unwrap()
+        LocalBertDriver::new(&bert_config).unwrap()
     }
 
     #[test]
