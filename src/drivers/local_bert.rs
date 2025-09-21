@@ -26,6 +26,7 @@ pub struct LocalBertDriver {
 }
 
 impl ModelDriver for LocalBertDriver {
+    const ID: &'static str = "local_bert";
     const NAME: &'static str = "Local BERT";
     const DESCRIPTION: &'static str = "A classic and lightweight text encoder that runs locally.";
 }
@@ -49,7 +50,7 @@ impl LocalBertDriver {
             unsafe { VarBuilder::from_mmaped_safetensors(&[weights_file], DTYPE, &device)? };
         let model = BertModel::load(var_builder, &config)?;
 
-        Ok(LocalBertDriver {
+        Ok(Self {
             config: bert_config.clone(),
             model,
             tokenizer,

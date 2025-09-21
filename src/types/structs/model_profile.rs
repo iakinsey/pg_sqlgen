@@ -1,4 +1,4 @@
-use crate::types::structs::profiles::{LocalBertConfig, LocalMistralConfig};
+use crate::types::structs::profiles::{LocalBertConfig};
 
 pub struct ModelProfile {
     pub name: String,
@@ -8,5 +8,4 @@ pub struct ModelProfile {
 
 pub enum ModelConfig {
     LocalBert(LocalBertConfig),
-    LocalMistral(LocalMistralConfig),
 }

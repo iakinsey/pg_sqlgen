@@ -1,10 +1,5 @@
-use crate::types::errors::ModelDriverError;
+use crate::types::{errors::ModelDriverError, structs::instruct_message::InstructMessage};
 
 pub trait TextInstructDriver {
-    fn instruct(&self, system_prompt: &str, user_prompt: &str) -> Result<String, ModelDriverError>;
-    fn instruct_many(
-        &self,
-        system_prompt: &str,
-        user_prompts: &[&str],
-    ) -> Result<Vec<String>, ModelDriverError>;
+    fn get_assistant_response(&mut self, messages: Vec<InstructMessage>) -> Result<String, ModelDriverError>;
 }

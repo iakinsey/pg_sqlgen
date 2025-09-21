@@ -25,4 +25,6 @@ pub enum ModelDriverError {
     SerdeJsonError(#[from] serde_json::Error),
     #[error(transparent)]
     UtilError(#[from] UtilError),
+    #[error(transparent)]
+    DTypeParseError(#[from] candle_core::DTypeParseError)
 }
