@@ -17,8 +17,18 @@ pub struct LocalPhiConfig {
     pub config_filename: String,
     #[serde(default = "default_weights_filenames")]
     pub weights_filenames: Vec<String>,
-    pub data_type: Option<String>,
+    #[serde(default = "default_sample_len")]
+    pub sample_len: usize,
+    #[serde(default = "default_repeat_penalty")]
+    pub repeat_penalty: f32,
+    #[serde(default = "default_repeat_last_n")]
+    pub repeat_last_n: usize,
+    #[serde(default = "default_seed")]
+    pub seed: u64,
 
+    pub temperature: Option<f64>,
+    pub top_p: Option<f64>,
+    pub data_type: Option<String>,
 }
 
 fn default_model_name() -> String {
@@ -42,4 +52,20 @@ fn default_weights_filenames() -> Vec<String> {
         "model-00001-of-00002.safetensors".to_string(),
         "model-00002-of-00002.safetensors".to_string(),
     ]
+}
+
+fn default_sample_len() -> usize {
+    5000
+}
+
+fn default_repeat_penalty() -> f32 {
+    1.1
+}
+
+fn default_repeat_last_n() -> usize {
+    64
+}
+
+fn default_seed() -> u64 {
+    5544542107816782714
 }

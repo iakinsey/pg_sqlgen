@@ -1,8 +1,8 @@
-use std::{fs::read_to_string, path::PathBuf, str::FromStr};
+use std::{fs::read_to_string, str::FromStr};
 
-use candle_core::DType;
+use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_nn::VarBuilder;
-use candle_transformers::models::{phi, phi3::{Config, Model}};
+use candle_transformers::{generation::LogitsProcessor, models::phi3::{Config, Model}, utils::apply_repeat_penalty};
 use hf_hub::{api::sync::Api, Repo};
 use serde_json::from_str;
 use tokenizers::Tokenizer;
@@ -13,7 +13,10 @@ use crate::{types::{errors::ModelDriverError, structs::{instruct_message::{Instr
 pub struct LocalPhiInstructDriver {
     model: Model,
     tokenizer: Tokenizer,
+    eos_token: u32,
     config: LocalPhiConfig,
+    device: Device,
+    logits_processor: LogitsProcessor,
 }
 
 
@@ -43,10 +46,15 @@ impl LocalPhiInstructDriver {
             .collect::<Result<_, _>>()?;
         let var_builder = unsafe { VarBuilder::from_mmaped_safetensors(&weights_files, dtype, &device)? };
         let model = Model::new(&config, var_builder)?;
+        let logits_processor = LogitsProcessor::new(phi_config.seed, phi_config.temperature, phi_config.top_p);
+        let eos_token = tokenizer.get_vocab(true).get("<|endoftext|>").copied().ok_or(ModelDriverError::Any("eos token does not exist".to_string()))?;
         
         Ok(Self {
             model,
             tokenizer,
+            device,
+            logits_processor,
+            eos_token,
             config: self_config,
         })
     }
@@ -72,6 +80,37 @@ impl LocalPhiInstructDriver {
 
 impl TextInstructDriver for LocalPhiInstructDriver {
     fn get_assistant_response(&mut self, messages: Vec<InstructMessage>) -> Result<String, ModelDriverError> {
-        unimplemented!()
+        let prompt = self.gen_prompt(messages);
+        let tokens = self.tokenizer.encode(prompt, true)?.get_ids().to_vec();
+        let mut pos = 0;
+        let mut out_tokens = Vec::new();
+
+        for index in 0..self.config.sample_len {
+            let context_size = if index > 0 { 1 } else { tokens.len() };
+            let ctx = &tokens[tokens.len().saturating_sub(context_size)..];
+            let input = Tensor::new(ctx, &self.device)?.unsqueeze(0)?;
+            let logits = self.model.forward(&input, pos)?.i((.., 0, ..))?;
+            let logits = logits.squeeze(0)?.to_dtype(DType::F32)?;
+            let logits = if self.config.repeat_penalty == 1. {
+                logits
+            } else {
+                let start_at = tokens.len().saturating_sub(self.config.repeat_last_n);
+                apply_repeat_penalty(&logits, self.config.repeat_penalty, &tokens[start_at..])?
+            };
+            let next_token = self.logits_processor.sample(&logits)?;
+
+            out_tokens.push(next_token);
+
+            if next_token == self.eos_token {
+                break;
+            }
+
+            pos += context_size;
+        }
+
+        Ok(match out_tokens.is_empty() {
+            true => String::new(),
+            false => self.tokenizer.decode(&out_tokens, true)?
+        })
     }
 }
