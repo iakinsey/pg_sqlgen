@@ -6,6 +6,9 @@ use candle_transformers::{generation::LogitsProcessor, models::phi3::{Config, Mo
 use hf_hub::{api::sync::Api, Repo};
 use serde_json::from_str;
 use tokenizers::Tokenizer;
+use std::fs;
+use std::io::{self, Write};
+use std::path::Path;
 
 use crate::{types::{errors::ModelDriverError, structs::{instruct_message::{InstructMessage, InstructRole}, profiles::LocalPhiConfig}, traits::driver::TextInstructDriver}, utils::model::get_device};
 
@@ -19,6 +22,10 @@ pub struct LocalPhiInstructDriver {
     logits_processor: LogitsProcessor,
 }
 
+fn write_string_to_file<P: AsRef<Path>>(path: P, contents: &str) -> io::Result<()> {
+    let mut file = fs::File::create(path)?;
+    file.write_all(contents.as_bytes())
+}
 
 impl LocalPhiInstructDriver {
     pub fn new(phi_config: LocalPhiConfig) -> Result<Self, ModelDriverError> {
@@ -35,6 +42,7 @@ impl LocalPhiInstructDriver {
         let config_file = api.get(&phi_config.config_filename)?;
         let config_json = read_to_string(config_file)?;
         let config: Config = from_str(&config_json)?;
+        write_string_to_file("/home/agent/wat", "worked")?;
         let dtype = match phi_config.data_type {
             Some(s) => DType::from_str(&s)?,
             None => device.bf16_default_to_f32(),
@@ -112,5 +120,44 @@ impl TextInstructDriver for LocalPhiInstructDriver {
             true => String::new(),
             false => self.tokenizer.decode(&out_tokens, true)?
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::from_str;
+
+    use crate::{drivers::LocalPhiInstructDriver, types::{structs::{instruct_message::{InstructMessage, InstructRole}, profiles::LocalPhiConfig}, traits::driver::TextInstructDriver}};
+
+    fn setup_scenario() -> LocalPhiInstructDriver {
+        let phi_config: LocalPhiConfig = from_str("{}").unwrap();
+        LocalPhiInstructDriver::new(phi_config).unwrap()
+    }
+
+    #[test]
+    fn test_generate_sql_statement() {
+    }
+
+    #[test]
+    fn test_genrate_sentence() {}
+
+    #[test]
+    fn test_question_answer() {
+        let messages = vec![
+            InstructMessage {
+                role: InstructRole::System,
+                message: "You are a helpful agent, you answer questions.".to_string(),
+            },
+            InstructMessage {
+                role:InstructRole::User,
+                message: "What colors are on the flag of the United States?".to_string(),
+            }
+        ];
+
+        let mut model = setup_scenario();
+        let response = model.get_assistant_response(messages).unwrap();
+
+        assert_eq!(response, "hello world");
+
     }
 }
