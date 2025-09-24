@@ -1,7 +1,18 @@
 pub enum InstructRole {
     System,
     User,
-    Assistant
+    Assistant,
+}
+
+impl InstructRole {
+    pub fn to_string(&self) -> String {
+        match self {
+            InstructRole::System => "system",
+            InstructRole::User => "user",
+            InstructRole::Assistant => "assistant",
+        }
+        .to_string()
+    }
 }
 
 pub struct InstructMessage {

@@ -87,7 +87,7 @@ impl LocalPhiInstructDriver {
 }
 
 impl TextInstructDriver for LocalPhiInstructDriver {
-    fn get_assistant_response(&mut self, messages: Vec<InstructMessage>) -> Result<String, ModelDriverError> {
+    async fn get_assistant_response(&mut self, messages: Vec<InstructMessage>) -> Result<String, ModelDriverError> {
         let prompt = self.gen_prompt(messages);
         let tokens = self.tokenizer.encode(prompt, true)?.get_ids().to_vec();
         let mut pos = 0;
@@ -158,6 +158,5 @@ mod tests {
         let response = model.get_assistant_response(messages).unwrap();
 
         assert_eq!(response, "hello world");
-
     }
 }
