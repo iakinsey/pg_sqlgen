@@ -100,7 +100,7 @@ impl TextInstructDriver for OllamaDriver {
 
         let url = self.get_request_url("chat");
         let body = self.get_chat_body()?;
-        let resp = self.client.post(url).json(&body).send().await?;
+        let resp = self.client.post(url).body(body).send().await?;
         let text = resp.text().await?;
         let response: OllamaResponse = from_str(&text)?;
 
@@ -110,16 +110,49 @@ impl TextInstructDriver for OllamaDriver {
 
 #[cfg(test)]
 mod tests {
+    use httpmock::{Method::POST, MockServer};
+
+    use crate::types::structs::instruct_message::InstructRole;
+
     use super::*;
 
     #[tokio::test]
     async fn test_get_assistant_response() {
-        let assistant_response = r#"{{
+        let assistant_response = r#"{
             "model": "test-model",
-            "message": {{
+            "message": {
                 "role": "assistant",
                 "content": "Test response" 
-            }}
-        }}"#;
+            }
+        }"#;
+
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/chat")
+                .body_contains("test-model");
+
+            then.status(200).body(assistant_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+        };
+
+        let messages = vec![InstructMessage {
+            role: InstructRole::User,
+            message: "test".to_string(),
+        }];
+
+        let mut driver = OllamaDriver::new(config).unwrap();
+        let response = driver.get_assistant_response(messages).await.unwrap();
+
+        mock.assert();
+        assert_eq!(response, "Test response");
     }
+
+    #[tokio::test]
+    async fn test_failed_get_assistant_response() {}
 }
