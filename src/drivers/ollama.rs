@@ -101,10 +101,23 @@ impl TextInstructDriver for OllamaDriver {
         let url = self.get_request_url("chat");
         let body = self.get_chat_body()?;
         let resp = self.client.post(url).body(body).send().await?;
+        let status = resp.status();
         let text = resp.text().await?;
-        let response: OllamaResponse = from_str(&text)?;
 
-        Ok(response.message.content)
+        if !status.is_success() {
+            return Err(ModelDriverError::ResponseError(format!(
+                "HTTP {}: {}",
+                status, text
+            )));
+        }
+
+        match from_str::<OllamaResponse>(&text) {
+            Ok(response) => Ok(response.message.content),
+            Err(_) => Err(ModelDriverError::ResponseError(format!(
+                "HTTP {}, failed to parse: {}",
+                status, text
+            ))),
+        }
     }
 }
 
@@ -154,5 +167,34 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_failed_get_assistant_response() {}
+    async fn test_failed_get_assistant_response() {
+        let error_response = r#"{"error": "test"}"#;
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/chat")
+                .body_contains("test-model");
+
+            then.status(500).body(error_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+        };
+
+        let messages = vec![InstructMessage {
+            role: InstructRole::User,
+            message: "test".to_string(),
+        }];
+
+        let mut driver = OllamaDriver::new(config).unwrap();
+        let response = driver.get_assistant_response(messages).await;
+
+        mock.assert();
+
+        let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
+    }
 }
