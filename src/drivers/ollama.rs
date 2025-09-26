@@ -15,6 +15,12 @@ struct ChatBody {
     stream: bool,
 }
 
+#[derive(Serialize)]
+struct EmbeddingsBody {
+    model: String,
+    prompt: String,
+}
+
 #[derive(Serialize, Deserialize)]
 struct ChatMessage {
     role: String,
@@ -28,8 +34,13 @@ pub struct OllamaDriver {
 }
 
 #[derive(Deserialize)]
-pub struct OllamaResponse {
+pub struct OllamaChatResponse {
     pub message: ChatMessage,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct OllamaEmbeddingsResponse {
+    pub embeddings: Vec<f32>,
 }
 
 impl OllamaDriver {
@@ -39,6 +50,17 @@ impl OllamaDriver {
             messages: Vec::new(),
             client: Client::new(),
         })
+    }
+
+    fn get_encode_body(&self, input: &str) -> Result<String, ModelDriverError> {
+        let message = EmbeddingsBody {
+            model: self.config.model_name.clone(),
+            prompt: input.to_string(),
+        };
+
+        let json = to_string(&message)?;
+
+        Ok(json)
     }
 
     fn get_chat_body(&self) -> Result<String, ModelDriverError> {
@@ -78,15 +100,36 @@ impl OllamaDriver {
 }
 
 impl TextEncoderDriver for OllamaDriver {
-    fn dimensions(&self) -> Result<usize, ModelDriverError> {
+    async fn dimensions(&self) -> Result<usize, ModelDriverError> {
+        // get model length from metadata
+        // otherwise read an api response
         unimplemented!()
     }
 
-    fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
-        unimplemented!()
+    async fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
+        let url = self.get_request_url("chat");
+        let body = self.get_encode_body(input)?;
+        let resp = self.client.post(url).body(body).send().await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+
+        if !status.is_success() {
+            return Err(ModelDriverError::ResponseError(format!(
+                "HTTP {}: {}",
+                status, text
+            )));
+        }
+
+        match from_str::<OllamaEmbeddingsResponse>(&text) {
+            Ok(response) => Ok(response.embeddings),
+            Err(_) => Err(ModelDriverError::ResponseError(format!(
+                "HTTP {}, failed to parse: {}",
+                status, text
+            ))),
+        }
     }
 
-    fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
+    async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
         unimplemented!()
     }
 }
@@ -111,7 +154,7 @@ impl TextInstructDriver for OllamaDriver {
             )));
         }
 
-        match from_str::<OllamaResponse>(&text) {
+        match from_str::<OllamaChatResponse>(&text) {
             Ok(response) => Ok(response.message.content),
             Err(_) => Err(ModelDriverError::ResponseError(format!(
                 "HTTP {}, failed to parse: {}",

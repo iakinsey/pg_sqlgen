@@ -60,19 +60,19 @@ impl LocalBertDriver {
 }
 
 impl TextEncoderDriver for LocalBertDriver {
-    fn dimensions(&self) -> Result<usize, ModelDriverError> {
+    async fn dimensions(&self) -> Result<usize, ModelDriverError> {
         Ok(self.hidden_size)
     }
 
-    fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
-        self.encode_many(&[input]).and_then(|mut results| {
+    async fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
+        self.encode_many(&[input]).await.and_then(|mut results| {
             results
                 .pop()
                 .ok_or_else(|| ModelDriverError::EncodeError("no output".into()))
         })
     }
 
-    fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
+    async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
         // Largely ripped from https://github.com/huggingface/candle/blob/main/candle-examples/examples/bert/main.rs
         let tokens = self.tokenizer.encode_batch(inputs.to_vec(), true)?;
         let device = get_device(&self.config.compute_device)?;
@@ -123,8 +123,8 @@ mod tests {
         LocalBertDriver::new(&bert_config).unwrap()
     }
 
-    #[test]
-    fn test_encode_success() {
+    #[tokio::test]
+    async fn test_encode_success() {
         let examples = vec![
             "The quick brown fox jumps over the lazy dog",
             "Quick zephyrs blow, vexing daft Jim",
@@ -133,11 +133,11 @@ mod tests {
             "By Jove, my quick study of lexicography won a prize!",
         ];
         let model = setup_scenario();
-        let encodings = model.encode_many(&examples).unwrap();
+        let encodings = model.encode_many(&examples).await.unwrap();
         let mut unique_set = HashSet::new();
 
         for encoding in encodings {
-            assert_eq!(encoding.len(), model.dimensions().unwrap());
+            assert_eq!(encoding.len(), model.dimensions().await.unwrap());
             let hex_encoding = encoding
                 .iter()
                 .flat_map(|f| f.to_le_bytes())
@@ -150,17 +150,17 @@ mod tests {
         assert_eq!(unique_set.len(), examples.len())
     }
 
-    #[test]
-    fn test_encode_many_success() {
+    #[tokio::test]
+    async fn test_encode_many_success() {
         let sentence = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
         let model = setup_scenario();
-        let encoding = model.encode(sentence).unwrap();
+        let encoding = model.encode(sentence).await.unwrap();
 
-        assert_eq!(encoding.len(), model.dimensions().unwrap());
+        assert_eq!(encoding.len(), model.dimensions().await.unwrap());
     }
 
-    #[test]
-    fn test_embeddings_distance() {
+    #[tokio::test]
+    async fn test_embeddings_distance() {
         let scenarios: Vec<[&str; 3]> = vec![
             ["emperor", "king", "keyboard"],
             ["cat", "dog", "planet"],
@@ -170,7 +170,7 @@ mod tests {
         let model = setup_scenario();
 
         for scenario in scenarios {
-            let e = model.encode_many(&scenario).unwrap();
+            let e = model.encode_many(&scenario).await.unwrap();
             let (closer_1, closer_2, farther) = (e[0].clone(), e[1].clone(), e[2].clone());
             let closer = cosine_similarity(&closer_1, &closer_2);
             let farther_1 = cosine_similarity(&closer_1, &farther);
