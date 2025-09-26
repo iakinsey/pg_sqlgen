@@ -167,7 +167,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_failed_get_assistant_response() {
+    async fn test_get_assistant_response_failed() {
         let error_response = r#"{"error": "test"}"#;
         let server = MockServer::start();
         let mock = server.mock(|when, then| {
@@ -195,6 +195,39 @@ mod tests {
         mock.assert();
 
         let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
+    }
+
+    #[tokio::test]
+    async fn test_get_assistant_response_parse_failed() {
+        let bad_response = r#"}{"#;
+
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/chat")
+                .body_contains("test-model");
+
+            then.status(200).body(bad_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+        };
+
+        let messages = vec![InstructMessage {
+            role: InstructRole::User,
+            message: "test".to_string(),
+        }];
+
+        let mut driver = OllamaDriver::new(config).unwrap();
+        let response = driver.get_assistant_response(messages).await;
+
+        mock.assert();
+
+        let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
         assert_eq!(response.unwrap_err().to_string(), expected_err);
     }
 }
