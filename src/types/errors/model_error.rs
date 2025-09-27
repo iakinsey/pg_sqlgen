@@ -8,6 +8,8 @@ pub enum ModelDriverError {
     #[error("{0}")]
     Any(String),
     #[error("{0}")]
+    ParseError(String),
+    #[error("{0}")]
     ResponseError(String),
     #[error("{0}")]
     DeviceError(String),

@@ -1,6 +1,6 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::{from_str, to_string};
+use serde_json::{from_str, to_string, Value};
 
 use crate::types::{
     errors::ModelDriverError,
@@ -52,6 +52,16 @@ impl OllamaDriver {
         })
     }
 
+    fn get_show_body(&self) -> Result<String, ModelDriverError> {
+        let message = ShowRequest {
+            model: self.config.model_name.clone(),
+        };
+
+        let json = to_string(&message)?;
+
+        Ok(json)
+    }
+
     fn get_encode_body(&self, input: &str) -> Result<String, ModelDriverError> {
         let message = EmbeddingsBody {
             model: self.config.model_name.clone(),
@@ -101,9 +111,7 @@ impl OllamaDriver {
 
 impl TextEncoderDriver for OllamaDriver {
     async fn dimensions(&self) -> Result<usize, ModelDriverError> {
-        // get model length from metadata
-        // otherwise read an api response
-        unimplemented!()
+        Ok(self.encode("a").await?.len())
     }
 
     async fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
