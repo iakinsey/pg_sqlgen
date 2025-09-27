@@ -40,7 +40,7 @@ pub struct OllamaChatResponse {
 
 #[derive(Deserialize, Debug)]
 pub struct OllamaEmbeddingsResponse {
-    pub embeddings: Vec<f32>,
+    pub embedding: Vec<f32>,
 }
 
 impl OllamaDriver {
@@ -50,16 +50,6 @@ impl OllamaDriver {
             messages: Vec::new(),
             client: Client::new(),
         })
-    }
-
-    fn get_show_body(&self) -> Result<String, ModelDriverError> {
-        let message = ShowRequest {
-            model: self.config.model_name.clone(),
-        };
-
-        let json = to_string(&message)?;
-
-        Ok(json)
     }
 
     fn get_encode_body(&self, input: &str) -> Result<String, ModelDriverError> {
@@ -115,7 +105,7 @@ impl TextEncoderDriver for OllamaDriver {
     }
 
     async fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
-        let url = self.get_request_url("chat");
+        let url = self.get_request_url("embeddings");
         let body = self.get_encode_body(input)?;
         let resp = self.client.post(url).body(body).send().await?;
         let status = resp.status();
@@ -129,7 +119,7 @@ impl TextEncoderDriver for OllamaDriver {
         }
 
         match from_str::<OllamaEmbeddingsResponse>(&text) {
-            Ok(response) => Ok(response.embeddings),
+            Ok(response) => Ok(response.embedding),
             Err(_) => Err(ModelDriverError::ResponseError(format!(
                 "HTTP {}, failed to parse: {}",
                 status, text
@@ -281,4 +271,45 @@ mod tests {
         let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
         assert_eq!(response.unwrap_err().to_string(), expected_err);
     }
+
+    #[tokio::test]
+    async fn test_encode() {
+        let encoding_response = r#"{
+            "embedding": [
+                0.2139129936695099,
+                0.05833360552787781
+            ]
+        }"#;
+
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/embeddings")
+                .body_contains("test-model");
+
+            then.status(200).body(encoding_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+        };
+
+        let driver = OllamaDriver::new(config).unwrap();
+        let response = driver.encode("test input").await.unwrap();
+
+        mock.assert();
+
+        assert_eq!(response.len(), 2)
+    }
+
+    #[tokio::test]
+    async fn test_encode_response_failed() {}
+
+    #[tokio::test]
+    async fn test_encode_parse_failed() {}
+
+    #[tokio::test]
+    async fn test_get_dimensions() {}
 }
