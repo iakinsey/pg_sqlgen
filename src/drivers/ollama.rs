@@ -332,7 +332,31 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encode_parse_failed() {}
+    async fn test_encode_parse_failed() {
+        let bad_response = r#"}{"#;
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/embeddings")
+                .body_contains("test-model");
+
+            then.status(200).body(bad_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+        };
+
+        let driver = OllamaDriver::new(config).unwrap();
+        let response = driver.encode("test input").await;
+
+        mock.assert();
+
+        let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
+    }
 
     #[tokio::test]
     async fn test_get_dimensions() {}
