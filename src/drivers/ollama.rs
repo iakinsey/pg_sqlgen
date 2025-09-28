@@ -359,5 +359,32 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_dimensions() {}
+    async fn test_get_dimensions() {
+        let encoding_response = r#"{
+            "embedding": [
+                0.2139129936695099,
+                0.05833360552787781
+            ]
+        }"#;
+
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/embeddings")
+                .body_contains("test-model");
+
+            then.status(200).body(encoding_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+        };
+
+        let driver = OllamaDriver::new(config).unwrap();
+        let size = driver.dimensions().await.unwrap();
+
+        assert_eq!(size, 2);
+    }
 }
