@@ -1,10 +1,13 @@
 use pgrx::prelude::*;
 
+mod api;
 mod drivers;
 mod types;
 mod utils;
 
 ::pgrx::pg_module_magic!(name, version);
+
+extension_sql_file!("../sql/internal.sql", name = "internal");
 
 #[pg_extern]
 fn hello_pg_sqlgen() -> &'static str {
