@@ -385,6 +385,7 @@ mod tests {
         let driver = OllamaDriver::new(config).unwrap();
         let size = driver.dimensions().await.unwrap();
 
+        mock.assert();
         assert_eq!(size, 2);
     }
 }
