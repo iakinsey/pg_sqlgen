@@ -305,7 +305,31 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encode_response_failed() {}
+    async fn test_encode_response_failed() {
+        let error_response = r#"{"error": "test"}"#;
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/embeddings")
+                .body_contains("test-model");
+
+            then.status(500).body(error_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+        };
+
+        let driver = OllamaDriver::new(config).unwrap();
+        let response = driver.encode("test input").await;
+
+        mock.assert();
+
+        let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
+    }
 
     #[tokio::test]
     async fn test_encode_parse_failed() {}
