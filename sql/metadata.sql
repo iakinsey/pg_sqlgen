@@ -3,37 +3,78 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    EXECUTE FORMAT($fmt$
-        CREATE TABLE sqlgen_internal.db_metadata_%I (
-            schema_name     TEXT NOT NULL,
-            table_name      TEXT NOT NULL,
-            column_name     TEXT NOT NULL,
-            ddl             TEXT NOT NULL,
-            comment         TEXT,
-            ddl_vector      VECTOR(%s) NOT NULL,
-            comment_vector  VECTOR(%s)
-        );
-    $fmt$, unique_name, vector_size, vector_size);
+  EXECUTE FORMAT($fmt$
+    CREATE TABLE sqlgen_internal.db_metadata_%I (
+      schema_name     TEXT NOT NULL,
+      table_name      TEXT NOT NULL,
+      column_name     TEXT NOT NULL,
+      ddl             TEXT NOT NULL,
+      comment         TEXT,
+      ddl_vector      VECTOR(%s) NOT NULL,
+      comment_vector  VECTOR(%s)
+    );
+  $fmt$, unique_name, vector_size, vector_size);
 
-    EXECUTE FORMAT($fmt$
-        REVOKE ALL ON TABLE sqlgen_internal.db_metadata_%I FROM PUBLIC;
-    $fmt$, unique_name);
+  EXECUTE FORMAT($fmt$
+    REVOKE ALL ON TABLE sqlgen_internal.db_metadata_%I FROM PUBLIC;
+  $fmt$, unique_name);
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, INT) FROM public;
+
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(schema_name TEXT, unique_name TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- TODO
+END
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT) FROM public;
+
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(schema_name TEXT, unique_name TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- TODO
+END
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT) FROM public;
+
+
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(unique_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    EXECUTE FORMAT($fmt$
-        DROP TABLE sqlgen_internal.db_metadata_%I;
-    $fmt$, unique_name);
+  DO $triggers$
+    DECLARE
+      s RECORD;
+    BEGIN
+      FOR s IN
+        SELECT schema_name
+        FROM information_schema.schemata
+      LOOP
+        BEGIN
+          PERFORM sqlgen_internal.remove_schema_triggers(s.schema_name);
+        EXCEPTION WHEN OTHERS THEN
+          -- suppress errors
+          NULL;
+        END;
+      END LOOP;
+    END;
+  $triggers$;
+
+  EXECUTE FORMAT($fmt$
+    DROP TABLE sqlgen_internal.db_metadata_%I;
+  $fmt$, unique_name);
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT) FROM public;
-
 
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.crawl_schema(schema_name TEXT)
