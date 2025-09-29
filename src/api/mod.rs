@@ -1,4 +1,7 @@
 pub mod api;
-pub mod crawler;
 
 pub use api::*;
+
+use pgrx::extension_sql_file;
+
+extension_sql_file!("../../sql/metadata.sql", name = "crawler");
