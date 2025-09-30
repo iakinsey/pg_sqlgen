@@ -45,9 +45,9 @@ pub struct OllamaEmbeddingsResponse {
 }
 
 impl OllamaDriver {
-    pub fn new(config: OllamaConfig) -> Result<Self, ModelDriverError> {
+    pub fn new(config: &OllamaConfig) -> Result<Self, ModelDriverError> {
         Ok(Self {
-            config,
+            config: config.clone(),
             messages: Vec::new(),
             client: Client::new(),
         })
@@ -137,6 +137,7 @@ impl TextEncoderDriver for OllamaDriver {
     }
 
     async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
+        // TODO
         unimplemented!()
     }
 }
@@ -210,7 +211,7 @@ mod tests {
             message: "test".to_string(),
         }];
 
-        let mut driver = OllamaDriver::new(config).unwrap();
+        let mut driver = OllamaDriver::new(&config).unwrap();
         let response = driver.get_assistant_response(messages).await.unwrap();
 
         mock.assert();
@@ -240,7 +241,7 @@ mod tests {
             message: "test".to_string(),
         }];
 
-        let mut driver = OllamaDriver::new(config).unwrap();
+        let mut driver = OllamaDriver::new(&config).unwrap();
         let response = driver.get_assistant_response(messages).await;
 
         mock.assert();
@@ -273,7 +274,7 @@ mod tests {
             message: "test".to_string(),
         }];
 
-        let mut driver = OllamaDriver::new(config).unwrap();
+        let mut driver = OllamaDriver::new(&config).unwrap();
         let response = driver.get_assistant_response(messages).await;
 
         mock.assert();
@@ -306,7 +307,7 @@ mod tests {
             use_https: false,
         };
 
-        let driver = OllamaDriver::new(config).unwrap();
+        let driver = OllamaDriver::new(&config).unwrap();
         let response = driver.encode("test input").await.unwrap();
 
         mock.assert();
@@ -332,7 +333,7 @@ mod tests {
             use_https: false,
         };
 
-        let driver = OllamaDriver::new(config).unwrap();
+        let driver = OllamaDriver::new(&config).unwrap();
         let response = driver.encode("test input").await;
 
         mock.assert();
@@ -359,7 +360,7 @@ mod tests {
             use_https: false,
         };
 
-        let driver = OllamaDriver::new(config).unwrap();
+        let driver = OllamaDriver::new(&config).unwrap();
         let response = driver.encode("test input").await;
 
         mock.assert();
@@ -392,7 +393,7 @@ mod tests {
             use_https: false,
         };
 
-        let driver = OllamaDriver::new(config).unwrap();
+        let driver = OllamaDriver::new(&config).unwrap();
         let size = driver.dimensions().await.unwrap();
 
         mock.assert();

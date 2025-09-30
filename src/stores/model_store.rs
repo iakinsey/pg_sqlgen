@@ -2,7 +2,7 @@ use crate::{
     drivers::{LocalBertDriver, OllamaDriver},
     types::{
         errors::ModelDriverError,
-        structs::model_profile::ModelProfile,
+        structs::model_profile::{ModelConfig, ModelProfile},
         traits::driver::{ModelDriver, TextEncoderDriver},
     },
 };
@@ -33,11 +33,13 @@ impl ModelStore {
         ]
     }
 
-    pub fn get_model_profile(name: String) -> Result<ModelProfile, ModelDriverError> {
+    pub fn get_model_profile(model_name: String) -> Result<ModelProfile, ModelDriverError> {
         unimplemented!()
     }
 
-    pub fn get_text_encoder_model() -> Result<Box<dyn TextEncoderDriver>, ModelDriverError> {
+    pub fn get_text_encoder_model(
+        model_name: String,
+    ) -> Result<Box<dyn TextEncoderDriver>, ModelDriverError> {
         unimplemented!()
     }
 

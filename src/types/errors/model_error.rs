@@ -13,6 +13,8 @@ pub enum ModelDriverError {
     ResponseError(String),
     #[error("{0}")]
     DeviceError(String),
+    #[error("unsupported model config: {0}")]
+    UnsupportedModelConfig(String),
     #[error("unknown device: {0}")]
     UnknownDevice(String),
     #[error("model encoding error: {0}")]

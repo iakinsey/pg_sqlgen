@@ -2,11 +2,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OllamaConfig {
-    #[serde(default="default_host")]
+    #[serde(default = "default_host")]
     pub host: String,
     pub model_name: String,
-    #[serde(default="default_use_https")]
-    pub use_https: bool
+    #[serde(default = "default_use_https")]
+    pub use_https: bool,
 }
 
 fn default_host() -> String {
