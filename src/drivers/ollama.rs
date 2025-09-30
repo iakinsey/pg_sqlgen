@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string, Value};
@@ -5,7 +6,7 @@ use serde_json::{from_str, to_string, Value};
 use crate::types::{
     errors::ModelDriverError,
     structs::{instruct_message::InstructMessage, profiles::OllamaConfig},
-    traits::driver::{TextEncoderDriver, TextInstructDriver},
+    traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
 };
 
 #[derive(Serialize)]
@@ -99,6 +100,14 @@ impl OllamaDriver {
     }
 }
 
+impl ModelDriver for OllamaDriver {
+    const ID: &'static str = "ollama";
+    const NAME: &'static str = "Ollama";
+    const DESCRIPTION: &'static str =
+        "A flexible runtime for running and managing language models.";
+}
+
+#[async_trait]
 impl TextEncoderDriver for OllamaDriver {
     async fn dimensions(&self) -> Result<usize, ModelDriverError> {
         Ok(self.encode("a").await?.len())
@@ -132,6 +141,7 @@ impl TextEncoderDriver for OllamaDriver {
     }
 }
 
+#[async_trait]
 impl TextInstructDriver for OllamaDriver {
     async fn get_assistant_response(
         &mut self,

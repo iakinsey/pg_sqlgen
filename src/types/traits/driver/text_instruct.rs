@@ -1,5 +1,11 @@
+use async_trait::async_trait;
+
 use crate::types::{errors::ModelDriverError, structs::instruct_message::InstructMessage};
 
-pub trait TextInstructDriver {
-    async fn get_assistant_response(&mut self, messages: Vec<InstructMessage>) -> Result<String, ModelDriverError>;
+#[async_trait]
+pub trait TextInstructDriver: Send + Sync {
+    async fn get_assistant_response(
+        &mut self,
+        messages: Vec<InstructMessage>,
+    ) -> Result<String, ModelDriverError>;
 }

@@ -2,6 +2,7 @@
 
 use std::fs::read_to_string;
 
+use async_trait::async_trait;
 use candle_core::Tensor;
 use candle_nn::VarBuilder;
 use candle_transformers::models::bert::{BertModel, Config, DTYPE};
@@ -59,6 +60,7 @@ impl LocalBertDriver {
     }
 }
 
+#[async_trait]
 impl TextEncoderDriver for LocalBertDriver {
     async fn dimensions(&self) -> Result<usize, ModelDriverError> {
         Ok(self.hidden_size)

@@ -19,6 +19,7 @@ pg17 = ["pgrx/pg17", "pgrx-tests/pg17" ]
 pg_test = []
 
 [dependencies]
+async-trait = "0.1.89"
 candle-core = { git = "https://github.com/huggingface/candle", rev = "41a674ce8d1e37a9f8c6a97ff758552eddfd389a" }
 candle-nn = { git = "https://github.com/huggingface/candle", rev = "41a674ce8d1e37a9f8c6a97ff758552eddfd389a" }
 candle-transformers = { git = "https://github.com/huggingface/candle", rev = "41a674ce8d1e37a9f8c6a97ff758552eddfd389a" }
