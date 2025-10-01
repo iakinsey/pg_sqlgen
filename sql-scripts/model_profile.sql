@@ -13,7 +13,7 @@ REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
 -- Public model profile view
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW sqlgen.model_profiles {
+CREATE OR REPLACE VIEW sqlgen.models {
     SELECT
         model_name,
         driver_name,
@@ -25,7 +25,7 @@ CREATE OR REPLACE VIEW sqlgen.model_profiles {
 -- Get model profile
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.get_model_profile(model_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen.get_model(model_name TEXT)
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql 
 STRICT
@@ -37,13 +37,12 @@ BEGIN
     WHERE mp.model_name = model_name;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_model_profile(TEXT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Create model profile
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.create_model_profile(model_name TEXT, driver_name TEXT, config JSONB)
+CREATE OR REPLACE FUNCTION sqlgen.create_model(model_name TEXT, driver_name TEXT, config JSONB)
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql
 STRICT
@@ -55,13 +54,13 @@ BEGIN
     RETURNING *;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_model_profile(TEXT, TEXT, JSONB) FROM public;
 
 --------------------------------------------------------------------------------
 -- Delete model profile
+-- TODO handle cases when model is already in use
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.delete_model_profile(model_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen.delete_model(model_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 STRICT
@@ -71,4 +70,3 @@ BEGIN
     WHERE mp.model_name = model_name;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.delete_model_profile(TEXT) FROM public;

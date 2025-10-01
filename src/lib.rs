@@ -8,7 +8,7 @@ mod utils;
 
 ::pgrx::pg_module_magic!(name, version);
 
-extension_sql_file!("../sql/internal.sql", name = "internal");
+extension_sql_file!("../sql-scripts/internal.sql", name = "internal");
 
 #[pg_extern]
 fn hello_pg_sqlgen() -> &'static str {
