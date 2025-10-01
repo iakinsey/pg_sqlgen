@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     drivers::{LocalBertDriver, OllamaDriver},
     types::{
@@ -7,12 +9,15 @@ use crate::{
     },
 };
 
+#[derive(Serialize, Deserialize)]
 pub struct ModelProfile {
     pub name: String,
     pub driver_name: String,
     pub config: ModelConfig,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type", content = "config")]
 pub enum ModelConfig {
     LocalBert(LocalBertConfig),
     Ollama(OllamaConfig),

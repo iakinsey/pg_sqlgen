@@ -3,7 +3,7 @@ use crate::{
     types::{
         errors::ModelDriverError,
         structs::model_profile::{ModelConfig, ModelProfile},
-        traits::driver::{ModelDriver, TextEncoderDriver},
+        traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
     },
 };
 
@@ -40,10 +40,16 @@ impl ModelStore {
     pub fn get_text_encoder_model(
         model_name: String,
     ) -> Result<Box<dyn TextEncoderDriver>, ModelDriverError> {
-        unimplemented!()
+        let profile = Self::get_model_profile(model_name)?;
+
+        profile.get_text_encoder_model()
     }
 
-    pub fn get_text_instruct_model() {
-        unimplemented!()
+    pub fn get_text_instruct_model(
+        model_name: String,
+    ) -> Result<Box<dyn TextInstructDriver>, ModelDriverError> {
+        let profile = Self::get_model_profile(model_name)?;
+
+        profile.get_text_instruct_model()
     }
 }
