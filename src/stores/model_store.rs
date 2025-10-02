@@ -1,3 +1,5 @@
+use pgrx::{spi::SpiTupleTable, IntoDatum, PgBuiltInOids, Spi};
+
 use crate::{
     drivers::{LocalBertDriver, OllamaDriver},
     types::{
@@ -10,14 +12,6 @@ use crate::{
 pub struct ModelStore {}
 
 impl ModelStore {
-    pub fn create() {
-        unimplemented!()
-    }
-
-    pub fn delete() {
-        unimplemented!()
-    }
-
     pub fn get_model_descriptions() -> Vec<(&'static str, &'static str, &'static str)> {
         vec![
             (
@@ -34,7 +28,13 @@ impl ModelStore {
     }
 
     pub fn get_model_profile(model_name: String) -> Result<ModelProfile, ModelDriverError> {
-        unimplemented!()
+        let query = "SELECT model_name, driver_name, config::text FROM sqlgen.get_model($1)";
+
+        Spi::connect(|mut client| {
+            let row = client.select(query, None, &[model_name.into()])?;
+
+            ModelProfile::from_row(row)
+        })
     }
 
     pub fn get_text_encoder_model(

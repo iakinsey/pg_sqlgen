@@ -35,4 +35,6 @@ pub enum ModelDriverError {
     DTypeParseError(#[from] candle_core::DTypeParseError),
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
+    #[error(transparent)]
+    SpiError(#[from] pgrx::spi::Error),
 }

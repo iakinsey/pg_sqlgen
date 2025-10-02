@@ -1,3 +1,4 @@
+use pgrx::spi::SpiTupleTable;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -7,12 +8,11 @@ use crate::{
         structs::profiles::{LocalBertConfig, OllamaConfig},
         traits::driver::{TextEncoderDriver, TextInstructDriver},
     },
+    utils::sql::get_column,
 };
 
-#[derive(Serialize, Deserialize)]
 pub struct ModelProfile {
     pub name: String,
-    pub driver_name: String,
     pub config: ModelConfig,
 }
 
@@ -24,6 +24,14 @@ pub enum ModelConfig {
 }
 
 impl ModelProfile {
+    pub fn from_row(row: SpiTupleTable) -> Result<Self, ModelDriverError> {
+        let name: String = get_column(&row, "name")?;
+        let config_json: String = get_column(&row, "config")?;
+        let config: ModelConfig = serde_json::from_str(&config_json)?;
+
+        Ok(Self { name, config })
+    }
+
     pub fn get_text_encoder_model(&self) -> Result<Box<dyn TextEncoderDriver>, ModelDriverError> {
         let driver: Box<dyn TextEncoderDriver> = match &self.config {
             ModelConfig::LocalBert(cfg) => Box::new(LocalBertDriver::new(&cfg)?),
@@ -36,11 +44,7 @@ impl ModelProfile {
     pub fn get_text_instruct_model(&self) -> Result<Box<dyn TextInstructDriver>, ModelDriverError> {
         let driver: Box<dyn TextInstructDriver> = match &self.config {
             ModelConfig::Ollama(cfg) => Box::new(OllamaDriver::new(cfg)?),
-            _ => {
-                return Err(ModelDriverError::UnsupportedModelConfig(
-                    self.driver_name.clone(),
-                ))
-            }
+            _ => return Err(ModelDriverError::UnsupportedModelConfig(self.name.clone())),
         };
 
         Ok(driver)

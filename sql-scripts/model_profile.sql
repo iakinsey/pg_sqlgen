@@ -4,7 +4,6 @@
 
 CREATE TABLE sqlgen_internal.model_profile (
     model_name TEXT PRIMARY KEY,
-    driver_name TEXT NOT NULL,
     config JSONB NOT NULL
 );
 REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
@@ -16,7 +15,6 @@ REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
 CREATE OR REPLACE VIEW sqlgen.models {
     SELECT
         model_name,
-        driver_name,
         jsonb_pretty(config) AS config
     FROM sqlgen_internal.model_profile
 }
