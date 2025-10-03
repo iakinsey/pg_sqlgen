@@ -28,11 +28,15 @@ impl ModelStore {
         ]
     }
 
-    pub fn get_model_profile(model_name: &str) -> Result<ModelProfile, ModelDriverError> {
+    pub fn get_model_profile(name: &str) -> Result<ModelProfile, ModelDriverError> {
         let query = "SELECT model_name, driver_name, config::text FROM sqlgen.get_model($1)";
 
         Spi::connect(|client| {
-            let row = client.select(query, None, &[model_name.into()])?;
+            let row = client.select(query, None, &[name.into()])?;
+
+            if row.is_empty() {
+                return Err(ModelDriverError::ModelDoesntExist(name.to_string()));
+            }
 
             ModelProfile::from_row(row)
         })
@@ -54,8 +58,14 @@ impl ModelStore {
         Ok(profile)
     }
 
-    pub fn delete_model_profile(name: &str) {
-        unimplemented!()
+    pub fn delete_model_profile(name: &str) -> Result<(), ModelDriverError> {
+        Self::get_model_profile(name)?;
+
+        let query = "SELECT model_name, driver_name, config::text FROM sqlgen.get_model($1)";
+
+        Spi::run_with_args(query, &[name.into()])?;
+
+        Ok(())
     }
 
     pub fn get_text_encoder_model(
