@@ -32,6 +32,13 @@ impl ModelProfile {
         Ok(Self { name, config })
     }
 
+    pub fn has_valid_config(&self) -> bool {
+        match &self.config {
+            ModelConfig::LocalBert(_) => true,
+            ModelConfig::Ollama(_) => true,
+        }
+    }
+
     pub fn get_text_encoder_model(&self) -> Result<Box<dyn TextEncoderDriver>, ModelDriverError> {
         let driver: Box<dyn TextEncoderDriver> = match &self.config {
             ModelConfig::LocalBert(cfg) => Box::new(LocalBertDriver::new(&cfg)?),

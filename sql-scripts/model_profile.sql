@@ -40,15 +40,15 @@ $$;
 -- Create model profile
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen.create_model(model_name TEXT, driver_name TEXT, config JSONB)
+CREATE OR REPLACE FUNCTION sqlgen.create_model(model_name TEXT, config JSONB)
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql
 STRICT
 AS $$
 BEGIN
     RETURN QUERY
-    INSERT INTO sqlgen_internal.model_profile(model_name, driver_name, config)
-    VALUES (model_name, driver_name, config)
+    INSERT INTO sqlgen_internal.model_profile(model_name, config)
+    VALUES (model_name, config)
     RETURNING *;
 END;
 $$;

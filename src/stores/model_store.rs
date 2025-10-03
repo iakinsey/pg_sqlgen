@@ -1,4 +1,5 @@
 use pgrx::{spi::SpiTupleTable, IntoDatum, PgBuiltInOids, Spi};
+use serde_json::from_str;
 
 use crate::{
     drivers::{LocalBertDriver, OllamaDriver},
@@ -27,18 +28,38 @@ impl ModelStore {
         ]
     }
 
-    pub fn get_model_profile(model_name: String) -> Result<ModelProfile, ModelDriverError> {
+    pub fn get_model_profile(model_name: &str) -> Result<ModelProfile, ModelDriverError> {
         let query = "SELECT model_name, driver_name, config::text FROM sqlgen.get_model($1)";
 
-        Spi::connect(|mut client| {
+        Spi::connect(|client| {
             let row = client.select(query, None, &[model_name.into()])?;
 
             ModelProfile::from_row(row)
         })
     }
 
+    pub fn create_model_profile(
+        name: &str,
+        config_str: &str,
+    ) -> Result<ModelProfile, ModelDriverError> {
+        let config: ModelConfig = from_str(config_str)?;
+        let profile = ModelProfile {
+            name: name.to_string(),
+            config: config,
+        };
+        let query = "SELECT sqlgen.create_model($1, $2);";
+
+        Spi::run_with_args(query, &[name.into(), config_str.into()])?;
+
+        Ok(profile)
+    }
+
+    pub fn delete_model_profile(name: &str) {
+        unimplemented!()
+    }
+
     pub fn get_text_encoder_model(
-        model_name: String,
+        model_name: &str,
     ) -> Result<Box<dyn TextEncoderDriver>, ModelDriverError> {
         let profile = Self::get_model_profile(model_name)?;
 
@@ -46,7 +67,7 @@ impl ModelStore {
     }
 
     pub fn get_text_instruct_model(
-        model_name: String,
+        model_name: &str,
     ) -> Result<Box<dyn TextInstructDriver>, ModelDriverError> {
         let profile = Self::get_model_profile(model_name)?;
 

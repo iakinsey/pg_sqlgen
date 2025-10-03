@@ -24,3 +24,8 @@ fn execute() -> &'static str {
 fn generate() -> &'static str {
     unimplemented!()
 }
+
+#[pg_extern]
+fn set_default_model() -> &'static str {
+    unimplemented!()
+}
