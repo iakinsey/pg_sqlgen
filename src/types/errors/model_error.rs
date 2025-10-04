@@ -15,8 +15,6 @@ pub enum ModelDriverError {
     DeviceError(String),
     #[error("unsupported model config: {0}")]
     UnsupportedModelConfig(String),
-    #[error("model doesn't exist: {0}")]
-    ModelDoesntExist(String),
     #[error("unknown device: {0}")]
     UnknownDevice(String),
     #[error("model encoding error: {0}")]

@@ -79,14 +79,12 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT) FROM publ
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.crawl_schema(schema_name TEXT)
 RETURNS TABLE (
-  schema_name  TEXT,
   table_name   TEXT,
   column_name  TEXT,
   ddl          TEXT,
   comment      TEXT
 )
 SELECT
-  n.nspname AS Schema_Name,
   c.relname AS Table_Name,
   a.attname AS Column_Name,
   (

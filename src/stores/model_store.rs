@@ -1,10 +1,10 @@
-use pgrx::{spi::SpiTupleTable, IntoDatum, PgBuiltInOids, Spi};
+use pgrx::Spi;
 use serde_json::from_str;
 
 use crate::{
     drivers::{LocalBertDriver, OllamaDriver},
     types::{
-        errors::ModelDriverError,
+        errors::StoreError,
         structs::model_profile::{ModelConfig, ModelProfile},
         traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
     },
@@ -28,24 +28,22 @@ impl ModelStore {
         ]
     }
 
-    pub fn get_model_profile(name: &str) -> Result<ModelProfile, ModelDriverError> {
+    pub fn get_model_profile(name: &str) -> Result<ModelProfile, StoreError> {
         let query = "SELECT model_name, driver_name, config::text FROM sqlgen.get_model($1)";
-
-        Spi::connect(|client| {
+        let result = Spi::connect(|client| {
             let row = client.select(query, None, &[name.into()])?;
 
             if row.is_empty() {
-                return Err(ModelDriverError::ModelDoesntExist(name.to_string()));
+                return Err(StoreError::ModelDoesntExist(name.to_string()));
             }
 
-            ModelProfile::from_row(row)
-        })
+            Ok(ModelProfile::from_row(row)?)
+        });
+
+        Ok(result?)
     }
 
-    pub fn create_model_profile(
-        name: &str,
-        config_str: &str,
-    ) -> Result<ModelProfile, ModelDriverError> {
+    pub fn create_model_profile(name: &str, config_str: &str) -> Result<ModelProfile, StoreError> {
         let config: ModelConfig = from_str(config_str)?;
         let profile = ModelProfile {
             name: name.to_string(),
@@ -58,7 +56,7 @@ impl ModelStore {
         Ok(profile)
     }
 
-    pub fn delete_model_profile(name: &str) -> Result<(), ModelDriverError> {
+    pub fn delete_model_profile(name: &str) -> Result<(), StoreError> {
         Self::get_model_profile(name)?;
 
         let query = "SELECT model_name, driver_name, config::text FROM sqlgen.get_model($1)";
@@ -70,17 +68,17 @@ impl ModelStore {
 
     pub fn get_text_encoder_model(
         model_name: &str,
-    ) -> Result<Box<dyn TextEncoderDriver>, ModelDriverError> {
+    ) -> Result<Box<dyn TextEncoderDriver>, StoreError> {
         let profile = Self::get_model_profile(model_name)?;
 
-        profile.get_text_encoder_model()
+        Ok(profile.get_text_encoder_model()?)
     }
 
     pub fn get_text_instruct_model(
         model_name: &str,
-    ) -> Result<Box<dyn TextInstructDriver>, ModelDriverError> {
+    ) -> Result<Box<dyn TextInstructDriver>, StoreError> {
         let profile = Self::get_model_profile(model_name)?;
 
-        profile.get_text_instruct_model()
+        Ok(profile.get_text_instruct_model()?)
     }
 }

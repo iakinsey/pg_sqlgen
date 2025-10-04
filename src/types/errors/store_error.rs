@@ -8,4 +8,10 @@ pub enum StoreError {
     Any(String),
     #[error(transparent)]
     ModelDriverError(#[from] ModelDriverError),
+    #[error("model doesn't exist: {0}")]
+    ModelDoesntExist(String),
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error),
+    #[error(transparent)]
+    SpiError(#[from] pgrx::spi::Error),
 }
