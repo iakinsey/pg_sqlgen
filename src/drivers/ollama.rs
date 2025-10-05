@@ -114,6 +114,10 @@ impl TextEncoderDriver for OllamaDriver {
     }
 
     async fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
+        if input == "" {
+            return Ok(vec![]);
+        }
+
         let url = self.get_request_url("embeddings");
         let body = self.get_encode_body(input)?;
         let resp = self.client.post(url).body(body).send().await?;

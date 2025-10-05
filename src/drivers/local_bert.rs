@@ -76,7 +76,21 @@ impl TextEncoderDriver for LocalBertDriver {
 
     async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
         // Largely ripped from https://github.com/huggingface/candle/blob/main/candle-examples/examples/bert/main.rs
-        let tokens = self.tokenizer.encode_batch(inputs.to_vec(), true)?;
+        let mut results = Vec::with_capacity(inputs.len());
+        let mut non_empty_inputs = Vec::new();
+        let mut empty_indices = Vec::new();
+
+        for (i, s) in inputs.iter().enumerate() {
+            if s.trim().is_empty() {
+                empty_indices.push(i);
+            } else {
+                non_empty_inputs.push(*s);
+            }
+        }
+
+        let tokens = self
+            .tokenizer
+            .encode_batch(non_empty_inputs.to_vec(), true)?;
         let device = get_device(&self.config.compute_device)?;
         let (token_ids, attention_mask) = tokens.iter().try_fold(
             (Vec::new(), Vec::new()),
@@ -100,10 +114,23 @@ impl TextEncoderDriver for LocalBertDriver {
         let (_, n_tokens, _) = embeddings.dims3()?;
         let embeddings = (embeddings.sum(1)? / (n_tokens as f64))?;
         let embeddings = l2_norm(&embeddings)?;
+        let mut embed_vecs: Vec<Vec<f32>> = (0..non_empty_inputs.len())
+            .map(|i| -> Result<Vec<f32>, ModelDriverError> {
+                Ok(embeddings.get(i)?.to_vec1::<f32>()?)
+            })
+            .collect::<Result<Vec<Vec<f32>>, ModelDriverError>>()?;
 
-        (0..inputs.len())
-            .map(|i| Ok(embeddings.get(i)?.to_vec1::<f32>()?))
-            .collect()
+        let mut ei = empty_indices.into_iter().peekable();
+        for i in 0..inputs.len() {
+            if ei.peek() == Some(&i) {
+                results.push(Vec::new());
+                ei.next();
+            } else {
+                results.push(embed_vecs.remove(0));
+            }
+        }
+
+        Ok(results)
     }
 }
 
