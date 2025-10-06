@@ -1,3 +1,7 @@
+--------------------------------------------------------------------------------
+-- Create metadata table
+--------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(unique_name TEXT, vector_size INT)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -22,6 +26,9 @@ END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, INT) FROM public;
 
+--------------------------------------------------------------------------------
+-- Install schema triggers
+--------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(schema_name TEXT, unique_name TEXT)
 RETURNS VOID
@@ -33,6 +40,9 @@ END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT) FROM public;
 
+--------------------------------------------------------------------------------
+-- Remove schema triggers
+--------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(schema_name TEXT, unique_name TEXT)
 RETURNS VOID
@@ -44,7 +54,9 @@ END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT) FROM public;
 
-
+--------------------------------------------------------------------------------
+-- Remove metadata table
+--------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(unique_name TEXT)
 RETURNS VOID
@@ -76,6 +88,9 @@ END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT) FROM public;
 
+--------------------------------------------------------------------------------
+-- Crawl schema
+--------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.crawl_schema(schema_name TEXT)
 RETURNS TABLE (
