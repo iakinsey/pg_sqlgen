@@ -25,6 +25,7 @@ candle-nn = { git = "https://github.com/huggingface/candle", rev = "41a674ce8d1e
 candle-transformers = { git = "https://github.com/huggingface/candle", rev = "41a674ce8d1e37a9f8c6a97ff758552eddfd389a" }
 hf-hub = "0.4.3"
 httpmock = "0.7.0"
+lazy_static = "1.5.0"
 pgrx = "=0.16.0"
 reqwest = "0.12.23"
 serde = "1.0.220"
