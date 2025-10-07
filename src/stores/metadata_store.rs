@@ -1,9 +1,12 @@
-use pgrx::Spi;
+use pgrx::{spi::Query, PgBuiltInOids, PgOid, Spi};
 
-use crate::types::{
-    errors::{ModelDriverError, StoreError},
-    structs::table_metadata::{CrawlSchema, TableMetadata},
-    traits::driver::TextEncoderDriver,
+use crate::{
+    types::{
+        errors::{ModelDriverError, StoreError},
+        structs::table_metadata::{CrawlSchema, TableMetadata},
+        traits::driver::TextEncoderDriver,
+    },
+    utils::sql::get_oid,
 };
 
 pub struct MetadataStore {}
@@ -62,23 +65,56 @@ impl MetadataStore {
             })
             .collect();
 
-        unimplemented!()
+        Self::add_to_metadata_table(model_name, schema, metadatas)
     }
 
-    pub fn add_to_metadata_table(model_name: &str, schema: &str, metadatas: Vec<TableMetadata>) {
+    pub fn add_to_metadata_table(
+        model_name: &str,
+        schema: &str,
+        metadatas: Vec<TableMetadata>,
+    ) -> Result<(), StoreError> {
         let query = format!(
             "
-            INSERT INTO sqlgen_internal.db_metadata_{} (
+            INSERT INTO sqlgen_internal.db_metadata_{}_{} (
                 schema_name, table_name, column_name, ddl, comment, ddl_vector, comment_vector
             ) VALUES ($1, $2, $3, $4, $5, $6, $7);
         ",
-            schema
+            schema, model_name,
         );
+
         Spi::connect(|client| {
-            let statement = client.prepare(&query, &[]);
-            //client.prepare(&query)
-            unimplemented!()
-        });
+            let vector_oid = get_oid("vector")?;
+            let statement = &client.prepare(
+                &query,
+                &[
+                    PgOid::from(PgBuiltInOids::TEXTOID),
+                    PgOid::from(PgBuiltInOids::TEXTOID),
+                    PgOid::from(PgBuiltInOids::TEXTOID),
+                    PgOid::from(PgBuiltInOids::TEXTOID),
+                    PgOid::from(PgBuiltInOids::TEXTOID),
+                    vector_oid,
+                    vector_oid,
+                ],
+            )?;
+
+            for metadata in metadatas {
+                statement.execute(
+                    client,
+                    None,
+                    &[
+                        metadata.schema_name.into(),
+                        metadata.table_name.into(),
+                        metadata.column_name.into(),
+                        metadata.ddl.into(),
+                        metadata.comment.into(),
+                        metadata.ddl_vector.into(),
+                        metadata.comment_vector.into(),
+                    ],
+                )?;
+            }
+
+            Ok(())
+        })
     }
 
     pub fn remove_metadata_table(model_name: &str, schema: &str) {

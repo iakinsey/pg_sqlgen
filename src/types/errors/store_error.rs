@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::types::errors::ModelDriverError;
+use crate::types::errors::{ModelDriverError, UtilError};
 
 #[derive(Error, Debug)]
 pub enum StoreError {
@@ -14,4 +14,6 @@ pub enum StoreError {
     SerdeJsonError(#[from] serde_json::Error),
     #[error(transparent)]
     SpiError(#[from] pgrx::spi::Error),
+    #[error(transparent)]
+    UtilError(#[from] UtilError),
 }

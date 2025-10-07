@@ -65,6 +65,7 @@ pub fn get_oid(name: &str) -> Result<PgOid, UtilError> {
         let oid = PgOid::from(Oid::from_u32(int_val));
 
         map.insert(name.to_string(), oid);
+
         Ok(oid)
     })
 }
