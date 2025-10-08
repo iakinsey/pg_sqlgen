@@ -30,7 +30,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, INT) FROM
 -- Install schema triggers
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(schema_name TEXT, unique_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$

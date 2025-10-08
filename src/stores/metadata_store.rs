@@ -12,8 +12,29 @@ use crate::{
 pub struct MetadataStore {}
 
 impl MetadataStore {
-    pub fn install_metadata_table(model_name: &str, schema: &str, vector_size: usize) {
-        unimplemented!()
+    pub async fn create_metadata_table(
+        model_name: &str,
+        schema: &str,
+        encoder: Box<dyn TextEncoderDriver>,
+    ) -> Result<(), StoreError> {
+        let unique_name = Self::get_unique_name(model_name, schema);
+        let query = "SELECT create_metadata_table($1, $2);";
+        let vector_size = i32::try_from(encoder.dimensions().await?)?;
+
+        Spi::run_with_args(query, &[unique_name.into(), vector_size.into()])?;
+
+        Self::initialize_metadata_table(model_name, schema, encoder).await?;
+        Self::install_schema_triggers(model_name, schema)?;
+
+        Ok(())
+    }
+
+    pub fn install_schema_triggers(model_name: &str, schema: &str) -> Result<(), StoreError> {
+        let query = "SELECT install_schema_triggers($1, $2);";
+
+        Spi::run_with_args(query, &[model_name.into(), schema.into()])?;
+
+        Ok(())
     }
 
     pub async fn initialize_metadata_table(
@@ -75,11 +96,11 @@ impl MetadataStore {
     ) -> Result<(), StoreError> {
         let query = format!(
             "
-            INSERT INTO sqlgen_internal.db_metadata_{}_{} (
+            INSERT INTO sqlgen_internal.db_metadata_{} (
                 schema_name, table_name, column_name, ddl, comment, ddl_vector, comment_vector
             ) VALUES ($1, $2, $3, $4, $5, $6, $7);
         ",
-            schema, model_name,
+            Self::get_unique_name(model_name, schema)
         );
 
         Spi::connect(|client| {
@@ -119,5 +140,11 @@ impl MetadataStore {
 
     pub fn remove_metadata_table(model_name: &str, schema: &str) {
         unimplemented!()
+    }
+
+    // TODO querying metadata tables
+
+    fn get_unique_name(model_name: &str, schema: &str) -> String {
+        format!("{}_{}", schema, model_name)
     }
 }

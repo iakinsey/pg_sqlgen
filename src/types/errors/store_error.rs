@@ -16,4 +16,6 @@ pub enum StoreError {
     SpiError(#[from] pgrx::spi::Error),
     #[error(transparent)]
     UtilError(#[from] UtilError),
+    #[error(transparent)]
+    TryFromIntError(#[from] std::num::TryFromIntError),
 }
