@@ -4,7 +4,9 @@
 
 CREATE TABLE sqlgen_internal.model_profile (
     model_name TEXT PRIMARY KEY,
-    config JSONB NOT NULL
+    config JSONB NOT NULL,
+    generate_prompt TEXT NOT NULL,
+    filter_prompt TEXT NOT NULL
 );
 REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
 
@@ -14,8 +16,10 @@ REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
 
 CREATE OR REPLACE VIEW sqlgen.models {
     SELECT
-        model_name,
-        jsonb_pretty(config) AS config
+        model_name AS model_name,
+        jsonb_pretty(config) AS config,
+        generate_prompt AS generate_prompt,
+        filter_prompt AS filter_prompt
     FROM sqlgen_internal.model_profile
 }
 

@@ -14,6 +14,8 @@ use crate::{
 pub struct ModelProfile {
     pub name: String,
     pub config: ModelConfig,
+    pub generate_prompt: String,
+    pub filter_prompt: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -28,8 +30,15 @@ impl ModelProfile {
         let name: String = get_column(&row, "name")?;
         let config_json: String = get_column(&row, "config")?;
         let config: ModelConfig = serde_json::from_str(&config_json)?;
+        let generate_prompt: String = get_column(&row, "generate_prompt")?;
+        let filter_prompt: String = get_column(&row, "filter_prompt")?;
 
-        Ok(Self { name, config })
+        Ok(Self {
+            name,
+            config,
+            generate_prompt,
+            filter_prompt,
+        })
     }
 
     pub fn has_valid_config(&self) -> bool {
