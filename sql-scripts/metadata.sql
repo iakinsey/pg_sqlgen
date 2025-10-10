@@ -9,7 +9,7 @@ AS $$
 DECLARE
   unique_name TEXT;
 BEGIN
-  unique_name := CONCAT(model_name, '_', schema_name);
+  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
 
   EXECUTE FORMAT($fmt$
     CREATE TABLE sqlgen_internal.db_metadata_%I (
@@ -41,7 +41,7 @@ AS $$
 DECLARE
   unique_name TEXT;
 BEGIN
-  unique_name := CONCAT(model_name, '_', schema_name);
+  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
 
   -- Create table function
   EXECUTE FORMAT($fmt
@@ -111,7 +111,7 @@ AS $$
 DECLARE 
   unique_name TEXT
 BEGIN
-  unique_name := CONCAT(model_name, '_', schema_name);
+  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
 
   EXECUTE FORMAT($fmt
     DROP
@@ -131,7 +131,7 @@ AS $$
 DECLARE
   unique_name TEXT
 BEGIN
-  unique_name := CONCAT(model_name, '_', schema_name);
+  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
   
   DO $triggers$
     DECLARE
