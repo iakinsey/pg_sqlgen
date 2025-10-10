@@ -2,11 +2,15 @@
 -- Create metadata table
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(unique_name TEXT, vector_size INT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(model_name TEXT, schema_name TEXT, vector_size INT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  unique_name TEXT;
 BEGIN
+  unique_name := CONCAT(model_name, '_', schema_name);
+
   EXECUTE FORMAT($fmt$
     CREATE TABLE sqlgen_internal.db_metadata_%I (
       schema_name     TEXT NOT NULL,
@@ -37,7 +41,7 @@ AS $$
 DECLARE
   unique_name TEXT;
 BEGIN
-  unique_name := CONCAT(model_name, '_', schema_name)
+  unique_name := CONCAT(model_name, '_', schema_name);
 
   -- Create table function
   EXECUTE FORMAT($fmt
@@ -100,12 +104,18 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT) F
 -- Remove schema triggers
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(schema_name TEXT, unique_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE 
+  unique_name TEXT
 BEGIN
-  -- TODO
+  unique_name := CONCAT(model_name, '_', schema_name);
+
+  EXECUTE FORMAT($fmt
+    DROP
+  $fmt$);
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT) FROM public;
@@ -114,11 +124,15 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT) FR
 -- Remove metadata table
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(unique_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  unique_name TEXT
 BEGIN
+  unique_name := CONCAT(model_name, '_', schema_name);
+  
   DO $triggers$
     DECLARE
       s RECORD;
@@ -188,5 +202,16 @@ ORDER BY n.nspname, c.relname, a.attnum;
 LANGUAGE SQL
 AS $$
 $$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema(TEXT) FROM public;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema(text) FROM public;
+--------------------------------------------------------------------------------
+-- Get unique name
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.get_metadata_unique_name(model_name TEXT, schema_name TEXT)
+RETURNS TEXT
+LANGUAGE sql
+AS $$
+    SELECT CONCAT(model_name, '_', schema_name);
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema(TEXT, TEXT) FROM public;
