@@ -30,7 +30,6 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, INT) FROM
 -- Install schema triggers
 --------------------------------------------------------------------------------
 
-
 CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -93,38 +92,6 @@ BEGIN
   $fmt$,
     unique_name -- %1
   );
-
-
-
-
-
-
-  /*
-  EXECUTE FORMAT($fmt
-    CREATE OR REPLACE FUNCTION on_table_change_%1$I_%2$I()
-    RETURNS event_trigger
-    LANGUAGE plpgsql
-    AS $trigger$
-    BEGIN
-      IF EXISTS (
-        SELECT 1
-        FROM pg_event_trigger_ddl_commands()
-        WHERE schema_name = %2$L
-      ) THEN
-        RAISE NOTICE 'TODO - schema update goes here'
-      END IF;
-    END;
-    $trigger$;
-
-    CREATE EVENT TRIGGER schema_trigger_%1$I_%2$I
-      ON ddl_command_end
-      WHEN TAG IN ('CREATE TABLE', 'ALTER TABLE', 'DROP TABLE')
-      EXECUTE FUNCTION on_table_change_%1$I_%2$I();
-  $fmt$,
-    model_name, -- %1
-    schema_name -- %2
-  )
-  */
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT) FROM public;
