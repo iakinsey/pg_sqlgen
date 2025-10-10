@@ -2,7 +2,7 @@ use pgrx::{spi::Query, PgBuiltInOids, PgOid, Spi};
 
 use crate::{
     types::{
-        errors::{ModelDriverError, StoreError},
+        errors::StoreError,
         structs::table_metadata::{CrawlSchema, TableMetadata},
         traits::driver::TextEncoderDriver,
     },
@@ -12,32 +12,25 @@ use crate::{
 pub struct MetadataStore {}
 
 impl MetadataStore {
-    pub async fn create_metadata_table(
+    pub async fn initialize_metadata(
         model_name: &str,
         schema: &str,
         encoder: Box<dyn TextEncoderDriver>,
     ) -> Result<(), StoreError> {
-        let unique_name = Self::get_unique_name(model_name, schema);
-        let query = "SELECT create_metadata_table($1, $2);";
+        let query = "SELECT sqlgen_internal.initialize_metadata($1, $2, $3);";
         let vector_size = i32::try_from(encoder.dimensions().await?)?;
 
-        Spi::run_with_args(query, &[unique_name.into(), vector_size.into()])?;
+        Spi::run_with_args(
+            query,
+            &[model_name.into(), schema.into(), vector_size.into()],
+        )?;
 
-        Self::initialize_metadata_table(model_name, schema, encoder).await?;
-        Self::install_schema_triggers(model_name, schema)?;
-
-        Ok(())
-    }
-
-    pub fn install_schema_triggers(model_name: &str, schema: &str) -> Result<(), StoreError> {
-        let query = "SELECT install_schema_triggers($1, $2);";
-
-        Spi::run_with_args(query, &[model_name.into(), schema.into()])?;
+        Self::populate_metadata_table(model_name, schema, encoder).await?;
 
         Ok(())
     }
 
-    pub async fn initialize_metadata_table(
+    pub async fn populate_metadata_table(
         model_name: &str,
         schema: &str,
         encoder: Box<dyn TextEncoderDriver>,
@@ -138,8 +131,12 @@ impl MetadataStore {
         })
     }
 
-    pub fn remove_metadata_table(model_name: &str, schema: &str) {
-        unimplemented!()
+    pub fn remove_metadata(model_name: &str, schema: &str) -> Result<(), StoreError> {
+        let query = "SELECT sqlgen_internal.remove_metadata($1, $2);";
+
+        Spi::run_with_args(query, &[model_name.into(), schema.into()])?;
+
+        Ok(())
     }
 
     // TODO querying metadata tables

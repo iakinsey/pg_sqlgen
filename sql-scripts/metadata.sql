@@ -1,4 +1,34 @@
 --------------------------------------------------------------------------------
+-- Initialize metadata
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.initialize_metadata(model_name TEXT, schema_name TEXT, vector_size INT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  PERFORM sqlgen_internal.create_metadata_table(model_name TEXT, schema_name TEXT, vector_size INT);
+  PERFORM sqlgen_internal.install_schema_triggers(model_name TEXT, schema_name TEXT);
+END
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) FROM public;
+
+--------------------------------------------------------------------------------
+-- Remove metadata
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata(model_name TEXT, schema_name TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  PERFORM sqlgen_internal.remove_schema_triggers(model_name, schema_name);
+  PERFORM sqlgen_internal.remove_metadata_table(model_name, schema_name);
+END
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) FROM public;
+
+--------------------------------------------------------------------------------
 -- Create metadata table
 --------------------------------------------------------------------------------
 
