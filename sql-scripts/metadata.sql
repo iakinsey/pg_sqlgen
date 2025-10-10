@@ -30,12 +30,101 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, INT) FROM
 -- Install schema triggers
 --------------------------------------------------------------------------------
 
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  unique_name TEXT;
 BEGIN
-  -- TODO
+  unique_name := CONCAT(model_name, '_', schema_name)
+
+  -- Create table function
+  EXECUTE FORMAT($fmt
+    CREATE OR REPLACE FUNCTION on_create_table_%1$I()
+    RETURNS event_trigger
+    LANGUAGE plpgsql AS $fn$
+    BEGIN
+      RAISE NOTICE 'CREATE %',
+        (SELECT json_agg(json_build_object('schema', schema_name, 'object', object_identity))
+        FROM pg_event_trigger_ddl_commands()
+        WHERE object_type IN ('table','partitioned table'));
+    END; $fn$;
+
+    -- Alter table function
+    CREATE OR REPLACE FUNCTION on_alter_table_%1$I()
+    RETURNS event_trigger
+    LANGUAGE plpgsql AS $fn$
+    BEGIN
+      RAISE NOTICE 'ALTER %',
+        (SELECT json_agg(json_build_object('schema', schema_name, 'object', object_identity))
+        FROM pg_event_trigger_ddl_commands()
+        WHERE object_type IN ('table','partitioned table'));
+    END; $fn$;
+
+    -- Drop table function
+    CREATE OR REPLACE FUNCTION on_drop_table()
+    RETURNS event_trigger
+    LANGUAGE plpgsql AS $fn$
+    BEGIN
+      RAISE NOTICE 'DROP %',
+      (SELECT json_agg(json_build_object('schema', schema_name, 'object', object_identity))
+      FROM pg_event_trigger_dropped_objects()
+      WHERE object_type IN ('table','partitioned table'));
+    END; $fn$;
+
+    -- Create table trigger
+    CREATE EVENT TRIGGER trigger_create_table_%1$I
+      ON ddl_command_end
+      WHEN TAG IN ('CREATE TABLE')
+      EXECUTE FUNCTION on_create_table_%1$I();
+
+    -- Alter table trigger
+    CREATE EVENT TRIGGER trigger_alter_table_%1$I
+      ON ddl_command_end
+      WHEN TAG IN ('ALTER TABLE')
+      EXECUTE FUNCTION on_alter_table();
+
+    -- Drop table trigger
+    CREATE EVENT TRIGGER trigger_drop_table_%1$I
+      ON sql_drop
+      EXECUTE FUNCTION on_drop_table_%1$I();
+  $fmt$,
+    unique_name -- %1
+  );
+
+
+
+
+
+
+  /*
+  EXECUTE FORMAT($fmt
+    CREATE OR REPLACE FUNCTION on_table_change_%1$I_%2$I()
+    RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $trigger$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM pg_event_trigger_ddl_commands()
+        WHERE schema_name = %2$L
+      ) THEN
+        RAISE NOTICE 'TODO - schema update goes here'
+      END IF;
+    END;
+    $trigger$;
+
+    CREATE EVENT TRIGGER schema_trigger_%1$I_%2$I
+      ON ddl_command_end
+      WHEN TAG IN ('CREATE TABLE', 'ALTER TABLE', 'DROP TABLE')
+      EXECUTE FUNCTION on_table_change_%1$I_%2$I();
+  $fmt$,
+    model_name, -- %1
+    schema_name -- %2
+  )
+  */
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT) FROM public;
