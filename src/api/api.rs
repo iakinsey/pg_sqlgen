@@ -16,8 +16,14 @@ fn add_model(
     generate_prompt: Option<&str>,
     filter_prompt: Option<&str>,
 ) {
-    ModelStore::create_model_profile(model_name, config_str, generate_prompt, filter_prompt)
-        .unwrap_or_else(|e| error!("{}", e));
+    ModelStore::create_model_profile(
+        model_name,
+        schema_name,
+        config_str,
+        generate_prompt,
+        filter_prompt,
+    )
+    .unwrap_or_else(|e| error!("{}", e));
 
     let encoder =
         ModelStore::get_text_encoder_model(model_name).unwrap_or_else(|e| error!("{}", e));
@@ -31,8 +37,11 @@ fn add_model(
 }
 
 #[pg_extern]
-fn remove_model() -> &'static str {
-    unimplemented!()
+fn remove_model(model_name: &str) {
+    let profile = ModelStore::get_model_profile(model_name).unwrap_or_else(|e| error!("{}", e));
+
+    MetadataStore::remove_metadata(model_name, &profile.schema).unwrap_or_else(|e| error!("{}", e));
+    ModelStore::delete_model_profile(model_name).unwrap_or_else(|e| error!("{}", e));
 }
 
 #[pg_extern]
