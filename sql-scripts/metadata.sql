@@ -32,6 +32,8 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) 
 -- Create metadata table
 --------------------------------------------------------------------------------
 
+-- TODO start here next, run test queries and fill the triggers out
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(model_name TEXT, schema_name TEXT, vector_size INT)
 RETURNS VOID
 LANGUAGE plpgsql
