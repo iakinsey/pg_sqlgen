@@ -9,14 +9,14 @@ use crate::types::structs::instruct_message::InstructRole;
 // These functions lives in sqlgen_internal
 
 #[pg_extern]
-fn internal_encode_text(model: &str, value: &str) -> Vec<f32> {
+fn internal_encode_text(model: &str, text_value: &str) -> Vec<f32> {
     let profile = ModelStore::get_model_profile(model).unwrap_or_else(|e| error!("{}", e));
     let model = profile
         .get_text_encoder_model()
         .unwrap_or_else(|e| error!("{}", e));
     let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
 
-    rt.block_on(async { model.encode(value).await })
+    rt.block_on(async { model.encode(text_value).await })
         .unwrap_or_else(|e| error!("{}", e))
 }
 
@@ -34,7 +34,7 @@ fn internal_batch_text_encode(model: &str, values: Vec<String>) -> Vec<Vec<f32>>
 }
 
 #[pg_extern]
-fn internal_instruct_text(model: &str, system_prompt: &str, user_prompt: &str) -> String {
+fn instruct_text(model: &str, system_prompt: &str, user_prompt: &str) -> String {
     let profile = ModelStore::get_model_profile(model).unwrap_or_else(|e| error!("{}", e));
     let mut model = profile
         .get_text_instruct_model()
