@@ -1,2 +1,3 @@
+pub mod engine_store;
 pub mod metadata_store;
 pub mod model_store;

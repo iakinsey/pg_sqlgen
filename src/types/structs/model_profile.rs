@@ -13,10 +13,7 @@ use crate::{
 
 pub struct ModelProfile {
     pub name: String,
-    pub schema: String,
     pub config: ModelConfig,
-    pub generate_prompt: String,
-    pub filter_prompt: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -29,19 +26,10 @@ pub enum ModelConfig {
 impl ModelProfile {
     pub fn from_row(row: SpiTupleTable) -> Result<Self, ModelDriverError> {
         let name: String = get_column(&row, "name")?;
-        let schema: String = get_column(&row, "db_schema")?;
         let config_json: String = get_column(&row, "config")?;
         let config: ModelConfig = serde_json::from_str(&config_json)?;
-        let generate_prompt: String = get_column(&row, "generate_prompt")?;
-        let filter_prompt: String = get_column(&row, "filter_prompt")?;
 
-        Ok(Self {
-            name,
-            schema,
-            config,
-            generate_prompt,
-            filter_prompt,
-        })
+        Ok(Self { name, config })
     }
 
     pub fn has_valid_config(&self) -> bool {

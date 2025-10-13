@@ -10,9 +10,6 @@ use crate::{
     },
 };
 
-static DEFAULT_GENERATE_PROMPT: &str = "TODO";
-static DEFAULT_FILTER_PROMPT: &str = "TODO";
-
 pub struct ModelStore {}
 
 impl ModelStore {
@@ -32,7 +29,7 @@ impl ModelStore {
     }
 
     pub fn get_model_profile(name: &str) -> Result<ModelProfile, StoreError> {
-        let query = "SELECT model_name, db_schema, config::text as config, generate_prompt, filter_prompt FROM sqlgen.get_model($1)";
+        let query = "SELECT model_name, config::text as config, generate_prompt, filter_prompt FROM sqlgen.get_model($1)";
         let result = Spi::connect(|client| {
             let row = client.select(query, None, &[name.into()])?;
 
@@ -50,24 +47,11 @@ impl ModelStore {
         name: &str,
         schema: &str,
         config_str: &str,
-        generate_prompt: Option<&str>,
-        filter_prompt: Option<&str>,
     ) -> Result<ModelProfile, StoreError> {
-        let generate_prompt = match generate_prompt {
-            Some(s) => s,
-            _ => DEFAULT_GENERATE_PROMPT,
-        };
-        let filter_prompt = match filter_prompt {
-            Some(s) => s,
-            _ => DEFAULT_FILTER_PROMPT,
-        };
         let config: ModelConfig = from_str(config_str)?;
         let profile = ModelProfile {
             name: name.to_string(),
-            schema: schema.to_string(),
             config: config,
-            generate_prompt: generate_prompt.to_string(),
-            filter_prompt: filter_prompt.to_string(),
         };
         let query = "SELECT sqlgen.create_model($1, $2);";
 

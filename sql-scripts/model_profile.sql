@@ -4,10 +4,7 @@
 
 CREATE TABLE sqlgen_internal.model_profile (
     model_name TEXT PRIMARY KEY,
-    db_schema TEXT NOT NULL,
     config JSONB NOT NULL,
-    generate_prompt TEXT,
-    filter_prompt TEXT
 );
 REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
 
@@ -18,10 +15,7 @@ REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
 CREATE OR REPLACE VIEW sqlgen.models {
     SELECT
         model_name AS model_name,
-        db_schema AS db_schema,
-        jsonb_pretty(config) AS config,
-        generate_prompt AS generate_prompt,
-        filter_prompt AS filter_prompt
+        jsonb_pretty(config) AS config
     FROM sqlgen_internal.model_profile
 }
 
@@ -48,10 +42,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION sqlgen.create_model(
     model_name TEXT,
-    db_schema TEXT,
     config JSONB,
-    generate_prompt TEXT DEFAULT NULL,
-    filter_prompt TEXT DEFAULT NULL
 )
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql
@@ -59,8 +50,8 @@ STRICT
 AS $$
 BEGIN
     RETURN QUERY
-    INSERT INTO sqlgen_internal.model_profile(model_name, db_schema, config, generate_prompt, filter_prompt)
-    VALUES (model_name, db_schema, config, generate_prompt, filter_prompt)
+    INSERT INTO sqlgen_internal.model_profile(model_name, config)
+    VALUES (model_name, config)
     RETURNING *;
 END;
 $$;

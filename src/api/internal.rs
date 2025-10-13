@@ -54,3 +54,13 @@ fn instruct_text(model: &str, system_prompt: &str, user_prompt: &str) -> String 
     rt.block_on(async { model.get_assistant_response(messages).await })
         .unwrap_or_else(|e| error!("{}", e))
 }
+
+#[cfg(any(test, feature = "pg_test"))]
+mod tests {
+    use crate::pg_test;
+
+    #[pg_test]
+    fn test_internal_decode_text() {
+        unimplemented!()
+    }
+}

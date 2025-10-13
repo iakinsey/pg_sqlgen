@@ -1,3 +1,4 @@
+pub mod engine;
 pub mod instruct_message;
 pub mod model_profile;
 pub mod profiles;
