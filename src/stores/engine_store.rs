@@ -1,2 +1,21 @@
 // TODO
-// Also TODO, check if all the sql-scripts are referenced, including engine store
+
+pub struct EngineStore {}
+
+impl EngineStore {
+    pub fn create_engine() {
+        unimplemented!()
+    }
+
+    pub fn remove_engine() {
+        unimplemented!()
+    }
+
+    pub fn get_engine() {
+        unimplemented!()
+    }
+
+    pub fn list_engines() {
+        unimplemented!()
+    }
+}
