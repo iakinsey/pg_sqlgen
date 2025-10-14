@@ -23,6 +23,14 @@ CREATE TABLE sqlgen_internal.engine (
 REVOKE ALL ON TABLE sqlgen_internal.engine FROM PUBLIC;
 
 --------------------------------------------------------------------------------
+-- Engines view
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW sqlgen.engines {
+    SELECT * FROM sqlgen_internal.model_profile
+}
+
+--------------------------------------------------------------------------------
 -- Create engine
 --------------------------------------------------------------------------------
 

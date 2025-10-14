@@ -1,9 +1,16 @@
+use pgrx::spi::SpiTupleTable;
+
+use crate::{
+    types::errors::ModelDriverError,
+    utils::sql::{get_column, get_column_optional},
+};
+
 pub static DEFAULT_GENERATE_PROMPT: &str = "TODO";
 pub static DEFAULT_FILTER_PROMPT: &str = "TODO";
 
 pub struct TextToSqlEngine {
     pub name: String,
-    pub db_schema: String,
+    pub schema_name: String,
     pub encoder_model: String,
     pub instruct_model: String,
     pub generate_prompt: String,
@@ -11,7 +18,27 @@ pub struct TextToSqlEngine {
 }
 
 impl TextToSqlEngine {
-    pub fn from_row() {
-        // TODO
+    pub fn from_row(row: SpiTupleTable) -> Result<Self, ModelDriverError> {
+        let name: String = get_column(&row, "name")?;
+        let schema_name: String = get_column(&row, "schema_name")?;
+        let encoder_model: String = get_column(&row, "encoder_model")?;
+        let instruct_model: String = get_column(&row, "instruct_model")?;
+        let generate_prompt: String = match get_column_optional(&row, "generate_prompt")? {
+            Some(v) => v,
+            None => DEFAULT_GENERATE_PROMPT.to_string(),
+        };
+        let filter_prompt: String = match get_column_optional(&row, "filter_prompt")? {
+            Some(v) => v,
+            None => DEFAULT_FILTER_PROMPT.to_string(),
+        };
+
+        Ok(Self {
+            name,
+            schema_name,
+            encoder_model,
+            instruct_model,
+            generate_prompt,
+            filter_prompt,
+        })
     }
 }

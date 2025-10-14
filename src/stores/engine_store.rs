@@ -1,21 +1,57 @@
 // TODO
 
+use pgrx::Spi;
+
+use crate::types::{errors::StoreError, structs::engine::TextToSqlEngine};
+
 pub struct EngineStore {}
 
 impl EngineStore {
-    pub fn create_engine() {
-        unimplemented!()
+    pub fn create_engine(
+        engine_name: &str,
+        schema_name: &str,
+        encoder_model: &str,
+        instruct_model: &str,
+        generate_prompt: Option<&str>,
+        filter_prompt: Option<&str>,
+    ) -> Result<(), StoreError> {
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6)",
+            &[
+                engine_name.into(),
+                schema_name.into(),
+                encoder_model.into(),
+                instruct_model.into(),
+                generate_prompt.into(),
+                filter_prompt.into(),
+            ],
+        )?;
+
+        Ok(())
     }
 
-    pub fn remove_engine() {
-        unimplemented!()
+    pub fn remove_engine(engine_name: &str) -> Result<(), StoreError> {
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.remove_engine($1)",
+            &[engine_name.into()],
+        )?;
+
+        Ok(())
     }
 
-    pub fn get_engine() {
-        unimplemented!()
-    }
+    pub fn get_engine(engine_name: &str) -> Result<TextToSqlEngine, StoreError> {
+        let query = "SELECT sqlgen_internal.get_engine($1)";
 
-    pub fn list_engines() {
-        unimplemented!()
+        let result = Spi::connect(|client| {
+            let row = client.select(query, None, &[engine_name.into()])?;
+
+            if row.is_empty() {
+                return Err(StoreError::ModelDoesntExist(engine_name.to_string()));
+            }
+
+            Ok(TextToSqlEngine::from_row(row)?)
+        });
+
+        Ok(result?)
     }
 }

@@ -64,6 +64,7 @@ fn create_engine(
     generate_prompt: Option<&str>,
     filter_prompt: Option<&str>,
 ) {
+    // TODO start here next, be sure to remove everything from the old model management functions
     unimplemented!()
 }
 
