@@ -69,3 +69,10 @@ pub fn get_oid(name: &str) -> Result<PgOid, UtilError> {
         Ok(oid)
     })
 }
+
+pub fn get_current_schema() -> Result<String, UtilError> {
+    match Spi::get_one::<String>("SELECT current_schema()")? {
+        Some(v) => Ok(v),
+        None => Err(UtilError::NoSchema()),
+    }
+}

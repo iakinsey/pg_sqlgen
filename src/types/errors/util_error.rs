@@ -19,6 +19,8 @@ pub enum UtilError {
     Poisoned,
     #[error("not found: {0}")]
     NotFound(String),
+    #[error("no schema available")]
+    NoSchema(),
 }
 
 impl<T> From<PoisonError<T>> for UtilError {
