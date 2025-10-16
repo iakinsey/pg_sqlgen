@@ -1,10 +1,13 @@
-use crate::types::{
-    errors::ModelDriverError,
-    structs::{
-        engine::TextToSqlEngine,
-        instruct_message::{InstructMessage, InstructRole},
+use crate::{
+    stores::model_store::ModelStore,
+    types::{
+        errors::{ModelDriverError, StoreError},
+        structs::{
+            engine::TextToSqlEngine,
+            instruct_message::{InstructMessage, InstructRole},
+        },
+        traits::driver::TextInstructDriver,
     },
-    traits::driver::TextInstructDriver,
 };
 use tera::{Context, Tera};
 
@@ -67,24 +70,25 @@ pub static RELEVANT_TABLES_BLOCK_KEY: &str = "output_format_description";
 pub static SIMILAR_QUERIES_BLOCK_KEY: &str = "similar_queries_block";
 
 impl SQLGenerationRunner {
-    pub fn new(
-        model: Box<dyn TextInstructDriver>,
-        engine: TextToSqlEngine,
-    ) -> Result<Self, ModelDriverError> {
+    pub fn new(engine: TextToSqlEngine) -> Result<Self, StoreError> {
         let mut tera = Tera::default();
 
         tera.add_raw_template(SYSTEM_PROMPT_TEMPLATE_KEY, &engine.system_prompt_template)?;
         tera.add_raw_template(USER_PROMPT_TEMPLATE_KEY, &engine.user_prompt_template)?;
         tera.add_raw_template(
             RELEVANT_TABLES_TEMPLATE_KEY,
-            &engine.relevant_table_template,
+            &engine.relevant_tables_template,
         )?;
-        tera.add_raw_template(SIMILAR_QUERIES_TEMPLATE_KEY, &engine.similar_query_template)?;
+        tera.add_raw_template(
+            SIMILAR_QUERIES_TEMPLATE_KEY,
+            &engine.similar_queries_template,
+        )?;
 
         let mut sys_ctx = Context::new();
         sys_ctx.insert(OUTPUT_FORMAT_VAR_KEY, OUTPUT_FORMAT_DESCRIPTION);
 
         let system_prompt = tera.render(SYSTEM_PROMPT_TEMPLATE_KEY, &sys_ctx)?;
+        let model = ModelStore::get_text_instruct_model(&engine.instruct_model)?;
 
         Ok(Self {
             tera: tera,

@@ -18,4 +18,6 @@ pub enum StoreError {
     UtilError(#[from] UtilError),
     #[error(transparent)]
     TryFromIntError(#[from] std::num::TryFromIntError),
+    #[error(transparent)]
+    TeraError(#[from] tera::Error),
 }
