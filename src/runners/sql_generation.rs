@@ -32,16 +32,16 @@ pub struct SQLGenerationRunner {
     Generate SQL from the following query:
     {user_query}
 
-    {relevant_table_block}
+    {relevant_ddl_block}
 
     {similar_queries_block}
 
     ----------------------------------------
 
-    Example relevant table block:
+    Example relevant ddls block:
 
-    Here are some relevant tables:
-    {relevant_tables}
+    Here are some relevant ddls:
+    {relevant_ddls}
 
     ----------------------------------------
 
@@ -56,17 +56,17 @@ pub static OUTPUT_FORMAT_DESCRIPTION: &str = "TODO";
 // Template keys
 pub static SYSTEM_PROMPT_TEMPLATE_KEY: &str = "system";
 pub static USER_PROMPT_TEMPLATE_KEY: &str = "user";
-pub static RELEVANT_TABLES_TEMPLATE_KEY: &str = "relevant_tables";
+pub static RELEVANT_DDLS_TEMPLATE_KEY: &str = "relevant_ddls";
 pub static SIMILAR_QUERIES_TEMPLATE_KEY: &str = "similar_queries";
 
 // Template variable keys
 pub static OUTPUT_FORMAT_VAR_KEY: &str = "output_format_description";
-pub static RELEVANT_TABLES_VAR_KEY: &str = "relevant_tables";
+pub static RELEVANT_DDLS_VAR_KEY: &str = "relevant_ddls";
 pub static SIMILAR_QUERIES_VAR_KEY: &str = "similar_queries";
 pub static USER_QUERY_VAR_KEY: &str = "user_query";
 
 // Template block keys
-pub static RELEVANT_TABLES_BLOCK_KEY: &str = "output_format_description";
+pub static RELEVANT_DDLS_BLOCK_KEY: &str = "relevant_ddls_block";
 pub static SIMILAR_QUERIES_BLOCK_KEY: &str = "similar_queries_block";
 
 impl SQLGenerationRunner {
@@ -75,10 +75,7 @@ impl SQLGenerationRunner {
 
         tera.add_raw_template(SYSTEM_PROMPT_TEMPLATE_KEY, &engine.system_prompt_template)?;
         tera.add_raw_template(USER_PROMPT_TEMPLATE_KEY, &engine.user_prompt_template)?;
-        tera.add_raw_template(
-            RELEVANT_TABLES_TEMPLATE_KEY,
-            &engine.relevant_tables_template,
-        )?;
+        tera.add_raw_template(RELEVANT_DDLS_TEMPLATE_KEY, &engine.relevant_ddls_template)?;
         tera.add_raw_template(
             SIMILAR_QUERIES_TEMPLATE_KEY,
             &engine.similar_queries_template,
@@ -101,19 +98,19 @@ impl SQLGenerationRunner {
     pub async fn generate_query(
         &mut self,
         user_query: &str,
-        relevant_tables: Vec<&str>,
+        relevant_ddls: Vec<&str>,
         similar_queries: Vec<&str>,
     ) -> Result<String, ModelDriverError> {
         // Render relevant tables block
-        let relevant_tables_block = match relevant_tables.is_empty() {
+        let relevant_tables_block = match relevant_ddls.is_empty() {
             true => "".to_string(),
             false => {
-                let list = relevant_tables.join("\n");
+                let list = relevant_ddls.join("\n");
                 let mut ctx = Context::new();
-                ctx.insert(RELEVANT_TABLES_VAR_KEY, &list);
+                ctx.insert(RELEVANT_DDLS_VAR_KEY, &list);
                 format!(
                     "\n\n{}",
-                    self.tera.render(RELEVANT_TABLES_TEMPLATE_KEY, &ctx)?
+                    self.tera.render(RELEVANT_DDLS_TEMPLATE_KEY, &ctx)?
                 )
             }
         };
@@ -137,7 +134,7 @@ impl SQLGenerationRunner {
         let mut user_ctx = Context::new();
 
         user_ctx.insert(USER_QUERY_VAR_KEY, user_query);
-        user_ctx.insert(RELEVANT_TABLES_BLOCK_KEY, &relevant_tables_block);
+        user_ctx.insert(RELEVANT_DDLS_BLOCK_KEY, &relevant_tables_block);
         user_ctx.insert(SIMILAR_QUERIES_BLOCK_KEY, &similar_queries_block);
 
         let user_prompt = self.tera.render(USER_PROMPT_TEMPLATE_KEY, &user_ctx)?;

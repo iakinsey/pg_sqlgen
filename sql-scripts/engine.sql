@@ -9,7 +9,7 @@ CREATE TABLE sqlgen_internal.engine (
     instruct_model TEXT NOT NULL,
     system_prompt_template TEXT,
     user_prompt_template TEXT,
-    relevant_tables_template TEXT,
+    relevant_ddls_template TEXT,
     similar_queries_template TEXT
     filter_prompt_template TEXT,
     table_filter_type TEXT
@@ -45,7 +45,7 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_engine(
     instruct_model TEXT,
     system_prompt_template TEXT DEFAULT NULL,
     user_prompt_template TEXT DEFAULT NULL,
-    relevant_tables_template TEXT DEFAULT NULL,
+    relevant_ddls_template TEXT DEFAULT NULL,
     similar_queries_template TEXT DEFAULT NULL,
     filter_prompt_template TEXT DEFAULT NULL,
     table_filter_type TEXT DEFAULT 'smart'
@@ -61,7 +61,7 @@ BEGIN
         instruct_model,
         system_prompt_template,
         user_prompt_template,
-        relevant_tables_template,
+        relevant_ddls_template,
         similar_queries_template,
         filter_prompt_template,
         filter_type
@@ -72,7 +72,7 @@ BEGIN
         instruct_model,
         system_prompt_template,
         user_prompt_template,
-        relevant_tables_template,
+        relevant_ddls_template,
         similar_queries_template,
         filter_prompt_template,
         filter_type

@@ -45,7 +45,7 @@ pub struct TextToSqlEngine {
     pub instruct_model: String,
     pub system_prompt_template: String,
     pub user_prompt_template: String,
-    pub relevant_tables_template: String,
+    pub relevant_ddls_template: String,
     pub similar_queries_template: String,
     pub filter_tables_template: String,
     pub filter_type: TableFilterType,
@@ -62,8 +62,8 @@ impl TextToSqlEngine {
             Some(v) => v,
             None => DEFAULT_USER_PROMPT_TEMPLATE.to_string(),
         };
-        let relevant_tables_template: String =
-            match get_column_optional(&row, "relevant_tables_template")? {
+        let relevant_ddls_template: String =
+            match get_column_optional(&row, "relevant_ddls_template")? {
                 Some(v) => v,
                 None => DEFAULT_RELEVANT_TABLES_TEMPLATE.to_string(),
             };
@@ -92,7 +92,7 @@ impl TextToSqlEngine {
             instruct_model,
             system_prompt_template,
             user_prompt_template,
-            relevant_tables_template,
+            relevant_ddls_template,
             similar_queries_template,
             filter_tables_template,
             filter_type,
