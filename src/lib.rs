@@ -2,6 +2,7 @@ use pgrx::prelude::*;
 
 mod api;
 mod drivers;
+mod runners;
 mod stores;
 mod types;
 mod utils;

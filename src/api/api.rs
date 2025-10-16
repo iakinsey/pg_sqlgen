@@ -7,11 +7,6 @@ use crate::{
 };
 
 #[pg_extern]
-fn certify_query() -> &'static str {
-    unimplemented!()
-}
-
-#[pg_extern]
 fn add_model(model_name: &str, schema_name: &str, config_str: &str) {
     ModelStore::create_model_profile(model_name, schema_name, config_str)
         .unwrap_or_else(|e| error!("{}", e));
@@ -24,16 +19,17 @@ fn remove_model(model_name: &str) {
 
 #[pg_extern]
 fn execute() -> &'static str {
+    // TODO start here, probably need to fill this in under the engine mechanism?
     unimplemented!()
 }
 
 #[pg_extern]
-fn generate() -> &'static str {
+fn generate(prompt: &str, engine: Option<&str>) -> &'static str {
     unimplemented!()
 }
 
 #[pg_extern]
-fn set_default_model() -> &'static str {
+fn set_default_engine() -> &'static str {
     unimplemented!()
 }
 

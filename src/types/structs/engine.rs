@@ -1,7 +1,8 @@
 use pgrx::spi::SpiTupleTable;
 
 use crate::{
-    types::errors::ModelDriverError,
+    stores::model_store::ModelStore,
+    types::errors::{ModelDriverError, StoreError},
     utils::sql::{get_column, get_column_optional},
 };
 
@@ -40,5 +41,15 @@ impl TextToSqlEngine {
             generate_prompt,
             filter_prompt,
         })
+    }
+
+    pub async fn generate(&self, prompt: &str) -> Result<String, StoreError> {
+        let instruct_model = ModelStore::get_text_instruct_model(&self.instruct_model)?;
+
+        unimplemented!()
+    }
+
+    pub async fn execute(&self, prompt: &str) {
+        unimplemented!()
     }
 }
