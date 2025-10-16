@@ -1,13 +1,14 @@
 use pgrx::spi::SpiTupleTable;
 
 use crate::{
-    stores::model_store::ModelStore,
-    types::errors::{ModelDriverError, StoreError},
+    types::errors::ModelDriverError,
     utils::sql::{get_column, get_column_optional},
 };
 
-pub static DEFAULT_GENERATE_PROMPT: &str = "TODO";
-pub static DEFAULT_FILTER_PROMPT: &str = "TODO";
+pub static DEFAULT_SYSTEM_PROMPT_TEMPLATE: &str = "TODO";
+pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = "TODO";
+pub static DEFAULT_RELEVANT_TABLES_TEMPLATE: &str = "TODO";
+pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = "TODO";
 
 // TODO update engine store to reflect new changes here
 pub struct TextToSqlEngine {
@@ -17,42 +18,46 @@ pub struct TextToSqlEngine {
     pub instruct_model: String,
     pub system_prompt_template: String,
     pub user_prompt_template: String,
-    pub relevant_table_template: String,
-    pub similar_query_template: String,
+    pub relevant_tables_template: String,
+    pub similar_queries_template: String,
 }
 
 impl TextToSqlEngine {
     pub fn from_row(row: SpiTupleTable) -> Result<Self, ModelDriverError> {
-        let name: String = get_column(&row, "name")?;
-        let schema_name: String = get_column(&row, "schema_name")?;
-        let encoder_model: String = get_column(&row, "encoder_model")?;
-        let instruct_model: String = get_column(&row, "instruct_model")?;
-        let generate_prompt: String = match get_column_optional(&row, "generate_prompt")? {
+        let system_prompt_template: String =
+            match get_column_optional(&row, "system_prompt_template")? {
+                Some(v) => v,
+                None => DEFAULT_SYSTEM_PROMPT_TEMPLATE.to_string(),
+            };
+        let user_prompt_template: String = match get_column_optional(&row, "user_prompt_tempate")? {
             Some(v) => v,
-            None => DEFAULT_GENERATE_PROMPT.to_string(),
+            None => DEFAULT_USER_PROMPT_TEMPLATE.to_string(),
         };
-        let filter_prompt: String = match get_column_optional(&row, "filter_prompt")? {
-            Some(v) => v,
-            None => DEFAULT_FILTER_PROMPT.to_string(),
-        };
+        let relevant_tables_template: String =
+            match get_column_optional(&row, "relevant_tables_template")? {
+                Some(v) => v,
+                None => DEFAULT_RELEVANT_TABLES_TEMPLATE.to_string(),
+            };
+        let similar_queries_template: String =
+            match get_column_optional(&row, "similar_queries_template")? {
+                Some(v) => v,
+                None => DEFAULT_SIMILAR_QUERIES_TEMPLATE.to_string(),
+            };
+
+        let name = get_column(&row, "name")?;
+        let schema_name = get_column(&row, "schema_name")?;
+        let encoder_model = get_column(&row, "encoder_model")?;
+        let instruct_model = get_column(&row, "instruct_model")?;
 
         Ok(Self {
             name,
             schema_name,
             encoder_model,
             instruct_model,
-            generate_prompt,
-            filter_prompt,
+            system_prompt_template,
+            user_prompt_template,
+            relevant_tables_template,
+            similar_queries_template,
         })
-    }
-
-    pub async fn generate(&self, prompt: &str) -> Result<String, StoreError> {
-        let instruct_model = ModelStore::get_text_instruct_model(&self.instruct_model)?;
-
-        unimplemented!()
-    }
-
-    pub async fn execute(&self, prompt: &str) {
-        unimplemented!()
     }
 }
