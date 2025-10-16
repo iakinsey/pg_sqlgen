@@ -9,13 +9,16 @@ use crate::{
 pub static DEFAULT_GENERATE_PROMPT: &str = "TODO";
 pub static DEFAULT_FILTER_PROMPT: &str = "TODO";
 
+// TODO update engine store to reflect new changes here
 pub struct TextToSqlEngine {
     pub name: String,
     pub schema_name: String,
     pub encoder_model: String,
     pub instruct_model: String,
-    pub generate_prompt: String,
-    pub filter_prompt: String,
+    pub system_prompt_template: String,
+    pub user_prompt_template: String,
+    pub relevant_table_template: String,
+    pub similar_query_template: String,
 }
 
 impl TextToSqlEngine {

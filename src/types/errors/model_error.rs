@@ -37,4 +37,6 @@ pub enum ModelDriverError {
     ReqwestError(#[from] reqwest::Error),
     #[error(transparent)]
     SpiError(#[from] pgrx::spi::Error),
+    #[error(transparent)]
+    TeraError(#[from] tera::Error),
 }
