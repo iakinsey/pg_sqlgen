@@ -28,6 +28,13 @@ impl TableFilterType {
             ))),
         }
     }
+
+    pub fn to_str(&self) -> &str {
+        match self {
+            TableFilterType::Quick => "quick",
+            TableFilterType::Smart => "smart",
+        }
+    }
 }
 
 // TODO update engine store to reflect new changes here

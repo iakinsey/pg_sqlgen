@@ -3,6 +3,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
     stores::{engine_store::EngineStore, metadata_store::MetadataStore, model_store::ModelStore},
+    types::structs::engine::TableFilterType,
     utils::sql::get_current_schema,
 };
 
@@ -39,12 +40,21 @@ fn create_engine(
     instruct_model: &str,
     encoder_model: &str,
     schema_name: Option<&str>,
-    generate_prompt: Option<&str>,
-    filter_prompt: Option<&str>,
+    system_prompt_template: Option<&str>,
+    user_prompt_template: Option<&str>,
+    relevant_tables_template: Option<&str>,
+    similar_queries_template: Option<&str>,
+    filter_prompt_template: Option<&str>,
+    table_filter_type: Option<TableFilterType>,
 ) {
     let schema_name = match schema_name {
         Some(s) => s.to_string(),
         None => get_current_schema().unwrap_or_else(|e| error!("{}", e)),
+    };
+
+    let table_filter_type = match table_filter_type {
+        Some(s) => s,
+        None => TableFilterType::Smart,
     };
 
     ModelStore::get_model_profile(instruct_model).unwrap_or_else(|e| error!("{}", e));
@@ -56,8 +66,12 @@ fn create_engine(
         &schema_name,
         encoder_model,
         instruct_model,
-        generate_prompt,
-        filter_prompt,
+        system_prompt_template,
+        user_prompt_template,
+        relevant_tables_template,
+        similar_queries_template,
+        filter_prompt_template,
+        table_filter_type.to_str(),
     )
     .unwrap_or_else(|e| error!("{}", e));
 

@@ -12,18 +12,26 @@ impl EngineStore {
         schema_name: &str,
         encoder_model: &str,
         instruct_model: &str,
-        generate_prompt: Option<&str>,
-        filter_prompt: Option<&str>,
+        system_prompt_template: Option<&str>,
+        user_prompt_template: Option<&str>,
+        relevant_tables_template: Option<&str>,
+        similar_queries_template: Option<&str>,
+        filter_prompt_template: Option<&str>,
+        table_filter_type: &str,
     ) -> Result<(), StoreError> {
         Spi::run_with_args(
-            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6)",
+            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
             &[
                 engine_name.into(),
                 schema_name.into(),
                 encoder_model.into(),
                 instruct_model.into(),
-                generate_prompt.into(),
-                filter_prompt.into(),
+                system_prompt_template.into(),
+                user_prompt_template.into(),
+                relevant_tables_template.into(),
+                similar_queries_template.into(),
+                filter_prompt_template.into(),
+                table_filter_type.into(),
             ],
         )?;
 

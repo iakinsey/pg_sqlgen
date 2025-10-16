@@ -7,8 +7,12 @@ CREATE TABLE sqlgen_internal.engine (
     schema_name TEXT NOT NULL,
     encoder_model TEXT NOT NULL,
     instruct_model TEXT NOT NULL,
-    generate_prompt TEXT,
-    filter_prompt TEXT,
+    system_prompt_template TEXT,
+    user_prompt_template TEXT,
+    relevant_tables_template TEXT,
+    similar_queries_template TEXT
+    filter_prompt_template TEXT,
+    table_filter_type TEXT
     CONSTRAINT fk_encoder_model
         FOREIGN KEY (encoder_model)
         REFERENCES sqlgen_internal.model_profile(model_name)
@@ -39,8 +43,12 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_engine(
     schema_name TEXT,
     encoder_model TEXT,
     instruct_model TEXT,
-    generate_prompt TEXT DEFAULT NULL,
-    filter_prompt TEXT DEFAULT NULL
+    system_prompt_template TEXT DEFAULT NULL,
+    user_prompt_template TEXT DEFAULT NULL,
+    relevant_tables_template TEXT DEFAULT NULL,
+    similar_queries_template TEXT DEFAULT NULL,
+    filter_prompt_template TEXT DEFAULT NULL,
+    table_filter_type TEXT DEFAULT 'smart'
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -51,15 +59,23 @@ BEGIN
         schema_name,
         encoder_model,
         instruct_model,
-        generate_prompt,
-        filter_prompt
+        system_prompt_template,
+        user_prompt_template,
+        relevant_tables_template,
+        similar_queries_template,
+        filter_prompt_template,
+        filter_type
     ) VALUES (
         engine_name,
         schema_name,
         encoder_model,
         instruct_model,
-        generate_prompt,
-        filter_prompt
+        system_prompt_template,
+        user_prompt_template,
+        relevant_tables_template,
+        similar_queries_template,
+        filter_prompt_template,
+        filter_type
     );
 EXCEPTION
     WHEN unique_violation THEN
