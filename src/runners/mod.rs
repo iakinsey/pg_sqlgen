@@ -1,2 +1,2 @@
+mod ddl_filter;
 mod sql_generation;
-mod table_filter;
