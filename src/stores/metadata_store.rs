@@ -6,7 +6,7 @@ use crate::{
         structs::table_metadata::{CrawlSchema, TableMetadata},
         traits::driver::TextEncoderDriver,
     },
-    utils::sql::get_oid,
+    utils::sql::{get_column_heap, get_oid},
 };
 
 pub struct MetadataStore {}
@@ -139,7 +139,56 @@ impl MetadataStore {
         Ok(())
     }
 
-    // TODO querying metadata tables
+    pub fn get_similar_ddls(
+        model_name: &str,
+        schema: &str,
+        user_query: Vec<f32>,
+        limit: i32,
+    ) -> Result<Vec<String>, StoreError> {
+        let query =
+            "SELECT sqlgen_internal.get_similar_ddls($1, $2, $3::REAL[]::VECTOR, $4) AS ddl;";
+
+        Spi::connect(|client| {
+            let rows = client.select(
+                query,
+                None,
+                &[
+                    model_name.into(),
+                    schema.into(),
+                    user_query.into(),
+                    limit.into(),
+                ],
+            )?;
+
+            let mut results = Vec::new();
+
+            for row in rows {
+                let ddl: String = get_column_heap(&row, "ddl")?;
+
+                results.push(ddl);
+            }
+
+            Ok(results)
+        })
+    }
+
+    pub fn get_ddls(model_name: &str, schema: &str) -> Result<Vec<String>, StoreError> {
+        let query = "SELECT sqlgen_internal.get_ddls($1, $2)";
+
+        Spi::connect(|client| {
+            let rows = client.select(query, None, &[model_name.into(), schema.into()])?;
+
+            let mut results = Vec::new();
+
+            for row in rows {
+                let ddl: String = get_column_heap(&row, "ddl")?;
+
+                results.push(ddl);
+            }
+
+            Ok(results)
+        })
+    }
 
     fn get_unique_name(model_name: &str, schema: &str) -> String {
         format!("{}_{}", schema, model_name)
