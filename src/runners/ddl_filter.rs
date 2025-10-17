@@ -1,5 +1,5 @@
 use crate::{
-    stores::model_store::ModelStore,
+    stores::{metadata_store::MetadataStore, model_store::ModelStore},
     types::{
         errors::StoreError,
         structs::{
@@ -60,20 +60,21 @@ impl DDLFilterRunner {
         })
     }
 
-    pub async fn generate(
-        &mut self,
-        user_query: &str,
-        relevant_ddls: Vec<&str>,
-    ) -> Result<Vec<String>, StoreError> {
+    pub async fn generate(&mut self, user_query: &str) -> Result<Vec<String>, StoreError> {
         match self.engine.filter_type {
-            TableFilterType::Quick => self.generate_quick(user_query, relevant_ddls).await,
-            TableFilterType::Smart => self.generate_smart(user_query, relevant_ddls).await,
+            TableFilterType::Quick => self.generate_quick(user_query).await,
+            TableFilterType::Smart => self.generate_smart(user_query).await,
         }
     }
 
+    // TODO start with this next
+    // TODO metadata should use engine name for table instead of model/schema
+    // TODO allow limit to be set
+    // TODO integrate runners with api module
     async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, StoreError> {
         let mut prompt_ctx = Context::new();
-        let relevant_ddls = relevant_ddls.join("\n");
+        let relevant_ddls =
+            MetadataStore::get_ddls(&self.engine.encoder_model, &self.engine.schema_name)?;
 
         prompt_ctx.insert(USER_QUERY_VAR_KEY, user_query);
         prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &relevant_ddls);
@@ -100,10 +101,13 @@ impl DDLFilterRunner {
         let model = self.encoder_model.as_deref_mut().ok_or(StoreError::Any(
             "generate_quick called without model reference".to_string(),
         ))?;
-
         let encoding = model.encode(user_query).await?;
 
-        // TODO
-        unimplemented!()
+        Ok(MetadataStore::get_similar_ddls(
+            &self.engine.encoder_model,
+            &self.engine.schema_name,
+            encoding,
+            100,
+        )?)
     }
 }
