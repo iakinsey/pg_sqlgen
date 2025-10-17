@@ -71,11 +71,7 @@ impl DDLFilterRunner {
         }
     }
 
-    async fn generate_smart(
-        &mut self,
-        user_query: &str,
-        relevant_ddls: Vec<&str>,
-    ) -> Result<Vec<String>, StoreError> {
+    async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, StoreError> {
         let mut prompt_ctx = Context::new();
         let relevant_ddls = relevant_ddls.join("\n");
 
@@ -100,11 +96,14 @@ impl DDLFilterRunner {
             .collect())
     }
 
-    async fn generate_quick(
-        &mut self,
-        user_query: &str,
-        relevant_ddls: Vec<&str>,
-    ) -> Result<Vec<String>, StoreError> {
+    async fn generate_quick(&mut self, user_query: &str) -> Result<Vec<String>, StoreError> {
+        let model = self.encoder_model.as_deref_mut().ok_or(StoreError::Any(
+            "generate_quick called without model reference".to_string(),
+        ))?;
+
+        let encoding = model.encode(user_query).await?;
+
+        // TODO
         unimplemented!()
     }
 }

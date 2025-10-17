@@ -63,6 +63,37 @@ $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, INT) FROM public;
 
 --------------------------------------------------------------------------------
+-- Get similar tables
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.get_similar_ddls(
+  model_name TEXT,
+  schema_name TEXT,
+  user_query VECTOR,
+  similarity_limit INT
+)
+RETURNS SETOF TEXT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  unique_name TEXT;
+BEGIN
+  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
+
+  RETURN QUERY EXECUTE format(
+    'SELECT ddl
+      FROM %I.%I
+      ORDER BY ddl_vector <-> $1
+      LIMIT $2',
+    'sqlgen_internal',
+    'db_metadata_' || unique_name
+  )
+  USING user_query, similarity_limit;
+END;
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_similar_ddls(TEXT, TEXT, VECTOR, INT) FROM public;
+
+--------------------------------------------------------------------------------
 -- Install schema triggers
 --------------------------------------------------------------------------------
 
