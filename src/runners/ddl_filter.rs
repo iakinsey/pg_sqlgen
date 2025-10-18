@@ -68,13 +68,10 @@ impl DDLFilterRunner {
     }
 
     // TODO start with this next
-    // TODO metadata should use engine name for table instead of model/schema
-    // TODO allow limit to be set
     // TODO integrate runners with api module
     async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, StoreError> {
         let mut prompt_ctx = Context::new();
-        let relevant_ddls =
-            MetadataStore::get_ddls(&self.engine.encoder_model, &self.engine.schema_name)?;
+        let relevant_ddls = MetadataStore::get_ddls(&self.engine.name)?;
 
         prompt_ctx.insert(USER_QUERY_VAR_KEY, user_query);
         prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &relevant_ddls);
@@ -104,8 +101,7 @@ impl DDLFilterRunner {
         let encoding = model.encode(user_query).await?;
 
         Ok(MetadataStore::get_similar_ddls(
-            &self.engine.encoder_model,
-            &self.engine.schema_name,
+            &self.engine.name,
             encoding,
             100,
         )?)

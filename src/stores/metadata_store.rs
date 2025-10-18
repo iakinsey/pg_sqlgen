@@ -13,25 +13,31 @@ pub struct MetadataStore {}
 
 impl MetadataStore {
     pub async fn initialize_metadata(
+        engine: &str,
         model_name: &str,
         schema: &str,
         encoder: Box<dyn TextEncoderDriver>,
     ) -> Result<(), StoreError> {
-        let query = "SELECT sqlgen_internal.initialize_metadata($1, $2, $3);";
+        let query = "SELECT sqlgen_internal.initialize_metadata($1, $2, $3, $4);";
         let vector_size = i32::try_from(encoder.dimensions().await?)?;
 
         Spi::run_with_args(
             query,
-            &[model_name.into(), schema.into(), vector_size.into()],
+            &[
+                engine.into(),
+                model_name.into(),
+                schema.into(),
+                vector_size.into(),
+            ],
         )?;
 
-        Self::populate_metadata_table(model_name, schema, encoder).await?;
+        Self::populate_metadata_table(engine, schema, encoder).await?;
 
         Ok(())
     }
 
     pub async fn populate_metadata_table(
-        model_name: &str,
+        engine: &str,
         schema: &str,
         encoder: Box<dyn TextEncoderDriver>,
     ) -> Result<(), StoreError> {
@@ -79,12 +85,11 @@ impl MetadataStore {
             })
             .collect();
 
-        Self::add_to_metadata_table(model_name, schema, metadatas)
+        Self::add_to_metadata_table(engine, metadatas)
     }
 
     pub fn add_to_metadata_table(
-        model_name: &str,
-        schema: &str,
+        engine: &str,
         metadatas: Vec<TableMetadata>,
     ) -> Result<(), StoreError> {
         let query = format!(
@@ -93,7 +98,7 @@ impl MetadataStore {
                 schema_name, table_name, column_name, ddl, comment, ddl_vector, comment_vector
             ) VALUES ($1, $2, $3, $4, $5, $6, $7);
         ",
-            Self::get_unique_name(model_name, schema)
+            engine
         );
 
         Spi::connect(|client| {
@@ -131,33 +136,26 @@ impl MetadataStore {
         })
     }
 
-    pub fn remove_metadata(model_name: &str, schema: &str) -> Result<(), StoreError> {
-        let query = "SELECT sqlgen_internal.remove_metadata($1, $2);";
+    pub fn remove_metadata(engine: &str, model_name: &str, schema: &str) -> Result<(), StoreError> {
+        let query = "SELECT sqlgen_internal.remove_metadata($1, $2, $3);";
 
-        Spi::run_with_args(query, &[model_name.into(), schema.into()])?;
+        Spi::run_with_args(query, &[engine.into(), model_name.into(), schema.into()])?;
 
         Ok(())
     }
 
     pub fn get_similar_ddls(
-        model_name: &str,
-        schema: &str,
+        engine: &str,
         user_query: Vec<f32>,
         limit: i32,
     ) -> Result<Vec<String>, StoreError> {
-        let query =
-            "SELECT sqlgen_internal.get_similar_ddls($1, $2, $3::REAL[]::VECTOR, $4) AS ddl;";
+        let query = "SELECT sqlgen_internal.get_similar_ddls($1, $2, $3::REAL[]::VECTOR) AS ddl;";
 
         Spi::connect(|client| {
             let rows = client.select(
                 query,
                 None,
-                &[
-                    model_name.into(),
-                    schema.into(),
-                    user_query.into(),
-                    limit.into(),
-                ],
+                &[engine.into(), user_query.into(), limit.into()],
             )?;
 
             let mut results = Vec::new();
@@ -172,11 +170,11 @@ impl MetadataStore {
         })
     }
 
-    pub fn get_ddls(model_name: &str, schema: &str) -> Result<Vec<String>, StoreError> {
-        let query = "SELECT sqlgen_internal.get_ddls($1, $2)";
+    pub fn get_ddls(engine: &str) -> Result<Vec<String>, StoreError> {
+        let query = "SELECT sqlgen_internal.get_ddls($1)";
 
         Spi::connect(|client| {
-            let rows = client.select(query, None, &[model_name.into(), schema.into()])?;
+            let rows = client.select(query, None, &[engine.into()])?;
 
             let mut results = Vec::new();
 
@@ -188,9 +186,5 @@ impl MetadataStore {
 
             Ok(results)
         })
-    }
-
-    fn get_unique_name(model_name: &str, schema: &str) -> String {
-        format!("{}_{}", schema, model_name)
     }
 }

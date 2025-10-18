@@ -78,7 +78,7 @@ fn create_engine(
     let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
 
     rt.block_on(async {
-        MetadataStore::initialize_metadata(encoder_model, &schema_name, encoder)
+        MetadataStore::initialize_metadata(name, encoder_model, &schema_name, encoder)
             .await
             .unwrap_or_else(|e| error!("{}", e));
     })
@@ -88,7 +88,7 @@ fn create_engine(
 fn remove_engine(name: &str) {
     let engine = EngineStore::get_engine(name).unwrap_or_else(|e| error!("{}", e));
 
-    MetadataStore::remove_metadata(&engine.encoder_model, &engine.schema_name)
+    MetadataStore::remove_metadata(name, &engine.encoder_model, &engine.schema_name)
         .unwrap_or_else(|e| error!("{}", e));
     EngineStore::remove_engine(name).unwrap_or_else(|e| error!("{}", e));
 }

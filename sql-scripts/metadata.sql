@@ -2,13 +2,13 @@
 -- Initialize metadata
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.initialize_metadata(model_name TEXT, schema_name TEXT, vector_size INT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.initialize_metadata(engine TEXT, model_name TEXT, schema_name TEXT, vector_size INT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  PERFORM sqlgen_internal.create_metadata_table(model_name TEXT, schema_name TEXT, vector_size INT);
-  PERFORM sqlgen_internal.install_schema_triggers(model_name TEXT, schema_name TEXT);
+  PERFORM sqlgen_internal.create_metadata_table(engine, model_name, schema_name, vector_size);
+  PERFORM sqlgen_internal.install_schema_triggers(engine, model_name, schema_name);
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) FROM public;
@@ -17,16 +17,16 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) 
 -- Remove metadata
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata(model_name TEXT, schema_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata(engine TEXT, model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  PERFORM sqlgen_internal.remove_schema_triggers(model_name, schema_name);
-  PERFORM sqlgen_internal.remove_metadata_table(model_name, schema_name);
+  PERFORM sqlgen_internal.remove_schema_triggers(engine, model_name, schema_name);
+  PERFORM sqlgen_internal.remove_metadata_table(engine, model_name, schema_name);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, TEXT, INT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Create metadata table
@@ -34,15 +34,13 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) 
 
 -- TODO start here next, run test queries and fill the triggers out
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(model_name TEXT, schema_name TEXT, vector_size INT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(engine TEXT, model_name TEXT, schema_name TEXT, vector_size INT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 DECLARE
   unique_name TEXT;
 BEGIN
-  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
-
   EXECUTE FORMAT($fmt$
     CREATE TABLE sqlgen_internal.db_metadata_%I (
       schema_name     TEXT NOT NULL,
@@ -53,22 +51,21 @@ BEGIN
       ddl_vector      VECTOR(%s) NOT NULL,
       comment_vector  VECTOR(%s)
     );
-  $fmt$, unique_name, vector_size, vector_size);
+  $fmt$, engine, vector_size, vector_size);
 
   EXECUTE FORMAT($fmt$
     REVOKE ALL ON TABLE sqlgen_internal.db_metadata_%I FROM PUBLIC;
   $fmt$, unique_name);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, INT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, TEXT, TEXT, INT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Get similar ddls
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_similar_ddls(
-  model_name TEXT,
-  schema_name TEXT,
+  engine TEXT,
   user_query VECTOR,
   similarity_limit INT
 )
@@ -78,28 +75,25 @@ AS $$
 DECLARE
   unique_name TEXT;
 BEGIN
-  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
-
   RETURN QUERY EXECUTE format(
     'SELECT ddl
       FROM %I.%I
       ORDER BY ddl_vector <-> $1
       LIMIT $2',
     'sqlgen_internal',
-    'db_metadata_' || unique_name
+    'db_metadata_' || engine
   )
   USING user_query, similarity_limit;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_similar_ddls(TEXT, TEXT, VECTOR, INT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_similar_ddls(TEXT, VECTOR, INT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Get ddls
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_ddls(
-  model_name TEXT,
-  schema_name TEXT,
+  engine TEXT,
 )
 RETURNS SETOF TEXT
 LANGUAGE plpgsql
@@ -107,11 +101,9 @@ AS $$
 DECLARE
   unique_name TEXT;
 BEGIN
-  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
-
   RETURN QUERY EXECUTE format($fmt$
     SELECT ddl FROM sqlgen_internal.db_metadata_%I
-  $fmt$, unique_name);
+  $fmt$, engine);
 END;
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_ddls(TEXT, TEXT) FROM public;
@@ -121,15 +113,12 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_ddls(TEXT, TEXT) FROM public;
 -- Install schema triggers
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(model_name TEXT, schema_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(engine TEXT, model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  unique_name TEXT;
 BEGIN
-  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
-
   -- Create table function
   EXECUTE FORMAT($fmt
     CREATE OR REPLACE FUNCTION on_create_table_%1$I()
@@ -181,17 +170,17 @@ BEGIN
       ON sql_drop
       EXECUTE FUNCTION on_drop_table_%1$I();
   $fmt$,
-    unique_name -- %1
+    engine -- %1
   );
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT, TEXT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove schema triggers
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(model_name TEXT, schema_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(engine TEXT, model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
@@ -201,25 +190,21 @@ BEGIN
   unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
 
   EXECUTE FORMAT($fmt
-    DROP
+    -- TODO
   $fmt$);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT, TEXT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove metadata table
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(model_name TEXT, schema_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(engine TEXT, model_name TEXT, schema_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
-DECLARE
-  unique_name TEXT
 BEGIN
-  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
-  
   DO $triggers$
     DECLARE
       s RECORD;
@@ -240,10 +225,10 @@ BEGIN
 
   EXECUTE FORMAT($fmt$
     DROP TABLE sqlgen_internal.db_metadata_%I;
-  $fmt$, unique_name);
+  $fmt$, engine);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT, TEXT, TEXT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Crawl schema
@@ -290,15 +275,3 @@ LANGUAGE SQL
 AS $$
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema(TEXT) FROM public;
-
---------------------------------------------------------------------------------
--- Get unique name
---------------------------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION sqlgen_internal.get_metadata_unique_name(model_name TEXT, schema_name TEXT)
-RETURNS TEXT
-LANGUAGE sql
-AS $$
-    SELECT CONCAT(model_name, '_', schema_name);
-$$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema(TEXT, TEXT) FROM public;
