@@ -10,6 +10,8 @@ pub enum StoreError {
     ModelDriverError(#[from] ModelDriverError),
     #[error("model doesn't exist: {0}")]
     ModelDoesntExist(String),
+    #[error("config value doesn't exist: {0}")]
+    ConfigDoesntExist(String),
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
     #[error(transparent)]
