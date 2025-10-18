@@ -3,6 +3,8 @@ pub mod internal;
 
 use pgrx::extension_sql_file;
 
+extension_sql_file!("../../sql-scripts/api.sql", name = "api");
+extension_sql_file!("../../sql-scripts/config.sql", name = "config");
 extension_sql_file!("../../sql-scripts/engine.sql", name = "engine");
 extension_sql_file!("../../sql-scripts/internal.sql", name = "internal");
 extension_sql_file!(

@@ -4,6 +4,8 @@ use crate::{types::errors::StoreError, utils::sql::get_column};
 
 pub struct ConfigStore {}
 
+pub static DEFAULT_ENGINE_CONFIG_KEY: &str = "default_engine";
+
 impl ConfigStore {
     pub fn get_config_value(key: &str) -> Result<String, StoreError> {
         let query = "SELECT sqlgen_internal.get_config_value($1);";

@@ -11,7 +11,7 @@ pub static DEFAULT_RELEVANT_TABLES_TEMPLATE: &str = "TODO";
 pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = "TODO";
 pub static DEFAULT_FILTER_DDLS_TEMPLATE: &str = "TODO";
 
-#[derive(PostgresEnum, Eq, PartialEq)]
+#[derive(PostgresEnum, Eq, PartialEq, Clone)]
 pub enum TableFilterType {
     Quick,
     Smart,
@@ -37,7 +37,7 @@ impl TableFilterType {
     }
 }
 
-// TODO update engine store to reflect new changes here
+#[derive(Clone)]
 pub struct TextToSqlEngine {
     pub name: String,
     pub schema_name: String,

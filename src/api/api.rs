@@ -2,7 +2,13 @@ use pgrx::prelude::*;
 use tokio::runtime::Runtime;
 
 use crate::{
-    stores::{engine_store::EngineStore, metadata_store::MetadataStore, model_store::ModelStore},
+    runners::{ddl_filter::DDLFilterRunner, sql_generation::SQLGenerationRunner},
+    stores::{
+        config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
+        engine_store::EngineStore,
+        metadata_store::MetadataStore,
+        model_store::ModelStore,
+    },
     types::structs::engine::TableFilterType,
     utils::sql::get_current_schema,
 };
@@ -19,14 +25,34 @@ fn remove_model(model_name: &str) {
 }
 
 #[pg_extern]
-fn execute() -> &'static str {
-    // TODO start here, probably need to fill this in under the engine mechanism?
-    unimplemented!()
-}
+fn generate(user_query: &str, engine: Option<&str>) -> String {
+    let engine_name = match engine {
+        Some(e) => e.to_string(),
+        None => ConfigStore::get_config_value(DEFAULT_ENGINE_CONFIG_KEY)
+            .unwrap_or_else(|e| error!("{}", e)),
+    };
+    let engine = EngineStore::get_engine(&engine_name).unwrap_or_else(|e| error!("{}", e));
+    let mut ddl_filter_runner =
+        DDLFilterRunner::new(engine.clone()).unwrap_or_else(|e| error!("{}", e));
+    let mut text_to_sql_runner =
+        SQLGenerationRunner::new(engine).unwrap_or_else(|e| error!("{}", e));
+    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
 
-#[pg_extern]
-fn generate(prompt: &str, engine: Option<&str>) -> &'static str {
-    unimplemented!()
+    rt.block_on(async {
+        let ddls = ddl_filter_runner
+            .generate(user_query)
+            .await
+            .unwrap_or_else(|e| error!("{}", e));
+
+        text_to_sql_runner
+            .generate_query(
+                user_query,
+                ddls.iter().map(|s| s.as_str()).collect(),
+                vec![],
+            )
+            .await
+            .unwrap_or_else(|e| error!("{}", e))
+    })
 }
 
 #[pg_extern]
