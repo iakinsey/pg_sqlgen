@@ -56,8 +56,9 @@ fn generate(user_query: &str, engine: Option<&str>) -> String {
 }
 
 #[pg_extern]
-fn set_default_engine() -> &'static str {
-    unimplemented!()
+fn set_default_engine(engine: &str) {
+    ConfigStore::set_config_value(DEFAULT_ENGINE_CONFIG_KEY, engine)
+        .unwrap_or_else(|e| error!("{}", e));
 }
 
 #[pg_extern]
