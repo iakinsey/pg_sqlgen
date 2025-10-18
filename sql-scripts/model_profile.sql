@@ -12,12 +12,11 @@ REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
 -- Public model profile view
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW sqlgen.models {
+CREATE OR REPLACE VIEW sqlgen.models AS
     SELECT
         model_name AS model_name,
         jsonb_pretty(config) AS config
-    FROM sqlgen_internal.model_profile
-}
+    FROM sqlgen_internal.model_profile;
 
 --------------------------------------------------------------------------------
 -- Get model profile

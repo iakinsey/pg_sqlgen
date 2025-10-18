@@ -24,15 +24,14 @@ CREATE TABLE sqlgen_internal.engine (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
-REVOKE ALL ON TABLE sqlgen_internal.engine FROM PUBLIC;
+REVOKE ALL ON TABLE sqlgen_internal.engine FROM public;
 
 --------------------------------------------------------------------------------
 -- Engines view
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW sqlgen.engines {
-    SELECT * FROM sqlgen_internal.model_profile
-}
+CREATE OR REPLACE VIEW sqlgen.engines AS
+    SELECT * FROM sqlgen_internal.model_profile;
 
 --------------------------------------------------------------------------------
 -- Create engine
