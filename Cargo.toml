@@ -1,5 +1,5 @@
 [package]
-name = "pg_sqlgen"
+name = "sqlgen"
 version = "0.0.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "lib"]
 
 [[bin]]
-name = "pgrx_embed_pg_sqlgen"
+name = "pgrx_embed_sqlgen"
 path = "./src/bin/pgrx_embed.rs"
 
 [features]

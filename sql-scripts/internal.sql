@@ -1,2 +1,2 @@
-CREATE SCHEMA sqlgen_internal AUTHORIZATION extension_owner;
-REVOKE ALL ON SCHEMA sqlgen_internal FROM public;
+CREATE SCHEMA sqlgen_internal AUTHORIZATION CURRENT_USER;
+--REVOKE ALL ON SCHEMA sqlgen_internal FROM public;
