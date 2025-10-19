@@ -44,11 +44,11 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO sqlgen_internal.config (key, value) VALUES (k ,v);
+    INSERT INTO sqlgen_internal.config(key, value)
+    VALUES (k, v)
     ON CONFLICT (key) DO UPDATE
     SET value = EXCLUDED.value;
-END
+END;
 $$;
+
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.set_config_value(TEXT, TEXT) FROM public;
-
-

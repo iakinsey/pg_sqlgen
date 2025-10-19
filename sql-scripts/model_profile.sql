@@ -1,39 +1,40 @@
 --------------------------------------------------------------------------------
 -- Model profile
 --------------------------------------------------------------------------------
-
 CREATE TABLE sqlgen_internal.model_profile (
     model_name TEXT PRIMARY KEY,
-    config JSONB NOT NULL,
+    config JSONB NOT NULL
 );
-REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM PUBLIC;
+REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM public;
 
 --------------------------------------------------------------------------------
 -- Public model profile view
 --------------------------------------------------------------------------------
-
 CREATE OR REPLACE VIEW sqlgen.models AS
-    SELECT
-        model_name AS model_name,
-        jsonb_pretty(config) AS config
-    FROM sqlgen_internal.model_profile;
+SELECT
+    model_name AS model_name,
+    jsonb_pretty(config) AS config
+FROM sqlgen_internal.model_profile;
 
 --------------------------------------------------------------------------------
 -- Get model profile
 --------------------------------------------------------------------------------
-
 CREATE OR REPLACE FUNCTION sqlgen.get_model(model_name TEXT)
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql 
 STRICT
 AS $$
+DECLARE
+    r sqlgen_internal.model_profile%ROWTYPE;
 BEGIN
-    RETURN QUERY
     SELECT *
+    INTO r
     FROM sqlgen_internal.model_profile mp
     WHERE mp.model_name = model_name;
+    RETURN r;
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION sqlgen.get_model(TEXT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Create model profile
@@ -41,25 +42,28 @@ $$;
 
 CREATE OR REPLACE FUNCTION sqlgen.create_model(
     model_name TEXT,
-    config JSONB,
+    config JSONB
 )
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql
 STRICT
 AS $$
+DECLARE
+    r sqlgen_internal.model_profile%ROWTYPE;
 BEGIN
-    RETURN QUERY
     INSERT INTO sqlgen_internal.model_profile(model_name, config)
     VALUES (model_name, config)
-    RETURNING *;
+    RETURNING * INTO r;
+
+    RETURN r;
 END;
 $$;
 
+REVOKE EXECUTE ON FUNCTION sqlgen.create_model(TEXT, JSONB) FROM public;
+
 --------------------------------------------------------------------------------
 -- Delete model profile
--- TODO handle cases when model is already in use
 --------------------------------------------------------------------------------
-
 CREATE OR REPLACE FUNCTION sqlgen.delete_model(model_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -70,3 +74,4 @@ BEGIN
     WHERE mp.model_name = model_name;
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION sqlgen.delete_model(TEXT) FROM public;

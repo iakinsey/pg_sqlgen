@@ -3,16 +3,16 @@
 --------------------------------------------------------------------------------
 
 CREATE TABLE sqlgen_internal.engine (
-    engine_name TEXT NOT NULL PRIMARY KEY,
+    engine_name TEXT PRIMARY KEY,
     schema_name TEXT NOT NULL,
     encoder_model TEXT NOT NULL,
     instruct_model TEXT NOT NULL,
     system_prompt_template TEXT,
     user_prompt_template TEXT,
     relevant_ddls_template TEXT,
-    similar_queries_template TEXT
+    similar_queries_template TEXT,
     filter_prompt_template TEXT,
-    table_filter_type TEXT
+    table_filter_type TEXT,
     CONSTRAINT fk_encoder_model
         FOREIGN KEY (encoder_model)
         REFERENCES sqlgen_internal.model_profile(model_name)
@@ -24,6 +24,7 @@ CREATE TABLE sqlgen_internal.engine (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
 REVOKE ALL ON TABLE sqlgen_internal.engine FROM public;
 
 --------------------------------------------------------------------------------
@@ -31,7 +32,7 @@ REVOKE ALL ON TABLE sqlgen_internal.engine FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE VIEW sqlgen.engines AS
-    SELECT * FROM sqlgen_internal.model_profile;
+    SELECT * FROM sqlgen_internal.engine;
 
 --------------------------------------------------------------------------------
 -- Create engine
@@ -63,7 +64,7 @@ BEGIN
         relevant_ddls_template,
         similar_queries_template,
         filter_prompt_template,
-        filter_type
+        table_filter_type
     ) VALUES (
         engine_name,
         schema_name,
@@ -74,31 +75,33 @@ BEGIN
         relevant_ddls_template,
         similar_queries_template,
         filter_prompt_template,
-        filter_type
+        table_filter_type
     );
 EXCEPTION
     WHEN unique_violation THEN
         RAISE EXCEPTION 'Engine "%" already exists', engine_name
-            USING ERRCODE = 'unique_violation';
+            USING ERRCODE = '23505';
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_engine(TEXT, TEXT, TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_engine(
+    TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT
+) FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove engine
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.remove_engine(model_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_engine(engine_name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    DELETE FROM sqlgen_internal.engine
-    WHERE engine_name = remove_engine.engine_name;
+    DELETE FROM sqlgen_internal.engine e
+    WHERE e.engine_name = engine_name;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Engine "%" does not exist', engine_name
-            USING ERRCODE = 'no_data_found';
+            USING ERRCODE = 'P0002';
     END IF;
 END
 $$;
@@ -108,20 +111,24 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_engine(TEXT) FROM public;
 -- Get engine
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.get_engine(engine TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.get_engine(engine_name TEXT)
 RETURNS sqlgen_internal.engine
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    r sqlgen_internal.engine%ROWTYPE;
 BEGIN
-    RETURN QUERY
     SELECT *
+    INTO r
     FROM sqlgen_internal.engine e
-    WHERE e.engine_name = get_engine.engine_name;
+    WHERE e.engine_name = engine_name;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Engine "%" does not exist', engine_name
-            USING ERRCODE = 'no_data_found';
-    END IF; 
+            USING ERRCODE = 'P0002';
+    END IF;
+
+    RETURN r;
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_engine(TEXT) FROM public;
