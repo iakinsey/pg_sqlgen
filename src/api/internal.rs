@@ -33,8 +33,9 @@ fn internal_batch_text_encode(model: &str, values: Vec<String>) -> Vec<Vec<f32>>
         .unwrap_or_else(|e| error!("{}", e))
 }
 
+/*
 #[pg_extern]
-fn instruct_text(model: &str, system_prompt: &str, user_prompt: &str) -> String {
+fn internal_instruct_text(model: &str, system_prompt: &str, user_prompt: &str) -> String {
     let profile = ModelStore::get_model_profile(model).unwrap_or_else(|e| error!("{}", e));
     let mut model = profile
         .get_text_instruct_model()
@@ -54,6 +55,7 @@ fn instruct_text(model: &str, system_prompt: &str, user_prompt: &str) -> String 
     rt.block_on(async { model.get_assistant_response(messages).await })
         .unwrap_or_else(|e| error!("{}", e))
 }
+*/
 
 #[cfg(any(test, feature = "pg_test"))]
 mod tests {

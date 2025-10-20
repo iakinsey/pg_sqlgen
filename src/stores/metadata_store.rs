@@ -198,7 +198,9 @@ mod tests {
     #[pg_test]
     fn test_metadata_triggers() {
         Spi::run(
-            "SELECT sqlgen_internal.initialize_metadata('test_engine', 'test_model', 'public', 10);",
+            r#"
+            SELECT sqlgen_internal.initialize_metadata('test_engine', 'test_model', 'public', 10);
+            "#,
         )
         .unwrap();
     }

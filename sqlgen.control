@@ -1,0 +1,7 @@
+comment = 'sqlgen:  Created by pgrx'
+default_version = '@CARGO_VERSION@'
+module_pathname = 'sqlgen'
+relocatable = false
+superuser = true
+trusted = false
+requires = 'vector'

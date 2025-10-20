@@ -1,5 +1,5 @@
 -- Make the rust encode_text an internal function
-ALTER FUNCTION sqlgen.internal_encode_text(TEXT, TEXT) SET SCHEMA sqlgen_internal;
+ALTER FUNCTION internal_encode_text(TEXT, TEXT) SET SCHEMA sqlgen_internal;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.internal_encode_text(TEXT, TEXT) FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.encode_text(model TEXT, text_value TEXT)
@@ -12,23 +12,19 @@ END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.encode_text(TEXT, TEXT) FROM public;
 
--- Make the rust encode_text_batch an internal function
-ALTER FUNCTION sqlgen.internal_encode_text_batch(TEXT, TEXT[]) SET SCHEMA sqlgen_internal;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.internal_encode_text_batch(TEXT, TEXT[]) FROM public;
+-- Make the rust batch_text_encode an internal function
+ALTER FUNCTION internal_batch_text_encode(TEXT, TEXT[]) SET SCHEMA sqlgen_internal;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.internal_batch_text_encode(TEXT, TEXT[]) FROM public;
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.encode_text_batch(model TEXT, text_values TEXT[])
+CREATE OR REPLACE FUNCTION sqlgen_internal.batch_text_encode(model TEXT, text_values TEXT[])
 RETURNS vector[]
 LANGUAGE plpgsql
 AS $$
 DECLARE
     results float4[][];
 BEGIN
-    results := sqlgen_internal.internal_encode_text_batch(model, text_values);
+    results := sqlgen_internal.batch_text_encode(model, text_values);
     RETURN ARRAY(SELECT (v)::vector FROM unnest(results) AS v);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.encode_text_batch(TEXT, TEXT[]) FROM public;
-
--- Make the rust instruct_text an internal function
-ALTER FUNCTION sqlgen.instruct_text(TEXT, TEXT) SET SCHEMA sqlgen_internal;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.instruct_text(TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.batch_text_encode(TEXT, TEXT[]) FROM public;
