@@ -1,4 +1,4 @@
-use pgrx::{spi::Query, PgBuiltInOids, PgOid, Spi};
+use pgrx::{pg_schema, spi::Query, PgBuiltInOids, PgOid, Spi};
 
 use crate::{
     types::{
@@ -190,6 +190,7 @@ impl MetadataStore {
 }
 
 #[cfg(any(test, feature = "pg_test"))]
+#[pg_schema]
 mod tests {
     use pgrx::Spi;
 
