@@ -126,6 +126,7 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
+  RAISE NOTICE '!!!!!!111 :D';
   EXECUTE format($fmt$
     -- Drop existing event triggers if present
     DROP EVENT TRIGGER IF EXISTS trigger_create_table_%1$I;
@@ -189,24 +190,19 @@ END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT, TEXT) FROM public;
 
---------------------------------------------------------------------------------
--- Remove schema triggers
---------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(
-    engine TEXT,
-    model_name TEXT,
-    schema_name TEXT
-)
-RETURNS VOID
+    RETURNS VOID
+
+
+
+   
+   
+   
+
+
 LANGUAGE plpgsql
 AS $$
-DECLARE 
-  unique_name TEXT;
 BEGIN
-  unique_name := sqlgen_internal.get_metadata_unique_name(model_name, schema_name);
-
   -- TODO: drop specific triggers here
-  RAISE NOTICE 'remove_schema_triggers(%, %, %) [unique_name=%]', engine, model_name, schema_name, unique_name;
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT, TEXT) FROM public;
@@ -274,3 +270,33 @@ WHERE n.nspname = $1
 ORDER BY n.nspname, c.relname, a.attnum;
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema(TEXT) FROM public;
+
+
+--------------------------------------------------------------------------------
+-- Add table
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.add_table_metadata(
+    engine TEXT,
+    table_name TEXT,
+    schema_name TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+
+
+END
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT, TEXT) FROM public;
+
+
+--------------------------------------------------------------------------------
+-- Remove table
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+-- Update table
+--------------------------------------------------------------------------------
+

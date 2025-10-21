@@ -204,5 +204,7 @@ mod tests {
             "#,
         )
         .unwrap();
+
+        assert!(false)
     }
 }

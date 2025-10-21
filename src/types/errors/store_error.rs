@@ -10,6 +10,10 @@ pub enum StoreError {
     ModelDriverError(#[from] ModelDriverError),
     #[error("model doesn't exist: {0}")]
     ModelDoesntExist(String),
+    #[error("failed to get encoding: {0} {1} {2}")]
+    EncodingError(String, String, String),
+    #[error("table doesn't exist: {0}")]
+    TableDoesntExist(String),
     #[error("config value doesn't exist: {0}")]
     ConfigDoesntExist(String),
     #[error(transparent)]
