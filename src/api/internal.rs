@@ -99,7 +99,6 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
             let comment_opt: Option<String> = get_column_heap_optional(&row, "comment")?;
 
             // For metadata (owned)
-            let comment_for_meta = comment_opt.clone().unwrap_or_default();
             m.push((column_name, ddl.clone(), comment_opt.clone()));
 
             // Leak to produce &'static str
@@ -118,7 +117,7 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
     let (ddl_encodings, comment_encodings): (Vec<Vec<f32>>, HashMap<usize, Vec<f32>>) = rt
         .block_on(async {
             let d = model.encode_many(&ddls).await?;
-            let comment_strings: Vec<&str> = comments.iter().map(|(_, s)| s.clone()).collect();
+            let comment_strings: Vec<&str> = comments.iter().map(|(_, s)| *s).collect();
             let vectors = model.encode_many(&comment_strings).await?;
 
             let mut map: HashMap<usize, Vec<f32>> = HashMap::new();
