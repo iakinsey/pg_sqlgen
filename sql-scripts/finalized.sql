@@ -28,3 +28,8 @@ BEGIN
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.batch_text_encode(TEXT, TEXT[]) FROM public;
+
+-- Make the rust batch_text_encode an internal function
+ALTER FUNCTION internal_add_table(TEXT, TEXT, TEXT) SET SCHEMA sqlgen_internal;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.internal_add_table(TEXT, TEXT, TEXT) FROM public;
+ALTER FUNCTION sqlgen_internal.internal_add_table(TEXT, TEXT, TEXT) RENAME TO add_table;

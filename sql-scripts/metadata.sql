@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 -- Initialize metadata
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.initialize_metadata(
     engine TEXT,
     model_name TEXT,
@@ -21,6 +22,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, TEXT,
 --------------------------------------------------------------------------------
 -- Remove metadata
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata(
     engine TEXT,
     model_name TEXT,
@@ -40,6 +42,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata(TEXT, TEXT, TEXT) FRO
 --------------------------------------------------------------------------------
 -- Create metadata table
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(
     engine TEXT,
     schema_name TEXT,
@@ -72,6 +75,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, TEXT, INT
 --------------------------------------------------------------------------------
 -- Get similar ddls
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_similar_ddls(
   engine TEXT,
   user_query VECTOR,
@@ -98,6 +102,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_similar_ddls(TEXT, VECTOR, INT) F
 --------------------------------------------------------------------------------
 -- Get ddls
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_ddls(
   engine TEXT
 )
@@ -126,7 +131,6 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  RAISE NOTICE '!!!!!!111 :D';
   EXECUTE format($fmt$
     -- Drop existing event triggers if present
     DROP EVENT TRIGGER IF EXISTS trigger_create_table_%1$I;
@@ -190,26 +194,10 @@ END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT, TEXT) FROM public;
 
-    RETURNS VOID
-
-
-
-   
-   
-   
-
-
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  -- TODO: drop specific triggers here
-END
-$$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT, TEXT) FROM public;
-
 --------------------------------------------------------------------------------
 -- Remove metadata table
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(
     engine TEXT,
     model_name TEXT,
@@ -233,6 +221,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT, TEXT, TEX
 --------------------------------------------------------------------------------
 -- Crawl schema
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.crawl_schema(schema_name TEXT)
 RETURNS TABLE (
   table_name   TEXT,
@@ -271,32 +260,61 @@ ORDER BY n.nspname, c.relname, a.attnum;
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema(TEXT) FROM public;
 
-
 --------------------------------------------------------------------------------
--- Add table
+-- Remove table
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.add_table_metadata(
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_table(
     engine TEXT,
-    table_name TEXT,
+    schema_name TEXT,
+    table_name TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  EXECUTE format($fmt$
+  DELETE FROM sqlgen_internal.db_metadata_%I
+  WHERE schema_name = %L
+    AND table_name = %L
+  $fmt$, engine, schema_name, table_name);
+END
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_table(TEXT, TEXT, TEXT) FROM public;
+
+--------------------------------------------------------------------------------
+-- Update table
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.update_table(
+    engine TEXT,
+    schema_name TEXT,
+    table_name TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  EXECUTE sqlgen_internal.remove_table(engine, schema_name, table_name);
+  EXECUTE sqlgen_internal.add_table(engine, schema_name, table_name);
+END
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_table(TEXT, TEXT, TEXT) FROM public;
+
+--------------------------------------------------------------------------------
+-- Remove schema triggers
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(
+    engine TEXT,
+    model_name TEXT,
     schema_name TEXT
 )
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-
-
+  -- TODO
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT, TEXT) FROM public;
-
-
---------------------------------------------------------------------------------
--- Remove table
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
--- Update table
---------------------------------------------------------------------------------
-

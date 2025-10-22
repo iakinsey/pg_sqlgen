@@ -41,8 +41,8 @@ fn internal_batch_text_encode(model: &str, values: Vec<String>) -> Vec<Vec<f32>>
 }
 
 #[pg_extern]
-fn internal_add_table(engine: &str, schema: &str, table: &str) {
-    _internal_add_table(engine, schema, table).unwrap_or_else(|e| error!("{}", e));
+fn internal_add_table(engine: &str, schema_name: &str, table_name: &str) {
+    _internal_add_table(engine, schema_name, table_name).unwrap_or_else(|e| error!("{}", e));
 }
 
 fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(), StoreError> {
@@ -199,29 +199,6 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
         Ok(())
     })
 }
-/*
-#[pg_extern]
-fn internal_instruct_text(model: &str, system_prompt: &str, user_prompt: &str) -> String {
-    let profile = ModelStore::get_model_profile(model).unwrap_or_else(|e| error!("{}", e));
-    let mut model = profile
-        .get_text_instruct_model()
-        .unwrap_or_else(|e| error!("{}", e));
-    let messages = vec![
-        InstructMessage {
-            role: InstructRole::System,
-            message: system_prompt.to_string(),
-        },
-        InstructMessage {
-            role: InstructRole::User,
-            message: user_prompt.to_string(),
-        },
-    ];
-    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
-
-    rt.block_on(async { model.get_assistant_response(messages).await })
-        .unwrap_or_else(|e| error!("{}", e))
-}
-*/
 
 #[cfg(any(test, feature = "pg_test"))]
 mod tests {
