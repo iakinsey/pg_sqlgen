@@ -141,33 +141,65 @@ BEGIN
     CREATE OR REPLACE FUNCTION sqlgen_internal.on_create_table_%1$I()
     RETURNS event_trigger
     LANGUAGE plpgsql AS $fn$
+    DECLARE
+      r RECORD;
+      v_tbl text;
     BEGIN
-      RAISE NOTICE 'CREATE %%',
-        (SELECT json_agg(json_build_object('schema', %2$L, 'object', object_identity))
-         FROM pg_event_trigger_ddl_commands()
-         WHERE object_type IN ('table','partitioned table'));
+      FOR r IN
+        SELECT schema_name,
+               substring(object_identity FROM '[^.]+$') AS table_name
+        FROM pg_event_trigger_ddl_commands()
+        WHERE object_type IN ('table','partitioned table')
+      LOOP
+        v_tbl := r.table_name;
+
+        IF r.schema_name = %2$L THEN
+          PERFORM sqlgen_internal.add_table(%1$L, %2$L, v_tbl);
+        END IF;
+      END LOOP;
     END; $fn$;
 
     -- Alter table function
     CREATE OR REPLACE FUNCTION sqlgen_internal.on_alter_table_%1$I()
     RETURNS event_trigger
     LANGUAGE plpgsql AS $fn$
+    DECLARE
+      r RECORD;
+      v_tbl text;
     BEGIN
-      RAISE NOTICE 'ALTER %%',
-        (SELECT json_agg(json_build_object('schema', %2$L, 'object', object_identity))
-         FROM pg_event_trigger_ddl_commands()
-         WHERE object_type IN ('table','partitioned table'));
+      FOR r IN
+        SELECT schema_name,
+               substring(object_identity FROM '[^.]+$') AS table_name
+        FROM pg_event_trigger_ddl_commands()
+        WHERE object_type IN ('table','partitioned table')
+      LOOP
+        v_tbl := r.table_name;
+
+        IF r.schema_name = %2$L THEN
+          PERFORM sqlgen_internal.update_table(%1$L, %2$L, v_tbl);
+        END IF;
+      END LOOP;
     END; $fn$;
 
     -- Drop table function
     CREATE OR REPLACE FUNCTION sqlgen_internal.on_drop_table_%1$I()
     RETURNS event_trigger
     LANGUAGE plpgsql AS $fn$
+    DECLARE
+      r RECORD;
+      v_tbl text;
     BEGIN
-      RAISE NOTICE 'DROP %%',
-        (SELECT json_agg(json_build_object('schema', %2$L, 'object', object_identity))
-         FROM pg_event_trigger_dropped_objects()
-         WHERE object_type IN ('table','partitioned table'));
+      FOR r IN
+        SELECT schema_name, object_name AS table_name
+        FROM pg_event_trigger_dropped_objects()
+        WHERE object_type IN ('table','partitioned table')
+      LOOP
+        v_tbl := r.table_name;
+
+        IF r.schema_name = %2$L THEN
+          PERFORM sqlgen_internal.remove_table(%1$L, %2$L, v_tbl);
+        END IF;
+      END LOOP;
     END; $fn$;
 
     -- Create table trigger
@@ -187,12 +219,11 @@ BEGIN
       ON sql_drop
       EXECUTE FUNCTION sqlgen_internal.on_drop_table_%1$I();
   $fmt$,
-    engine,         -- %1$I
-    schema_name     -- %2$L
+    engine,       -- %1$*
+    schema_name   -- %2$*
   );
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT, TEXT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove metadata table
