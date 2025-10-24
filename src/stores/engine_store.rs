@@ -1,6 +1,6 @@
 // TODO
 
-use pgrx::Spi;
+use pgrx::{pg_schema, Spi};
 
 use crate::types::{errors::SqlgenError, structs::engine::TextToSqlEngine};
 
@@ -61,5 +61,19 @@ impl EngineStore {
         });
 
         Ok(result?)
+    }
+}
+
+#[cfg(any(test, feature = "pg_test"))]
+#[pg_schema]
+mod tests {
+    use pgrx::{pg_schema, Spi};
+
+    use crate::pg_test;
+
+    #[pg_test]
+    fn test_engine_crud() {
+        // TODO test
+        unimplemented!()
     }
 }

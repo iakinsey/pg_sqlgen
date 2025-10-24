@@ -107,3 +107,22 @@ impl DDLFilterRunner {
         )?)
     }
 }
+
+#[cfg(any(test, feature = "pg_test"))]
+mod tests {
+    use pgrx::Spi;
+
+    use crate::pg_test;
+
+    #[pg_test]
+    fn test_filter_smart() {
+        // TODO test
+        unimplemented!()
+    }
+
+    #[pg_test]
+    fn test_filter_fast() {
+        // TODO test
+        unimplemented!()
+    }
+}

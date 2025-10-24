@@ -152,3 +152,12 @@ impl SQLGenerationRunner {
         Ok(self.model.get_assistant_response(messages).await?)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_generate_query() {
+        // TODO test
+        unimplemented!()
+    }
+}

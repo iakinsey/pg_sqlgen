@@ -136,7 +136,11 @@ impl MetadataStore {
         })
     }
 
-    pub fn remove_metadata(engine: &str, model_name: &str, schema: &str) -> Result<(), SqlgenError> {
+    pub fn remove_metadata(
+        engine: &str,
+        model_name: &str,
+        schema: &str,
+    ) -> Result<(), SqlgenError> {
         let query = "SELECT sqlgen_internal.remove_metadata($1, $2, $3);";
 
         Spi::run_with_args(query, &[engine.into(), model_name.into(), schema.into()])?;
@@ -197,14 +201,20 @@ mod tests {
     use crate::pg_test;
 
     #[pg_test]
-    fn test_metadata_triggers() {
-        Spi::run(
-            r#"
-            SELECT sqlgen_internal.initialize_metadata('test_engine', 'test_model', 'public', 10);
-            "#,
-        )
-        .unwrap();
+    fn test_init_schema() {
+        // TODO test
+        unimplemented!()
+    }
 
-        assert!(false)
+    #[pg_test]
+    fn test_get_ddls() {
+        // TODO test
+        unimplemented!()
+    }
+
+    #[pg_test]
+    fn test_get_similar_ddls() {
+        // TODO test
+        unimplemented!()
     }
 }

@@ -1,4 +1,4 @@
-use pgrx::Spi;
+use pgrx::{pg_schema, Spi};
 
 use crate::{types::errors::SqlgenError, utils::sql::get_column};
 
@@ -28,5 +28,19 @@ impl ConfigStore {
         )?;
 
         Ok(())
+    }
+}
+
+#[cfg(any(test, feature = "pg_test"))]
+#[pg_schema]
+mod tests {
+    use pgrx::Spi;
+
+    use crate::pg_test;
+
+    #[pg_test]
+    fn test_config_get_set() {
+        // TODO test
+        unimplemented!()
     }
 }
