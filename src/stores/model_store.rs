@@ -1,4 +1,4 @@
-use pgrx::Spi;
+use pgrx::{pg_schema, Spi};
 use serde_json::from_str;
 
 use crate::{
@@ -85,5 +85,17 @@ impl ModelStore {
         let profile = Self::get_model_profile(model_name)?;
 
         Ok(profile.get_text_instruct_model()?)
+    }
+}
+
+#[cfg(any(test, feature = "pg_test"))]
+#[pg_schema]
+mod tests {
+    use pgrx::prelude::*;
+
+    #[pg_test]
+    fn test_model_store_crud() {
+        // TODO test
+        unimplemented!()
     }
 }
