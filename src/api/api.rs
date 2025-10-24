@@ -19,9 +19,8 @@ fn get_descriptions() {
 }
 
 #[pg_extern]
-fn add_model(model_name: &str, schema_name: &str, config_str: &str) {
-    ModelStore::create_model_profile(model_name, schema_name, config_str)
-        .unwrap_or_else(|e| error!("{}", e));
+fn add_model(model_name: &str, config_str: &str) {
+    ModelStore::create_model_profile(model_name, config_str).unwrap_or_else(|e| error!("{}", e));
 }
 
 #[pg_extern]

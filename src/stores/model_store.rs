@@ -2,7 +2,7 @@ use pgrx::{pg_schema, Spi};
 use serde_json::from_str;
 
 use crate::{
-    drivers::{LocalBertDriver, OllamaDriver},
+    drivers::{LocalBertDriver, OllamaDriver, StubDriver},
     types::{
         errors::SqlgenError,
         structs::model_profile::{ModelConfig, ModelProfile},
@@ -26,6 +26,7 @@ impl ModelStore {
                 OllamaDriver::NAME,
                 OllamaDriver::DESCRIPTION,
             ),
+            (StubDriver::ID, StubDriver::NAME, StubDriver::DESCRIPTION),
         ]
     }
 
@@ -44,11 +45,7 @@ impl ModelStore {
         Ok(result?)
     }
 
-    pub fn create_model_profile(
-        name: &str,
-        schema: &str,
-        config_str: &str,
-    ) -> Result<ModelProfile, SqlgenError> {
+    pub fn create_model_profile(name: &str, config_str: &str) -> Result<ModelProfile, SqlgenError> {
         let config: ModelConfig = from_str(config_str)?;
         let profile = ModelProfile {
             name: name.to_string(),
@@ -93,9 +90,15 @@ impl ModelStore {
 mod tests {
     use pgrx::prelude::*;
 
+    use crate::stores::model_store::ModelStore;
+
     #[pg_test]
     fn test_model_store_crud() {
-        // TODO test
-        unimplemented!()
+        let model_name = "test_model";
+        let created_profile = ModelStore::create_model_profile(model_name, "{}").unwrap();
+        let got_profile = ModelStore::get_model_profile(model_name).unwrap();
+
+        assert_eq!(created_profile.name, got_profile.name);
+        assert_eq!(created_profile.config, got_profile.config);
     }
 }
