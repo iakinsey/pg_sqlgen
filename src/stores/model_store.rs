@@ -4,7 +4,7 @@ use serde_json::from_str;
 use crate::{
     drivers::{LocalBertDriver, OllamaDriver},
     types::{
-        errors::StoreError,
+        errors::SqlgenError,
         structs::model_profile::{ModelConfig, ModelProfile},
         traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
     },
@@ -29,13 +29,13 @@ impl ModelStore {
         ]
     }
 
-    pub fn get_model_profile(name: &str) -> Result<ModelProfile, StoreError> {
+    pub fn get_model_profile(name: &str) -> Result<ModelProfile, SqlgenError> {
         let query = "SELECT model_name, config::text as config, generate_prompt, filter_prompt FROM sqlgen.get_model($1)";
         let result = Spi::connect(|client| {
             let row = client.select(query, None, &[name.into()])?;
 
             if row.is_empty() {
-                return Err(StoreError::ModelDoesntExist(name.to_string()));
+                return Err(SqlgenError::ModelDoesntExist(name.to_string()));
             }
 
             Ok(ModelProfile::from_row(row)?)
@@ -48,7 +48,7 @@ impl ModelStore {
         name: &str,
         schema: &str,
         config_str: &str,
-    ) -> Result<ModelProfile, StoreError> {
+    ) -> Result<ModelProfile, SqlgenError> {
         let config: ModelConfig = from_str(config_str)?;
         let profile = ModelProfile {
             name: name.to_string(),
@@ -61,7 +61,7 @@ impl ModelStore {
         Ok(profile)
     }
 
-    pub fn delete_model_profile(name: &str) -> Result<(), StoreError> {
+    pub fn delete_model_profile(name: &str) -> Result<(), SqlgenError> {
         Self::get_model_profile(name)?;
 
         let query = "SELECT model_name, driver_name, config::text FROM sqlgen.get_model($1)";
@@ -73,7 +73,7 @@ impl ModelStore {
 
     pub fn get_text_encoder_model(
         model_name: &str,
-    ) -> Result<Box<dyn TextEncoderDriver>, StoreError> {
+    ) -> Result<Box<dyn TextEncoderDriver>, SqlgenError> {
         let profile = Self::get_model_profile(model_name)?;
 
         Ok(profile.get_text_encoder_model()?)
@@ -81,7 +81,7 @@ impl ModelStore {
 
     pub fn get_text_instruct_model(
         model_name: &str,
-    ) -> Result<Box<dyn TextInstructDriver>, StoreError> {
+    ) -> Result<Box<dyn TextInstructDriver>, SqlgenError> {
         let profile = Self::get_model_profile(model_name)?;
 
         Ok(profile.get_text_instruct_model()?)

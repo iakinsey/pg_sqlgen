@@ -3,18 +3,18 @@ use candle_core::{
     Device,
 };
 
-use crate::types::errors::ModelDriverError;
+use crate::types::errors::SqlgenError;
 
-pub fn get_device(compute_device: &str) -> Result<Device, ModelDriverError> {
+pub fn get_device(compute_device: &str) -> Result<Device, SqlgenError> {
     match compute_device {
         "cpu" => Ok(Device::Cpu),
         "cuda" => {
-            Ok(Device::new_cuda(0).map_err(|e| ModelDriverError::DeviceError(e.to_string()))?)
+            Ok(Device::new_cuda(0).map_err(|e| SqlgenError::DeviceError(e.to_string()))?)
         }
         "metal" => {
-            Ok(Device::new_metal(0).map_err(|e| ModelDriverError::DeviceError(e.to_string()))?)
+            Ok(Device::new_metal(0).map_err(|e| SqlgenError::DeviceError(e.to_string()))?)
         }
-        _ => Err(ModelDriverError::UnknownDevice(compute_device.to_string())),
+        _ => Err(SqlgenError::UnknownDevice(compute_device.to_string())),
     }
 }
 

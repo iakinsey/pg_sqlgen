@@ -12,7 +12,7 @@ use tokenizers::Tokenizer;
 
 use crate::{
     types::{
-        errors::ModelDriverError,
+        errors::SqlgenError,
         structs::profiles::LocalBertConfig,
         traits::driver::{ModelDriver, TextEncoderDriver},
     },
@@ -33,7 +33,7 @@ impl ModelDriver for LocalBertDriver {
 }
 
 impl LocalBertDriver {
-    pub fn new(bert_config: &LocalBertConfig) -> Result<Self, ModelDriverError> {
+    pub fn new(bert_config: &LocalBertConfig) -> Result<Self, SqlgenError> {
         let device = get_device(&bert_config.compute_device)?;
         let repo = Repo::with_revision(
             bert_config.model_name.clone(),
@@ -62,19 +62,19 @@ impl LocalBertDriver {
 
 #[async_trait]
 impl TextEncoderDriver for LocalBertDriver {
-    async fn dimensions(&self) -> Result<usize, ModelDriverError> {
+    async fn dimensions(&self) -> Result<usize, SqlgenError> {
         Ok(self.hidden_size)
     }
 
-    async fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
+    async fn encode(&self, input: &str) -> Result<Vec<f32>, SqlgenError> {
         self.encode_many(&[input]).await.and_then(|mut results| {
             results
                 .pop()
-                .ok_or_else(|| ModelDriverError::EncodeError("no output".into()))
+                .ok_or_else(|| SqlgenError::EncodeError("no output".into()))
         })
     }
 
-    async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
+    async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, SqlgenError> {
         // Largely ripped from https://github.com/huggingface/candle/blob/main/candle-examples/examples/bert/main.rs
         let mut results = Vec::with_capacity(inputs.len());
         let mut non_empty_inputs = Vec::new();
@@ -101,7 +101,7 @@ impl TextEncoderDriver for LocalBertDriver {
                 token_ids.push(ids_tensor);
                 attention_mask.push(attn_tensor);
 
-                Ok::<(Vec<Tensor>, Vec<Tensor>), ModelDriverError>((token_ids, attention_mask))
+                Ok::<(Vec<Tensor>, Vec<Tensor>), SqlgenError>((token_ids, attention_mask))
             },
         )?;
 
@@ -115,10 +115,10 @@ impl TextEncoderDriver for LocalBertDriver {
         let embeddings = (embeddings.sum(1)? / (n_tokens as f64))?;
         let embeddings = l2_norm(&embeddings)?;
         let mut embed_vecs: Vec<Vec<f32>> = (0..non_empty_inputs.len())
-            .map(|i| -> Result<Vec<f32>, ModelDriverError> {
+            .map(|i| -> Result<Vec<f32>, SqlgenError> {
                 Ok(embeddings.get(i)?.to_vec1::<f32>()?)
             })
-            .collect::<Result<Vec<Vec<f32>>, ModelDriverError>>()?;
+            .collect::<Result<Vec<Vec<f32>>, SqlgenError>>()?;
 
         let mut ei = empty_indices.into_iter().peekable();
         for i in 0..inputs.len() {

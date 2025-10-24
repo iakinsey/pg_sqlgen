@@ -7,7 +7,7 @@ use tokio::runtime::Runtime;
 
 use crate::stores::engine_store::EngineStore;
 use crate::stores::model_store::ModelStore;
-use crate::types::errors::StoreError;
+use crate::types::errors::SqlgenError;
 use crate::types::structs::table_metadata::TableMetadata;
 use crate::utils::sql::get_column_heap;
 use crate::utils::sql::get_column_heap_optional;
@@ -45,7 +45,11 @@ fn internal_add_table(engine: &str, schema_name: &str, table_name: &str) {
     _internal_add_table(engine, schema_name, table_name).unwrap_or_else(|e| error!("{}", e));
 }
 
-fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(), StoreError> {
+fn _internal_add_table(
+    engine_name: &str,
+    schema: &str,
+    table: &str,
+) -> Result<(), SqlgenError> {
     let table_metadata_query = r#"
         SELECT
             a.attname AS column_name,
@@ -54,7 +58,7 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
                 || CASE WHEN a.attidentity IN ('a','d') AND coalesce(a.attgenerated,'') = '' THEN
                     ' GENERATED ' || CASE a.attidentity WHEN 'a' THEN 'ALWAYS' ELSE 'BY DEFAULT' END || ' AS IDENTITY'
                 ELSE '' END
-                || CASE WHEN a.attgenerated = 's' THEN
+                | CASE WHEN a.attgenerated = 's' THEN
                     ' GENERATED ALWAYS AS (' || pg_get_expr(ad.adbin, ad.adrelid) || ') STORED'
                 ELSE '' END
                 || CASE WHEN ad.adbin IS NOT NULL AND coalesce(a.attgenerated,'') = '' THEN
@@ -87,7 +91,7 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
         let rows = client.select(table_metadata_query, None, &[schema.into(), table.into()])?;
 
         if rows.is_empty() {
-            return Err(StoreError::TableDoesntExist(format!(
+            return Err(SqlgenError::TableDoesntExist(format!(
                 "{}.{}",
                 schema, table
             )));
@@ -125,14 +129,14 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
                 map.insert(*i, v);
             }
 
-            Ok::<(Vec<Vec<f32>>, HashMap<usize, Vec<f32>>), StoreError>((d, map))
+            Ok::<(Vec<Vec<f32>>, HashMap<usize, Vec<f32>>), SqlgenError>((d, map))
         })?;
 
     let mut table_metadata: Vec<TableMetadata> = Vec::new();
 
     for (i, (column_name, ddl, comment)) in metadata.iter().enumerate() {
         let ddl_vector = ddl_encodings.get(i).cloned().ok_or_else(|| {
-            StoreError::EncodingError(
+            SqlgenError::EncodingError(
                 engine_name.to_string(),
                 schema.to_string(),
                 table.to_string(),
@@ -205,7 +209,7 @@ mod tests {
     use crate::pg_test;
 
     #[pg_test]
-    fn test_internal_decode_text() {
+    fn test_add_table() {
         unimplemented!()
     }
 }

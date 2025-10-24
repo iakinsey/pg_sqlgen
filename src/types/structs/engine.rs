@@ -1,7 +1,7 @@
 use pgrx::{spi::SpiTupleTable, PostgresEnum};
 
 use crate::{
-    types::errors::ModelDriverError,
+    types::errors::SqlgenError,
     utils::sql::{get_column, get_column_optional},
 };
 
@@ -18,11 +18,11 @@ pub enum TableFilterType {
 }
 
 impl TableFilterType {
-    pub fn from_str(val: &str) -> Result<Self, ModelDriverError> {
+    pub fn from_str(val: &str) -> Result<Self, SqlgenError> {
         match val {
             "quick" => Ok(Self::Quick),
             "smart" => Ok(Self::Smart),
-            _ => Err(ModelDriverError::ParseError(format!(
+            _ => Err(SqlgenError::ParseError(format!(
                 "unable to parse filter type: {}",
                 val
             ))),
@@ -52,7 +52,7 @@ pub struct TextToSqlEngine {
 }
 
 impl TextToSqlEngine {
-    pub fn from_row(row: SpiTupleTable) -> Result<Self, ModelDriverError> {
+    pub fn from_row(row: SpiTupleTable) -> Result<Self, SqlgenError> {
         let system_prompt_template: String =
             match get_column_optional(&row, "system_prompt_template")? {
                 Some(v) => v,

@@ -1,7 +1,7 @@
 use crate::{
     stores::{metadata_store::MetadataStore, model_store::ModelStore},
     types::{
-        errors::StoreError,
+        errors::SqlgenError,
         structs::{
             engine::{TableFilterType, TextToSqlEngine},
             instruct_message::{InstructMessage, InstructRole},
@@ -36,7 +36,7 @@ pub static FILTER_DDL_TEMPLATE_KEY: &str = "filter_ddls";
 
 // TODO allow for segmenting multiple queries
 impl DDLFilterRunner {
-    pub fn new(engine: TextToSqlEngine) -> Result<Self, StoreError> {
+    pub fn new(engine: TextToSqlEngine) -> Result<Self, SqlgenError> {
         let mut tera = Tera::default();
 
         tera.add_raw_template(FILTER_DDL_TEMPLATE_KEY, &engine.filter_ddls_template)?;
@@ -60,7 +60,7 @@ impl DDLFilterRunner {
         })
     }
 
-    pub async fn generate(&mut self, user_query: &str) -> Result<Vec<String>, StoreError> {
+    pub async fn generate(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
         match self.engine.filter_type {
             TableFilterType::Quick => self.generate_quick(user_query).await,
             TableFilterType::Smart => self.generate_smart(user_query).await,
@@ -69,7 +69,7 @@ impl DDLFilterRunner {
 
     // TODO start with this next
     // TODO integrate runners with api module
-    async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, StoreError> {
+    async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
         let mut prompt_ctx = Context::new();
         let relevant_ddls = MetadataStore::get_ddls(&self.engine.name)?;
 
@@ -77,7 +77,7 @@ impl DDLFilterRunner {
         prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &relevant_ddls);
 
         let prompt = self.tera.render(FILTER_DDL_TEMPLATE_KEY, &prompt_ctx)?;
-        let model = self.instruct_model.as_deref_mut().ok_or(StoreError::Any(
+        let model = self.instruct_model.as_deref_mut().ok_or(SqlgenError::Any(
             "generate_smart called without model reference".to_string(),
         ))?;
 
@@ -94,8 +94,8 @@ impl DDLFilterRunner {
             .collect())
     }
 
-    async fn generate_quick(&mut self, user_query: &str) -> Result<Vec<String>, StoreError> {
-        let model = self.encoder_model.as_deref_mut().ok_or(StoreError::Any(
+    async fn generate_quick(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
+        let model = self.encoder_model.as_deref_mut().ok_or(SqlgenError::Any(
             "generate_quick called without model reference".to_string(),
         ))?;
         let encoding = model.encode(user_query).await?;

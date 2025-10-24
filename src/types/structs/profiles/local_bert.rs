@@ -1,5 +1,5 @@
 use crate::{
-    types::{errors::ModelDriverError, traits::driver::ModelDriver},
+    types::{errors::SqlgenError, traits::driver::ModelDriver},
     utils::model::default_compute_device,
 };
 use serde::{Deserialize, Serialize};

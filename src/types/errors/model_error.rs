@@ -1,10 +1,9 @@
 use hf_hub::api::sync::ApiError;
+use std::sync::PoisonError;
 use thiserror::Error;
 
-use crate::types::errors::UtilError;
-
 #[derive(Error, Debug)]
-pub enum ModelDriverError {
+pub enum SqlgenError {
     #[error("{0}")]
     Any(String),
     #[error("{0}")]
@@ -19,6 +18,28 @@ pub enum ModelDriverError {
     UnknownDevice(String),
     #[error("model encoding error: {0}")]
     EncodeError(String),
+    #[error("model doesn't exist: {0}")]
+    ModelDoesntExist(String),
+    #[error("failed to get encoding: {0} {1} {2}")]
+    EncodingError(String, String, String),
+    #[error("table doesn't exist: {0}")]
+    TableDoesntExist(String),
+    #[error("config value doesn't exist: {0}")]
+    ConfigDoesntExist(String),
+    #[error("mutex poisoned")]
+    Poisoned,
+    #[error("not found: {0}")]
+    NotFound(String),
+    #[error("no schema available")]
+    NoSchema(),
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error),
+    #[error(transparent)]
+    SpiError(#[from] pgrx::spi::Error),
+    #[error(transparent)]
+    TryFromIntError(#[from] std::num::TryFromIntError),
+    #[error(transparent)]
+    TeraError(#[from] tera::Error),
     #[error(transparent)]
     ApiError(#[from] ApiError),
     #[error(transparent)]
@@ -28,15 +49,17 @@ pub enum ModelDriverError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
-    SerdeJsonError(#[from] serde_json::Error),
-    #[error(transparent)]
-    UtilError(#[from] UtilError),
-    #[error(transparent)]
     DTypeParseError(#[from] candle_core::DTypeParseError),
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
+    #[error("{0}")]
+    ColumnParseFailed(String),
     #[error(transparent)]
-    SpiError(#[from] pgrx::spi::Error),
-    #[error(transparent)]
-    TeraError(#[from] tera::Error),
+    ParseIntError(#[from] std::num::ParseIntError),
+}
+
+impl<T> From<PoisonError<T>> for SqlgenError {
+    fn from(_: PoisonError<T>) -> Self {
+        SqlgenError::Poisoned
+    }
 }

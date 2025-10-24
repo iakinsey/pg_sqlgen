@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     drivers::{LocalBertDriver, OllamaDriver},
     types::{
-        errors::ModelDriverError,
+        errors::SqlgenError,
         structs::profiles::{LocalBertConfig, OllamaConfig},
         traits::driver::{TextEncoderDriver, TextInstructDriver},
     },
@@ -24,7 +24,7 @@ pub enum ModelConfig {
 }
 
 impl ModelProfile {
-    pub fn from_row(row: SpiTupleTable) -> Result<Self, ModelDriverError> {
+    pub fn from_row(row: SpiTupleTable) -> Result<Self, SqlgenError> {
         let name: String = get_column(&row, "name")?;
         let config_json: String = get_column(&row, "config")?;
         let config: ModelConfig = serde_json::from_str(&config_json)?;
@@ -39,7 +39,7 @@ impl ModelProfile {
         }
     }
 
-    pub fn get_text_encoder_model(&self) -> Result<Box<dyn TextEncoderDriver>, ModelDriverError> {
+    pub fn get_text_encoder_model(&self) -> Result<Box<dyn TextEncoderDriver>, SqlgenError> {
         let driver: Box<dyn TextEncoderDriver> = match &self.config {
             ModelConfig::LocalBert(cfg) => Box::new(LocalBertDriver::new(&cfg)?),
             ModelConfig::Ollama(cfg) => Box::new(OllamaDriver::new(cfg)?),
@@ -48,10 +48,10 @@ impl ModelProfile {
         Ok(driver)
     }
 
-    pub fn get_text_instruct_model(&self) -> Result<Box<dyn TextInstructDriver>, ModelDriverError> {
+    pub fn get_text_instruct_model(&self) -> Result<Box<dyn TextInstructDriver>, SqlgenError> {
         let driver: Box<dyn TextInstructDriver> = match &self.config {
             ModelConfig::Ollama(cfg) => Box::new(OllamaDriver::new(cfg)?),
-            _ => return Err(ModelDriverError::UnsupportedModelConfig(self.name.clone())),
+            _ => return Err(SqlgenError::UnsupportedModelConfig(self.name.clone())),
         };
 
         Ok(driver)

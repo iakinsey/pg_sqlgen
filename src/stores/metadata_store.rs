@@ -2,7 +2,7 @@ use pgrx::{pg_schema, spi::Query, PgBuiltInOids, PgOid, Spi};
 
 use crate::{
     types::{
-        errors::StoreError,
+        errors::SqlgenError,
         structs::table_metadata::{CrawlSchema, TableMetadata},
         traits::driver::TextEncoderDriver,
     },
@@ -17,7 +17,7 @@ impl MetadataStore {
         model_name: &str,
         schema: &str,
         encoder: Box<dyn TextEncoderDriver>,
-    ) -> Result<(), StoreError> {
+    ) -> Result<(), SqlgenError> {
         let query = "SELECT sqlgen_internal.initialize_metadata($1, $2, $3, $4);";
         let vector_size = i32::try_from(encoder.dimensions().await?)?;
 
@@ -40,11 +40,11 @@ impl MetadataStore {
         engine: &str,
         schema: &str,
         encoder: Box<dyn TextEncoderDriver>,
-    ) -> Result<(), StoreError> {
+    ) -> Result<(), SqlgenError> {
         let query =
             "SELECT table_name, column_name, ddl, comment FROM sqlgen_internal.crawl_schema($1);";
 
-        let schemas: Result<Vec<CrawlSchema>, StoreError> = Spi::connect(|client| {
+        let schemas: Result<Vec<CrawlSchema>, SqlgenError> = Spi::connect(|client| {
             let mut schemas: Vec<CrawlSchema> = Vec::new();
             let rows = client.select(query, None, &[schema.into()])?;
 
@@ -91,7 +91,7 @@ impl MetadataStore {
     pub fn add_to_metadata_table(
         engine: &str,
         metadatas: Vec<TableMetadata>,
-    ) -> Result<(), StoreError> {
+    ) -> Result<(), SqlgenError> {
         let query = format!(
             "
             INSERT INTO sqlgen_internal.db_metadata_{} (
@@ -136,7 +136,7 @@ impl MetadataStore {
         })
     }
 
-    pub fn remove_metadata(engine: &str, model_name: &str, schema: &str) -> Result<(), StoreError> {
+    pub fn remove_metadata(engine: &str, model_name: &str, schema: &str) -> Result<(), SqlgenError> {
         let query = "SELECT sqlgen_internal.remove_metadata($1, $2, $3);";
 
         Spi::run_with_args(query, &[engine.into(), model_name.into(), schema.into()])?;
@@ -148,7 +148,7 @@ impl MetadataStore {
         engine: &str,
         user_query: Vec<f32>,
         limit: i32,
-    ) -> Result<Vec<String>, StoreError> {
+    ) -> Result<Vec<String>, SqlgenError> {
         let query = "SELECT sqlgen_internal.get_similar_ddls($1, $2, $3::REAL[]::VECTOR) AS ddl;";
 
         Spi::connect(|client| {
@@ -170,7 +170,7 @@ impl MetadataStore {
         })
     }
 
-    pub fn get_ddls(engine: &str) -> Result<Vec<String>, StoreError> {
+    pub fn get_ddls(engine: &str) -> Result<Vec<String>, SqlgenError> {
         let query = "SELECT sqlgen_internal.get_ddls($1)";
 
         Spi::connect(|client| {

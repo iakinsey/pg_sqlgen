@@ -1,8 +1,8 @@
 use candle_core::Tensor;
 
-use crate::types::errors::UtilError;
+use crate::types::errors::SqlgenError;
 
-pub fn l2_norm(v: &Tensor) -> Result<Tensor, UtilError> {
+pub fn l2_norm(v: &Tensor) -> Result<Tensor, SqlgenError> {
     Ok(v.broadcast_div(&v.sqr()?.sum_keepdim(1)?.sqrt()?)?)
 }
 

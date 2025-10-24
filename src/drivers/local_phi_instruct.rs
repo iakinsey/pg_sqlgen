@@ -10,7 +10,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
 
-use crate::{types::{errors::ModelDriverError, structs::{instruct_message::{InstructMessage, InstructRole}, profiles::LocalPhiConfig}, traits::driver::TextInstructDriver}, utils::model::get_device};
+use crate::{types::{errors::SqlgenError, structs::{instruct_message::{InstructMessage, InstructRole}, profiles::LocalPhiConfig}, traits::driver::TextInstructDriver}, utils::model::get_device};
 
 
 pub struct LocalPhiInstructDriver {
@@ -28,7 +28,7 @@ fn write_string_to_file<P: AsRef<Path>>(path: P, contents: &str) -> io::Result<(
 }
 
 impl LocalPhiInstructDriver {
-    pub fn new(phi_config: LocalPhiConfig) -> Result<Self, ModelDriverError> {
+    pub fn new(phi_config: LocalPhiConfig) -> Result<Self, SqlgenError> {
         let self_config = phi_config.clone();
         let device = get_device(&phi_config.compute_device)?;
         let repo = Repo::with_revision(
@@ -55,7 +55,7 @@ impl LocalPhiInstructDriver {
         let var_builder = unsafe { VarBuilder::from_mmaped_safetensors(&weights_files, dtype, &device)? };
         let model = Model::new(&config, var_builder)?;
         let logits_processor = LogitsProcessor::new(phi_config.seed, phi_config.temperature, phi_config.top_p);
-        let eos_token = tokenizer.get_vocab(true).get("<|endoftext|>").copied().ok_or(ModelDriverError::Any("eos token does not exist".to_string()))?;
+        let eos_token = tokenizer.get_vocab(true).get("<|endoftext|>").copied().ok_or(SqlgenError::Any("eos token does not exist".to_string()))?;
         
         Ok(Self {
             model,
@@ -87,7 +87,7 @@ impl LocalPhiInstructDriver {
 }
 
 impl TextInstructDriver for LocalPhiInstructDriver {
-    async fn get_assistant_response(&mut self, messages: Vec<InstructMessage>) -> Result<String, ModelDriverError> {
+    async fn get_assistant_response(&mut self, messages: Vec<InstructMessage>) -> Result<String, SqlgenError> {
         let prompt = self.gen_prompt(messages);
         let tokens = self.tokenizer.encode(prompt, true)?.get_ids().to_vec();
         let mut pos = 0;

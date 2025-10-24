@@ -7,35 +7,35 @@ use pgrx::{
     FromDatum, IntoDatum, PgOid, Spi,
 };
 
-use crate::types::errors::UtilError;
+use crate::types::errors::SqlgenError;
 
 pub fn get_column<T: IntoDatum + FromDatum>(
     row: &SpiTupleTable,
     name: &str,
-) -> Result<T, UtilError> {
+) -> Result<T, SqlgenError> {
     row.get_by_name::<T, _>(name)?
-        .ok_or_else(|| UtilError::ColumnParseFailed(name.to_string()))
+        .ok_or_else(|| SqlgenError::ColumnParseFailed(name.to_string()))
 }
 
 pub fn get_column_optional<T: IntoDatum + FromDatum>(
     row: &SpiTupleTable,
     name: &str,
-) -> Result<Option<T>, UtilError> {
+) -> Result<Option<T>, SqlgenError> {
     Ok(row.get_by_name::<T, _>(name)?)
 }
 
 pub fn get_column_heap<T: IntoDatum + FromDatum>(
     row: &SpiHeapTupleData,
     name: &str,
-) -> Result<T, UtilError> {
+) -> Result<T, SqlgenError> {
     row.get_by_name::<T, _>(name)?
-        .ok_or_else(|| UtilError::ColumnParseFailed(name.to_string()))
+        .ok_or_else(|| SqlgenError::ColumnParseFailed(name.to_string()))
 }
 
 pub fn get_column_heap_optional<T: IntoDatum + FromDatum>(
     row: &SpiHeapTupleData,
     name: &str,
-) -> Result<Option<T>, UtilError> {
+) -> Result<Option<T>, SqlgenError> {
     Ok(row.get_by_name::<T, _>(name)?)
 }
 
@@ -43,7 +43,7 @@ lazy_static! {
     pub static ref OID_MAP: Mutex<HashMap<String, PgOid>> = Mutex::new(HashMap::new());
 }
 
-pub fn get_oid(name: &str) -> Result<PgOid, UtilError> {
+pub fn get_oid(name: &str) -> Result<PgOid, SqlgenError> {
     let mut map = OID_MAP.lock()?;
     let oid = map.get(name).copied();
 
@@ -57,7 +57,7 @@ pub fn get_oid(name: &str) -> Result<PgOid, UtilError> {
         let row = client.select(query, Some(1), &[name.into()])?;
 
         if row.is_empty() {
-            return Err(UtilError::NotFound(name.to_string()));
+            return Err(SqlgenError::NotFound(name.to_string()));
         }
 
         let result: String = get_column(&row, "oid")?;
@@ -70,9 +70,9 @@ pub fn get_oid(name: &str) -> Result<PgOid, UtilError> {
     })
 }
 
-pub fn get_current_schema() -> Result<String, UtilError> {
+pub fn get_current_schema() -> Result<String, SqlgenError> {
     match Spi::get_one::<String>("SELECT current_schema()")? {
         Some(v) => Ok(v),
-        None => Err(UtilError::NoSchema()),
+        None => Err(SqlgenError::NoSchema()),
     }
 }

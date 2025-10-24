@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string, Value};
 
 use crate::types::{
-    errors::ModelDriverError,
+    errors::SqlgenError,
     structs::{instruct_message::InstructMessage, profiles::OllamaConfig},
     traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
 };
@@ -45,7 +45,7 @@ pub struct OllamaEmbeddingsResponse {
 }
 
 impl OllamaDriver {
-    pub fn new(config: &OllamaConfig) -> Result<Self, ModelDriverError> {
+    pub fn new(config: &OllamaConfig) -> Result<Self, SqlgenError> {
         Ok(Self {
             config: config.clone(),
             messages: Vec::new(),
@@ -53,7 +53,7 @@ impl OllamaDriver {
         })
     }
 
-    fn get_encode_body(&self, input: &str) -> Result<String, ModelDriverError> {
+    fn get_encode_body(&self, input: &str) -> Result<String, SqlgenError> {
         let message = EmbeddingsBody {
             model: self.config.model_name.clone(),
             prompt: input.to_string(),
@@ -64,7 +64,7 @@ impl OllamaDriver {
         Ok(json)
     }
 
-    fn get_chat_body(&self) -> Result<String, ModelDriverError> {
+    fn get_chat_body(&self) -> Result<String, SqlgenError> {
         let messages: Vec<ChatMessage> = self
             .messages
             .iter()
@@ -109,11 +109,11 @@ impl ModelDriver for OllamaDriver {
 
 #[async_trait]
 impl TextEncoderDriver for OllamaDriver {
-    async fn dimensions(&self) -> Result<usize, ModelDriverError> {
+    async fn dimensions(&self) -> Result<usize, SqlgenError> {
         Ok(self.encode("a").await?.len())
     }
 
-    async fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError> {
+    async fn encode(&self, input: &str) -> Result<Vec<f32>, SqlgenError> {
         if input == "" {
             return Ok(vec![]);
         }
@@ -125,7 +125,7 @@ impl TextEncoderDriver for OllamaDriver {
         let text = resp.text().await?;
 
         if !status.is_success() {
-            return Err(ModelDriverError::ResponseError(format!(
+            return Err(SqlgenError::ResponseError(format!(
                 "HTTP {}: {}",
                 status, text
             )));
@@ -133,14 +133,14 @@ impl TextEncoderDriver for OllamaDriver {
 
         match from_str::<OllamaEmbeddingsResponse>(&text) {
             Ok(response) => Ok(response.embedding),
-            Err(_) => Err(ModelDriverError::ResponseError(format!(
+            Err(_) => Err(SqlgenError::ResponseError(format!(
                 "HTTP {}, failed to parse: {}",
                 status, text
             ))),
         }
     }
 
-    async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError> {
+    async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, SqlgenError> {
         // TODO
         unimplemented!()
     }
@@ -151,7 +151,7 @@ impl TextInstructDriver for OllamaDriver {
     async fn get_assistant_response(
         &mut self,
         messages: Vec<InstructMessage>,
-    ) -> Result<String, ModelDriverError> {
+    ) -> Result<String, SqlgenError> {
         self.messages.extend(messages);
 
         let url = self.get_request_url("chat");
@@ -161,7 +161,7 @@ impl TextInstructDriver for OllamaDriver {
         let text = resp.text().await?;
 
         if !status.is_success() {
-            return Err(ModelDriverError::ResponseError(format!(
+            return Err(SqlgenError::ResponseError(format!(
                 "HTTP {}: {}",
                 status, text
             )));
@@ -169,7 +169,7 @@ impl TextInstructDriver for OllamaDriver {
 
         match from_str::<OllamaChatResponse>(&text) {
             Ok(response) => Ok(response.message.content),
-            Err(_) => Err(ModelDriverError::ResponseError(format!(
+            Err(_) => Err(SqlgenError::ResponseError(format!(
                 "HTTP {}, failed to parse: {}",
                 status, text
             ))),

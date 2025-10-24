@@ -1,7 +1,7 @@
 use pgrx::spi::SpiHeapTupleData;
 
 use crate::{
-    types::errors::ModelDriverError,
+    types::errors::SqlgenError,
     utils::sql::{get_column_heap, get_column_heap_optional},
 };
 
@@ -23,7 +23,7 @@ pub struct CrawlSchema {
 }
 
 impl CrawlSchema {
-    pub fn from_row(row: SpiHeapTupleData) -> Result<Self, ModelDriverError> {
+    pub fn from_row(row: SpiHeapTupleData) -> Result<Self, SqlgenError> {
         let table_name: String = get_column_heap(&row, "table_name")?;
         let column_name: String = get_column_heap(&row, "column_name")?;
         let ddl: String = get_column_heap(&row, "ddl")?;

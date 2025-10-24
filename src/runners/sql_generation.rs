@@ -1,7 +1,7 @@
 use crate::{
     stores::model_store::ModelStore,
     types::{
-        errors::{ModelDriverError, StoreError},
+        errors::SqlgenError,
         structs::{
             engine::TextToSqlEngine,
             instruct_message::{InstructMessage, InstructRole},
@@ -70,7 +70,7 @@ pub static RELEVANT_DDLS_BLOCK_KEY: &str = "relevant_ddls_block";
 pub static SIMILAR_QUERIES_BLOCK_KEY: &str = "similar_queries_block";
 
 impl SQLGenerationRunner {
-    pub fn new(engine: TextToSqlEngine) -> Result<Self, StoreError> {
+    pub fn new(engine: TextToSqlEngine) -> Result<Self, SqlgenError> {
         let mut tera = Tera::default();
 
         tera.add_raw_template(SYSTEM_PROMPT_TEMPLATE_KEY, &engine.system_prompt_template)?;
@@ -100,7 +100,7 @@ impl SQLGenerationRunner {
         user_query: &str,
         relevant_ddls: Vec<&str>,
         similar_queries: Vec<&str>,
-    ) -> Result<String, ModelDriverError> {
+    ) -> Result<String, SqlgenError> {
         // Render relevant tables block
         let relevant_tables_block = match relevant_ddls.is_empty() {
             true => "".to_string(),

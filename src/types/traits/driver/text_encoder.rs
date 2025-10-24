@@ -1,10 +1,10 @@
 use async_trait::async_trait;
 
-use crate::types::errors::ModelDriverError;
+use crate::types::errors::SqlgenError;
 
 #[async_trait]
 pub trait TextEncoderDriver: Send + Sync {
-    async fn dimensions(&self) -> Result<usize, ModelDriverError>;
-    async fn encode(&self, input: &str) -> Result<Vec<f32>, ModelDriverError>;
-    async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, ModelDriverError>;
+    async fn dimensions(&self) -> Result<usize, SqlgenError>;
+    async fn encode(&self, input: &str) -> Result<Vec<f32>, SqlgenError>;
+    async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, SqlgenError>;
 }
