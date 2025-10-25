@@ -2,6 +2,7 @@ use pgrx::prelude::*;
 use tokio::runtime::Runtime;
 
 use crate::{
+    drivers::get_model_descriptions,
     runners::{ddl_filter::DDLFilterRunner, sql_generation::SQLGenerationRunner},
     stores::{
         config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
@@ -14,8 +15,15 @@ use crate::{
 };
 
 #[pg_extern]
-fn get_descriptions() {
-    unimplemented!()
+fn get_descriptions() -> TableIterator<
+    'static,
+    (
+        name!(id, &'static str),
+        name!(name, &'static str),
+        name!(description, &'static str),
+    ),
+> {
+    TableIterator::new(get_model_descriptions().into_iter())
 }
 
 #[pg_extern]
