@@ -14,22 +14,6 @@ pub struct ModelStore {}
 
 // TODO add get_model_capabilities, provide a way to check if a model could be instruct/encoder/etc
 impl ModelStore {
-    pub fn get_model_descriptions() -> Vec<(&'static str, &'static str, &'static str)> {
-        vec![
-            (
-                LocalBertDriver::ID,
-                LocalBertDriver::NAME,
-                LocalBertDriver::DESCRIPTION,
-            ),
-            (
-                OllamaDriver::ID,
-                OllamaDriver::NAME,
-                OllamaDriver::DESCRIPTION,
-            ),
-            (StubDriver::ID, StubDriver::NAME, StubDriver::DESCRIPTION),
-        ]
-    }
-
     pub fn get_model_profile(name: &str) -> Result<ModelProfile, SqlgenError> {
         let query = "SELECT model_name, config::text as config, generate_prompt, filter_prompt FROM sqlgen.get_model($1)";
         let result = Spi::connect(|client| {
