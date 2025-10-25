@@ -20,13 +20,13 @@ CREATE OR REPLACE VIEW sqlgen.config AS
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_config_value(k TEXT)
-RETURNS sqlgen_internal.config
+RETURNS TEXT
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    result sqlgen_internal.config
+    result TEXT;
 BEGIN
-    SELECT * INTO result
+    SELECT "value" INTO result
     FROM sqlgen_internal.config
     WHERE key = k;
 
