@@ -125,14 +125,4 @@ mod tests {
         )
         .unwrap();
     }
-
-    #[pg_test]
-    fn test_create_engine_no_instruct_model() {
-        unimplemented!()
-    }
-
-    #[pg_test]
-    fn test_create_engine_no_encoder_model() {
-        unimplemented!()
-    }
 }
