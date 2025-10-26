@@ -12,12 +12,12 @@ impl EngineStore {
         schema_name: &str,
         encoder_model: &str,
         instruct_model: &str,
+        table_filter_type: &str,
         system_prompt_template: Option<&str>,
         user_prompt_template: Option<&str>,
         relevant_tables_template: Option<&str>,
         similar_queries_template: Option<&str>,
         filter_prompt_template: Option<&str>,
-        table_filter_type: &str,
     ) -> Result<(), SqlgenError> {
         Spi::run_with_args(
             "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
@@ -26,12 +26,12 @@ impl EngineStore {
                 schema_name.into(),
                 encoder_model.into(),
                 instruct_model.into(),
+                table_filter_type.into(),
                 system_prompt_template.into(),
                 user_prompt_template.into(),
                 relevant_tables_template.into(),
                 similar_queries_template.into(),
                 filter_prompt_template.into(),
-                table_filter_type.into(),
             ],
         )?;
 
@@ -67,13 +67,72 @@ impl EngineStore {
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
 mod tests {
-    use pgrx::{pg_schema, Spi};
+    use std::net;
 
-    use crate::pg_test;
+    use pgrx::{pg_schema, Spi};
+    use serde_json::{from_str, to_string};
+
+    use crate::{
+        pg_test,
+        stores::engine_store::EngineStore,
+        types::structs::{
+            model_profile::{ModelConfig, ModelProfile},
+            profiles::StubConfig,
+        },
+    };
 
     #[pg_test]
     fn test_engine_crud() {
-        // TODO test
+        let name = "test_engine_name";
+        let schema_name = "test_schema_name";
+        let table_filter_type = "smart";
+        let encoder_model_name = "test_encoder_model_name";
+        let instruct_model_name = "test_instruct_model_name";
+        let expected_instruct_output = "expected_instruct_output";
+        let expected_encoding_output = vec![0.0, 0.1, 0.2, 0.3];
+        let config = StubConfig {
+            instruct_output: expected_instruct_output.to_string(),
+            encode_output: expected_encoding_output,
+        };
+        let encoder_profile = ModelConfig::Stub(config.clone());
+        let instruct_profile = ModelConfig::Stub(config);
+        let encoder_profile_json = to_string(&encoder_profile).unwrap();
+        let instruct_profile_json = to_string(&instruct_profile).unwrap();
+
+        Spi::run_with_args(
+            "SELECT sqlgen.create_model($1, $2::JSONB);",
+            &[encoder_model_name.into(), encoder_profile_json.into()],
+        )
+        .unwrap();
+
+        Spi::run_with_args(
+            "SELECT sqlgen.create_model($1, $2::JSONB);",
+            &[instruct_model_name.into(), instruct_profile_json.into()],
+        )
+        .unwrap();
+
+        EngineStore::create_engine(
+            name,
+            schema_name,
+            encoder_model_name,
+            instruct_model_name,
+            table_filter_type,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+    }
+
+    #[pg_test]
+    fn test_create_engine_no_instruct_model() {
+        unimplemented!()
+    }
+
+    #[pg_test]
+    fn test_create_engine_no_encoder_model() {
         unimplemented!()
     }
 }

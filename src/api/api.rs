@@ -79,12 +79,12 @@ fn create_engine(
     instruct_model: &str,
     encoder_model: &str,
     schema_name: Option<&str>,
+    table_filter_type: Option<TableFilterType>,
     system_prompt_template: Option<&str>,
     user_prompt_template: Option<&str>,
     relevant_ddls_template: Option<&str>,
     similar_queries_template: Option<&str>,
     filter_prompt_template: Option<&str>,
-    table_filter_type: Option<TableFilterType>,
 ) {
     let schema_name = match schema_name {
         Some(s) => s.to_string(),
@@ -105,12 +105,12 @@ fn create_engine(
         &schema_name,
         encoder_model,
         instruct_model,
+        table_filter_type.to_str(),
         system_prompt_template,
         user_prompt_template,
         relevant_ddls_template,
         similar_queries_template,
         filter_prompt_template,
-        table_filter_type.to_str(),
     )
     .unwrap_or_else(|e| error!("{}", e));
 
@@ -131,3 +131,5 @@ fn remove_engine(name: &str) {
         .unwrap_or_else(|e| error!("{}", e));
     EngineStore::remove_engine(name).unwrap_or_else(|e| error!("{}", e));
 }
+
+// TODO test each function

@@ -43,12 +43,12 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_engine(
     schema_name TEXT,
     encoder_model TEXT,
     instruct_model TEXT,
+    table_filter_type TEXT DEFAULT 'smart',
     system_prompt_template TEXT DEFAULT NULL,
     user_prompt_template TEXT DEFAULT NULL,
     relevant_ddls_template TEXT DEFAULT NULL,
     similar_queries_template TEXT DEFAULT NULL,
-    filter_prompt_template TEXT DEFAULT NULL,
-    table_filter_type TEXT DEFAULT 'smart'
+    filter_prompt_template TEXT DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
