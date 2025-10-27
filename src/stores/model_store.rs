@@ -15,7 +15,7 @@ pub struct ModelStore {}
 // TODO add get_model_capabilities, provide a way to check if a model could be instruct/encoder/etc
 impl ModelStore {
     pub fn get_model_profile(name: &str) -> Result<ModelProfile, SqlgenError> {
-        let query = "SELECT model_name, config::text as config, generate_prompt, filter_prompt FROM sqlgen.get_model($1)";
+        let query = "SELECT model_name, config::TEXT AS config FROM sqlgen.get_model($1)";
         let result = Spi::connect(|client| {
             let row = client.select(query, None, &[name.into()])?;
 

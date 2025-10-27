@@ -19,7 +19,7 @@ FROM sqlgen_internal.model_profile;
 --------------------------------------------------------------------------------
 -- Get model profile
 --------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION sqlgen.get_model(model_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen.get_model(n TEXT)
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql 
 STRICT
@@ -30,7 +30,7 @@ BEGIN
     SELECT *
     INTO r
     FROM sqlgen_internal.model_profile mp
-    WHERE mp.model_name = model_name;
+    WHERE mp.model_name = n;
     RETURN r;
 END;
 $$;
