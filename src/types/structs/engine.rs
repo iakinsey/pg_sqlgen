@@ -10,6 +10,7 @@ pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = "TODO";
 pub static DEFAULT_RELEVANT_TABLES_TEMPLATE: &str = "TODO";
 pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = "TODO";
 pub static DEFAULT_FILTER_DDLS_TEMPLATE: &str = "TODO";
+pub static DEFAULT_FILTER_PROMPT_TEMPLATE: &str = "TODO";
 
 #[derive(PostgresEnum, Eq, PartialEq, Clone)]
 pub enum TableFilterType {
@@ -58,7 +59,8 @@ impl TextToSqlEngine {
                 Some(v) => v,
                 None => DEFAULT_SYSTEM_PROMPT_TEMPLATE.to_string(),
             };
-        let user_prompt_template: String = match get_column_optional(&row, "user_prompt_tempate")? {
+        let user_prompt_template: String = match get_column_optional(&row, "user_prompt_template")?
+        {
             Some(v) => v,
             None => DEFAULT_USER_PROMPT_TEMPLATE.to_string(),
         };
@@ -72,17 +74,17 @@ impl TextToSqlEngine {
                 Some(v) => v,
                 None => DEFAULT_SIMILAR_QUERIES_TEMPLATE.to_string(),
             };
-        let filter_tables_template: String =
-            match get_column_optional(&row, "filter_ddls_template")? {
-                Some(v) => v,
-                None => DEFAULT_FILTER_DDLS_TEMPLATE.to_string(),
-            };
+        let filter_ddls_template: String = match get_column_optional(&row, "filter_ddls_template")?
+        {
+            Some(v) => v,
+            None => DEFAULT_FILTER_DDLS_TEMPLATE.to_string(),
+        };
 
-        let name = get_column(&row, "name")?;
+        let name = get_column(&row, "engine_name")?;
         let schema_name = get_column(&row, "schema_name")?;
         let encoder_model = get_column(&row, "encoder_model")?;
         let instruct_model = get_column(&row, "instruct_model")?;
-        let filter_type_str = get_column(&row, "filter_type")?;
+        let filter_type_str = get_column(&row, "table_filter_type")?;
         let filter_type = TableFilterType::from_str(filter_type_str)?;
 
         Ok(Self {
@@ -94,7 +96,7 @@ impl TextToSqlEngine {
             user_prompt_template,
             relevant_ddls_template,
             similar_queries_template,
-            filter_ddls_template: filter_tables_template,
+            filter_ddls_template,
             filter_type,
         })
     }

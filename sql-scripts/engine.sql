@@ -11,7 +11,7 @@ CREATE TABLE sqlgen_internal.engine (
     user_prompt_template TEXT,
     relevant_ddls_template TEXT,
     similar_queries_template TEXT,
-    filter_prompt_template TEXT,
+    filter_ddls_template TEXT,
     table_filter_type TEXT,
     CONSTRAINT fk_encoder_model
         FOREIGN KEY (encoder_model)
@@ -48,7 +48,7 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_engine(
     user_prompt_template TEXT DEFAULT NULL,
     relevant_ddls_template TEXT DEFAULT NULL,
     similar_queries_template TEXT DEFAULT NULL,
-    filter_prompt_template TEXT DEFAULT NULL
+    filter_ddls_template TEXT DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -63,7 +63,7 @@ BEGIN
         user_prompt_template,
         relevant_ddls_template,
         similar_queries_template,
-        filter_prompt_template,
+        filter_ddls_template,
         table_filter_type
     ) VALUES (
         engine_name,
@@ -74,7 +74,7 @@ BEGIN
         user_prompt_template,
         relevant_ddls_template,
         similar_queries_template,
-        filter_prompt_template,
+        filter_ddls_template,
         table_filter_type
     );
 EXCEPTION
@@ -111,7 +111,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_engine(TEXT) FROM public;
 -- Get engine
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.get_engine(engine_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.get_engine(n TEXT)
 RETURNS sqlgen_internal.engine
 LANGUAGE plpgsql
 AS $$
@@ -121,10 +121,10 @@ BEGIN
     SELECT *
     INTO r
     FROM sqlgen_internal.engine e
-    WHERE e.engine_name = engine_name;
+    WHERE e.engine_name = n;
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'Engine "%" does not exist', engine_name
+        RAISE EXCEPTION 'Engine "%" does not exist', n
             USING ERRCODE = 'P0002';
     END IF;
 

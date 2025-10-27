@@ -17,10 +17,10 @@ impl EngineStore {
         user_prompt_template: Option<&str>,
         relevant_tables_template: Option<&str>,
         similar_queries_template: Option<&str>,
-        filter_prompt_template: Option<&str>,
+        filter_ddls_template: Option<&str>,
     ) -> Result<(), SqlgenError> {
         Spi::run_with_args(
-            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9)",
             &[
                 engine_name.into(),
                 schema_name.into(),
@@ -31,7 +31,7 @@ impl EngineStore {
                 user_prompt_template.into(),
                 relevant_tables_template.into(),
                 similar_queries_template.into(),
-                filter_prompt_template.into(),
+                filter_ddls_template.into(),
             ],
         )?;
 
@@ -48,7 +48,7 @@ impl EngineStore {
     }
 
     pub fn get_engine(engine_name: &str) -> Result<TextToSqlEngine, SqlgenError> {
-        let query = "SELECT sqlgen_internal.get_engine($1)";
+        let query = "SELECT (sqlgen_internal.get_engine($1)).*";
 
         let result = Spi::connect(|client| {
             let row = client.select(query, None, &[engine_name.into()])?;
@@ -57,7 +57,7 @@ impl EngineStore {
                 return Err(SqlgenError::ModelDoesntExist(engine_name.to_string()));
             }
 
-            Ok(TextToSqlEngine::from_row(row)?)
+            Ok(TextToSqlEngine::from_row(row.first())?)
         });
 
         Ok(result?)
@@ -124,5 +124,18 @@ mod tests {
             None,
         )
         .unwrap();
+
+        let engine = EngineStore::get_engine(name).unwrap();
+
+        assert_eq!(name, engine.name);
+        assert_eq!(schema_name, engine.schema_name);
+        assert_eq!(encoder_model_name, engine.encoder_model);
+        assert_eq!(instruct_model_name, engine.instruct_model);
+        assert_eq!(table_filter_type, engine.filter_type.to_str());
+    }
+
+    #[pg_test]
+    fn test_create_engine_model_doesnt_exist() {
+        assert!(true);
     }
 }

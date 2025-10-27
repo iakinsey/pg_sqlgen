@@ -84,7 +84,7 @@ fn create_engine(
     user_prompt_template: Option<&str>,
     relevant_ddls_template: Option<&str>,
     similar_queries_template: Option<&str>,
-    filter_prompt_template: Option<&str>,
+    filter_ddls_template: Option<&str>,
 ) {
     let schema_name = match schema_name {
         Some(s) => s.to_string(),
@@ -110,7 +110,7 @@ fn create_engine(
         user_prompt_template,
         relevant_ddls_template,
         similar_queries_template,
-        filter_prompt_template,
+        filter_ddls_template,
     )
     .unwrap_or_else(|e| error!("{}", e));
 
