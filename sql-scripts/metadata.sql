@@ -4,7 +4,6 @@
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.initialize_metadata(
     engine TEXT,
-    model_name TEXT,
     schema_name TEXT,
     vector_size INT
 )
@@ -13,11 +12,11 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   PERFORM sqlgen_internal.create_metadata_table(engine, schema_name, vector_size);
-  PERFORM sqlgen_internal.install_schema_triggers(engine, model_name, schema_name);
+  PERFORM sqlgen_internal.install_schema_triggers(engine, schema_name);
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, TEXT, INT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove metadata
@@ -25,15 +24,14 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, TEXT,
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata(
     engine TEXT,
-    model_name TEXT,
     schema_name TEXT
 )
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  PERFORM sqlgen_internal.remove_schema_triggers(engine, model_name, schema_name);
-  PERFORM sqlgen_internal.remove_metadata_table(engine, model_name, schema_name);
+  PERFORM sqlgen_internal.remove_schema_triggers(engine, schema_name);
+  PERFORM sqlgen_internal.remove_metadata_table(engine, schema_name);
 END
 $$;
 
@@ -124,7 +122,6 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_ddls(TEXT) FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(
     engine TEXT,
-    model_name TEXT,
     schema_name TEXT
 )
 RETURNS VOID
@@ -224,6 +221,7 @@ BEGIN
   );
 END
 $$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove metadata table
@@ -231,7 +229,6 @@ $$;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(
     engine TEXT,
-    model_name TEXT,
     schema_name TEXT
 )
 RETURNS VOID
@@ -247,7 +244,7 @@ BEGIN
   $fmt$, engine);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT, TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT, TEXT) FROM public;
 
 --------------------------------------------------------------------------------
 -- Crawl schema
@@ -338,7 +335,6 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_table(TEXT, TEXT, TEXT) FROM p
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(
     engine TEXT,
-    model_name TEXT,
     schema_name TEXT
 )
 RETURNS VOID
@@ -348,4 +344,4 @@ BEGIN
   -- TODO
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT) FROM public;
