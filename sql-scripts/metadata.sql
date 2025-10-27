@@ -35,7 +35,7 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata(TEXT, TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata FROM public;
 
 --------------------------------------------------------------------------------
 -- Create metadata table
@@ -68,7 +68,7 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table(TEXT, TEXT, INT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table FROM public;
 
 --------------------------------------------------------------------------------
 -- Get similar ddls
@@ -95,7 +95,7 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_similar_ddls(TEXT, VECTOR, INT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_similar_ddls FROM public;
 
 --------------------------------------------------------------------------------
 -- Get ddls
@@ -114,7 +114,7 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_ddls(TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_ddls FROM public;
 
 --------------------------------------------------------------------------------
 -- Install schema triggers
@@ -221,7 +221,7 @@ BEGIN
   );
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers(TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove metadata table
@@ -244,7 +244,7 @@ BEGIN
   $fmt$, engine);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table(TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table FROM public;
 
 --------------------------------------------------------------------------------
 -- Crawl schema
@@ -286,7 +286,7 @@ WHERE n.nspname = $1
   AND NOT a.attisdropped
 ORDER BY n.nspname, c.relname, a.attnum;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema(TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove table
@@ -308,7 +308,7 @@ BEGIN
   $fmt$, engine, schema_name, table_name);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_table(TEXT, TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_table FROM public;
 
 --------------------------------------------------------------------------------
 -- Update table
@@ -327,7 +327,7 @@ BEGIN
   EXECUTE sqlgen_internal.add_table(engine, schema_name, table_name);
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_table(TEXT, TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_table FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove schema triggers
@@ -344,4 +344,4 @@ BEGIN
   -- TODO
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers(TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers FROM public;

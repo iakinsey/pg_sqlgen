@@ -34,7 +34,7 @@ BEGIN
     RETURN r;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen.get_model(TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen.get_model FROM public;
 
 --------------------------------------------------------------------------------
 -- Create model profile
@@ -59,7 +59,7 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen.create_model(TEXT, JSONB) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen.create_model FROM public;
 
 --------------------------------------------------------------------------------
 -- Delete model profile
@@ -74,4 +74,4 @@ BEGIN
     WHERE mp.model_name = model_name;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen.delete_model(TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen.delete_model FROM public;

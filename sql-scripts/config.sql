@@ -33,7 +33,7 @@ BEGIN
     RETURN result;
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_config_value(TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_config_value FROM public;
 
 --------------------------------------------------------------------------------
 -- Set config
@@ -51,4 +51,4 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.set_config_value(TEXT, TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.set_config_value FROM public;

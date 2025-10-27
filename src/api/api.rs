@@ -117,7 +117,7 @@ fn create_engine(
     let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
 
     rt.block_on(async {
-        MetadataStore::initialize_metadata(name, encoder_model, &schema_name, encoder)
+        MetadataStore::initialize_metadata(name, &schema_name, encoder)
             .await
             .unwrap_or_else(|e| error!("{}", e));
     })

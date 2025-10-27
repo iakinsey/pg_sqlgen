@@ -79,9 +79,7 @@ BEGIN
     );
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_engine(
-    TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT
-) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_engine FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove engine
@@ -96,7 +94,7 @@ BEGIN
     WHERE e.engine_name = n;
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_engine(TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_engine FROM public;
 
 --------------------------------------------------------------------------------
 -- Get engine
@@ -117,7 +115,7 @@ BEGIN
     RETURN r;
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_engine(TEXT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_engine FROM public;
 
 --------------------------------------------------------------------------------
 -- List engines
@@ -133,4 +131,4 @@ BEGIN
     FROM sqlgen_internal.engine;
 END
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.list_engines() FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.list_engines FROM public;
