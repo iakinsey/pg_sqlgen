@@ -54,10 +54,11 @@ impl EngineStore {
             let row = client.select(query, None, &[engine_name.into()])?;
 
             if row.is_empty() {
-                return Err(SqlgenError::ModelDoesntExist(engine_name.to_string()));
+                return Err(SqlgenError::EngineDoesntExist(engine_name.to_string()));
             }
 
-            Ok(TextToSqlEngine::from_row(row.first())?)
+            Ok(TextToSqlEngine::from_row(row.first())
+                .map_err(|_| SqlgenError::EngineDoesntExist(engine_name.to_string()))?)
         });
 
         Ok(result?)
@@ -75,9 +76,12 @@ mod tests {
     use crate::{
         pg_test,
         stores::engine_store::EngineStore,
-        types::structs::{
-            model_profile::{ModelConfig, ModelProfile},
-            profiles::StubConfig,
+        types::{
+            errors::SqlgenError,
+            structs::{
+                model_profile::{ModelConfig, ModelProfile},
+                profiles::StubConfig,
+            },
         },
     };
 
@@ -132,6 +136,14 @@ mod tests {
         assert_eq!(encoder_model_name, engine.encoder_model);
         assert_eq!(instruct_model_name, engine.instruct_model);
         assert_eq!(table_filter_type, engine.filter_type.to_str());
+
+        EngineStore::remove_engine(name).unwrap();
+
+        match EngineStore::get_engine(name) {
+            Ok(_) => panic!("engine still exists after calling remove_engine"),
+            Err(SqlgenError::EngineDoesntExist(_)) => assert!(true),
+            Err(e) => panic!("{:?}", e),
+        }
     }
 
     #[pg_test]

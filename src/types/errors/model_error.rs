@@ -20,6 +20,8 @@ pub enum SqlgenError {
     EncodeError(String),
     #[error("model doesn't exist: {0}")]
     ModelDoesntExist(String),
+    #[error("engine doesn't exist: {0}")]
+    EngineDoesntExist(String),
     #[error("failed to get encoding: {0} {1} {2}")]
     EncodingError(String, String, String),
     #[error("table doesn't exist: {0}")]

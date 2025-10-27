@@ -77,10 +77,6 @@ BEGIN
         filter_ddls_template,
         table_filter_type
     );
-EXCEPTION
-    WHEN unique_violation THEN
-        RAISE EXCEPTION 'Engine "%" already exists', engine_name
-            USING ERRCODE = '23505';
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_engine(
@@ -91,18 +87,13 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_engine(
 -- Remove engine
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.remove_engine(engine_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_engine(n TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
     DELETE FROM sqlgen_internal.engine e
-    WHERE e.engine_name = engine_name;
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Engine "%" does not exist', engine_name
-            USING ERRCODE = 'P0002';
-    END IF;
+    WHERE e.engine_name = n;
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_engine(TEXT) FROM public;
@@ -122,11 +113,6 @@ BEGIN
     INTO r
     FROM sqlgen_internal.engine e
     WHERE e.engine_name = n;
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Engine "%" does not exist', n
-            USING ERRCODE = 'P0002';
-    END IF;
 
     RETURN r;
 END
