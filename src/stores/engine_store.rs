@@ -70,7 +70,7 @@ impl EngineStore {
 mod tests {
     use std::net;
 
-    use pgrx::{pg_schema, Spi};
+    use pgrx::{pg_schema, PgTryBuilder, Spi};
     use serde_json::{from_str, to_string};
 
     use crate::{
@@ -148,6 +148,28 @@ mod tests {
 
     #[pg_test]
     fn test_create_engine_model_doesnt_exist() {
-        assert!(true);
+        let name = "test_engine_name";
+        let schema_name = "test_schema_name";
+        let table_filter_type = "smart";
+        let encoder_model_name = "test_encoder_model_name";
+        let instruct_model_name = "test_instruct_model_name";
+        let result = PgTryBuilder::new(|| {
+            EngineStore::create_engine(
+                name,
+                schema_name,
+                encoder_model_name,
+                instruct_model_name,
+                table_filter_type,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+        })
+        .catch_others(|_| Err(SqlgenError::Any("test".to_string())))
+        .execute();
+
+        assert!(result.is_err())
     }
 }
