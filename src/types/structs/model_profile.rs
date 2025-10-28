@@ -26,7 +26,7 @@ pub enum ModelConfig {
 
 impl ModelProfile {
     pub fn from_row(row: SpiTupleTable) -> Result<Self, SqlgenError> {
-        let name: String = get_column(&row, "name")?;
+        let name: String = get_column(&row, "model_name")?;
         let config_json: String = get_column(&row, "config")?;
         let config: ModelConfig = serde_json::from_str(&config_json)?;
 

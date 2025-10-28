@@ -23,7 +23,7 @@ impl ModelStore {
                 return Err(SqlgenError::ModelDoesntExist(name.to_string()));
             }
 
-            Ok(ModelProfile::from_row(row)?)
+            Ok(ModelProfile::from_row(row.first())?)
         });
 
         Ok(result?)
@@ -45,7 +45,7 @@ impl ModelStore {
     pub fn delete_model_profile(name: &str) -> Result<(), SqlgenError> {
         Self::get_model_profile(name)?;
 
-        let query = "SELECT model_name, driver_name, config::text FROM sqlgen.get_model($1)";
+        let query = "SELECT sqlgen.delete_model($1)";
 
         Spi::run_with_args(query, &[name.into()])?;
 

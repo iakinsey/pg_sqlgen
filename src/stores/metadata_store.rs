@@ -22,8 +22,9 @@ impl MetadataStore {
 
         Spi::run_with_args(query, &[engine.into(), schema.into(), vector_size.into()])?;
 
-        Self::populate_metadata_table(engine, schema, encoder).await?;
-
+        /*
+        Self::populate_metadgenerate_promptata_table(engine, schema, encoder).await?;
+        */
         Ok(())
     }
 
