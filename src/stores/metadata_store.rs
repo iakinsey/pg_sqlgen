@@ -1,4 +1,4 @@
-use pgrx::{pg_schema, spi::Query, PgBuiltInOids, PgOid, Spi};
+use pgrx::{datum::WithTypeIds, pg_schema, spi::Query, IntoDatum, PgBuiltInOids, PgOid, Spi};
 
 use crate::{
     types::{
@@ -88,13 +88,12 @@ impl MetadataStore {
             "
             INSERT INTO sqlgen_internal.db_metadata_{} (
                 schema_name, table_name, column_name, ddl, comment, ddl_vector, comment_vector
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7);
+            ) VALUES ($1, $2, $3, $4, $5, $6::VECTOR, $7::VECTOR);
         ",
             engine
         );
 
         Spi::connect(|client| {
-            let vector_oid = get_oid("vector")?;
             let statement = &client.prepare(
                 &query,
                 &[
@@ -103,8 +102,8 @@ impl MetadataStore {
                     PgOid::from(PgBuiltInOids::TEXTOID),
                     PgOid::from(PgBuiltInOids::TEXTOID),
                     PgOid::from(PgBuiltInOids::TEXTOID),
-                    vector_oid,
-                    vector_oid,
+                    PgOid::from(PgBuiltInOids::FLOAT4ARRAYOID),
+                    PgOid::from(PgBuiltInOids::FLOAT4ARRAYOID),
                 ],
             )?;
 
