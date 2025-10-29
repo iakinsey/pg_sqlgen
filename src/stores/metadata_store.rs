@@ -22,9 +22,8 @@ impl MetadataStore {
 
         Spi::run_with_args(query, &[engine.into(), schema.into(), vector_size.into()])?;
 
-        /*
-        Self::populate_metadgenerate_promptata_table(engine, schema, encoder).await?;
-        */
+        Self::populate_metadata_table(engine, schema, encoder).await?;
+
         Ok(())
     }
 
@@ -40,6 +39,7 @@ impl MetadataStore {
             let mut schemas: Vec<CrawlSchema> = Vec::new();
             let rows = client.select(query, None, &[schema.into()])?;
 
+            // TODO start here next time
             for row in rows {
                 let crawl_schema = CrawlSchema::from_row(row)?;
 

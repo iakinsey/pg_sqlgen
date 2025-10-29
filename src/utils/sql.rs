@@ -60,7 +60,7 @@ pub fn get_oid(name: &str) -> Result<PgOid, SqlgenError> {
             return Err(SqlgenError::NotFound(name.to_string()));
         }
 
-        let result: String = get_column(&row, "oid")?;
+        let result: String = get_column(&row.first(), "oid")?;
         let int_val: u32 = result.parse()?;
         let oid = PgOid::from(Oid::from_u32(int_val));
 
