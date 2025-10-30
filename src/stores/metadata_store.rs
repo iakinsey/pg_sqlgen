@@ -1,4 +1,4 @@
-use pgrx::{datum::WithTypeIds, pg_schema, spi::Query, IntoDatum, PgBuiltInOids, PgOid, Spi};
+use pgrx::{pg_schema, spi::Query, PgBuiltInOids, PgOid, Spi};
 
 use crate::{
     types::{
@@ -6,7 +6,7 @@ use crate::{
         structs::table_metadata::{CrawlSchema, TableMetadata},
         traits::driver::TextEncoderDriver,
     },
-    utils::sql::{get_column_heap, get_oid},
+    utils::sql::get_column_heap,
 };
 
 pub struct MetadataStore {}
@@ -199,6 +199,7 @@ mod tests {
         types::structs::{
             engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig,
         },
+        utils::sql::get_column_heap,
     };
 
     fn create_engine(name: &str) -> TextToSqlEngine {
@@ -259,6 +260,12 @@ mod tests {
                     created_at TIMESTAMP DEFAULT NOW()
                 );
 
+                COMMENT ON COLUMN {name}.users.user_id IS 'Hello world';
+                COMMENT ON COLUMN {name}.users.username IS 'Hello world';
+                COMMENT ON COLUMN {name}.users.email IS 'Hello world';
+                COMMENT ON COLUMN {name}.users.created_at IS 'Hello world';
+
+
                 CREATE TABLE {name}.products (
                     product_id SERIAL PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -267,12 +274,25 @@ mod tests {
                     created_at TIMESTAMP DEFAULT NOW()
                 );
 
+                COMMENT ON COLUMN {name}.products.product_id IS 'Hello world';
+                COMMENT ON COLUMN {name}.products.name IS 'Hello world';
+                COMMENT ON COLUMN {name}.products.description IS 'Hello world';
+                COMMENT ON COLUMN {name}.products.price IS 'Hello world';
+                COMMENT ON COLUMN {name}.products.created_at IS 'Hello world';
+
+
                 CREATE TABLE {name}.orders (
                     order_id SERIAL PRIMARY KEY,
                     user_id INT NOT NULL REFERENCES {name}.users(user_id) ON DELETE CASCADE,
                     order_date TIMESTAMP DEFAULT NOW(),
                     total NUMERIC(10, 2) NOT NULL
                 );
+
+                COMMENT ON COLUMN {name}.orders.order_id IS 'Hello world';
+                COMMENT ON COLUMN {name}.orders.user_id IS 'Hello world';
+                COMMENT ON COLUMN {name}.orders.order_date IS 'Hello world';
+                COMMENT ON COLUMN {name}.orders.total IS 'Hello world';
+
 
                 CREATE TABLE {name}.order_items (
                     order_item_id SERIAL PRIMARY KEY,
@@ -281,6 +301,12 @@ mod tests {
                     quantity INT NOT NULL CHECK (quantity > 0),
                     price NUMERIC(10, 2) NOT NULL
                 );
+
+                COMMENT ON COLUMN {name}.order_items.order_item_id IS 'Hello world';
+                COMMENT ON COLUMN {name}.order_items.order_id IS 'Hello world';
+                COMMENT ON COLUMN {name}.order_items.product_id IS 'Hello world';
+                COMMENT ON COLUMN {name}.order_items.quantity IS 'Hello world';
+                COMMENT ON COLUMN {name}.order_items.price IS 'Hello world';
             "#,
                 name = name
             )
@@ -304,6 +330,44 @@ mod tests {
                 .await
                 .unwrap()
         });
+
+        let query = format!(
+            r#"
+            SELECT
+                schema_name,
+                comment,
+                ddl_vector::TEXT as ddl_vector,
+                comment_vector::TEXT as comment_vector
+            FROM sqlgen_internal.db_metadata_{};
+        "#,
+            engine_name
+        );
+
+        Spi::connect(|client| {
+            let rows = client.select(&query, None, &[]).unwrap();
+
+            if rows.is_empty() {
+                panic!("db metadata rows are empty")
+            }
+
+            let mut meta_count = 0;
+
+            for row in rows {
+                meta_count += 1;
+
+                let written_schema_name: String = get_column_heap(&row, "schema_name").unwrap();
+                let ddl_vector: String = get_column_heap(&row, "ddl_vector").unwrap();
+                let comment: String = get_column_heap(&row, "comment").unwrap();
+                let comment_vector: String = get_column_heap(&row, "comment_vector").unwrap();
+
+                assert_eq!(written_schema_name, schema_name);
+                assert_eq!(ddl_vector, "[0,0.1,0.2,0.3]");
+                assert_eq!(comment, "Hello world");
+                assert_eq!(comment_vector, "[0,0.1,0.2,0.3]");
+            }
+
+            assert_eq!(meta_count, 18);
+        })
     }
 
     #[pg_test]
