@@ -141,8 +141,7 @@ impl TextEncoderDriver for OllamaDriver {
     }
 
     async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, SqlgenError> {
-        // TODO
-        unimplemented!()
+        unimplemented!();
     }
 }
 

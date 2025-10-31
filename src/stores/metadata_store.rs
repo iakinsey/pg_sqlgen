@@ -199,11 +199,10 @@ mod tests {
         types::structs::{
             engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig,
         },
-        utils::sql::get_column_heap,
+        utils::sql::{get_column, get_column_heap},
     };
 
-    fn create_engine(name: &str) -> TextToSqlEngine {
-        let schema_name = "test_schema_name";
+    fn create_engine(name: &str, schema_name: &str) -> TextToSqlEngine {
         let table_filter_type = "smart";
         let encoder_model_name = "test_encoder_model_name";
         let instruct_model_name = "test_instruct_model_name";
@@ -319,7 +318,7 @@ mod tests {
     fn test_init_schema() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
-        let engine = create_engine(engine_name);
+        let engine = create_engine(engine_name, schema_name);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
         let rt = Runtime::new().unwrap();
 
@@ -367,7 +366,57 @@ mod tests {
             }
 
             assert_eq!(meta_count, 18);
-        })
+        });
+
+        // Create table
+        let table_name = format!("{}.authors", engine.schema_name);
+        Spi::run(
+            format!(
+                r#"
+                    CREATE TABLE {} (
+                        author_id SERIAL PRIMARY KEY,
+                        name TEXT NOT NULL
+                    ); 
+                    "#,
+                table_name
+            )
+            .as_str(),
+        )
+        .unwrap();
+
+        let query = format!(
+            r#"
+                SELECT
+                    ddl_vector::TEXT as ddl_vector,
+                    comment_vector::TEXT as comment_vector
+                FROM sqlgen_internal.db_metadata_{}
+                WHERE schema_name = $1
+                AND table_name = $2;
+                "#,
+            engine_name
+        );
+        Spi::connect(|client| {
+            let rows = client
+                .select(&query, None, &[schema_name.into(), table_name.into()])
+                .unwrap();
+
+            if rows.is_empty() {
+                panic!("db metadata rows are empty")
+            }
+
+            let row = rows.first();
+            let ddl_vector: String = get_column(&row, "ddl_vector").unwrap();
+            let comment_vector: String = get_column(&row, "comment_vector").unwrap();
+
+            assert_eq!(ddl_vector, "[0,0.1,0.2,0.3]");
+            assert_eq!(comment_vector, "[0,0.1,0.2,0.3]");
+        });
+
+        // Alter table
+
+        // Delete table
+
+        // Add comment
     }
 
     #[pg_test]

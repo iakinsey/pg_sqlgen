@@ -12,7 +12,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   PERFORM sqlgen_internal.create_metadata_table(engine, schema_name, vector_size);
-  -- PERFORM sqlgen_internal.install_schema_triggers(engine, schema_name);
+  PERFORM sqlgen_internal.install_schema_triggers(engine, schema_name);
 END
 $$;
 

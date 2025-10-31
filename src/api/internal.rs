@@ -45,11 +45,7 @@ fn internal_add_table(engine: &str, schema_name: &str, table_name: &str) {
     _internal_add_table(engine, schema_name, table_name).unwrap_or_else(|e| error!("{}", e));
 }
 
-fn _internal_add_table(
-    engine_name: &str,
-    schema: &str,
-    table: &str,
-) -> Result<(), SqlgenError> {
+fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(), SqlgenError> {
     let table_metadata_query = r#"
         SELECT
             a.attname AS column_name,
@@ -90,6 +86,8 @@ fn _internal_add_table(
 
         let rows = client.select(table_metadata_query, None, &[schema.into(), table.into()])?;
 
+        // TODO start here next time, error might be in query
+        panic!("test");
         if rows.is_empty() {
             return Err(SqlgenError::TableDoesntExist(format!(
                 "{}.{}",
@@ -117,7 +115,7 @@ fn _internal_add_table(
 
     let model_name = EngineStore::get_engine(engine_name)?.encoder_model;
     let model = ModelStore::get_model_profile(&model_name)?.get_text_encoder_model()?;
-    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
+    let rt = Runtime::new()?;
     let (ddl_encodings, comment_encodings): (Vec<Vec<f32>>, HashMap<usize, Vec<f32>>) = rt
         .block_on(async {
             let d = model.encode_many(&ddls).await?;
