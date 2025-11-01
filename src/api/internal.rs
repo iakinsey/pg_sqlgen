@@ -11,9 +11,8 @@ use crate::types::errors::SqlgenError;
 use crate::types::structs::table_metadata::TableMetadata;
 use crate::utils::sql::get_column_heap;
 use crate::utils::sql::get_column_heap_optional;
-use crate::utils::sql::get_oid;
 
-// These functions lives in sqlgen_internal
+// These functions live in sqlgen_internal
 
 #[pg_extern]
 fn internal_encode_text(model: &str, text_value: &str) -> Vec<f32> {
@@ -86,8 +85,6 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
 
         let rows = client.select(table_metadata_query, None, &[schema.into(), table.into()])?;
 
-        // TODO start here next time, error might be in query
-        panic!("test");
         if rows.is_empty() {
             return Err(SqlgenError::TableDoesntExist(format!(
                 "{}.{}",
@@ -162,13 +159,12 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
             comment,
             ddl_vector,
             comment_vector
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7);
+        ) VALUES ($1, $2, $3, $4, $5, $6::VECTOR, $7::VECTOR);
     "#,
         engine_name
     );
 
     Spi::connect(|client| {
-        let vector_oid = get_oid("vector")?;
         let statement = &client.prepare(
             &add_metadata_query,
             &[
@@ -177,8 +173,8 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
                 PgOid::from(PgBuiltInOids::TEXTOID),
                 PgOid::from(PgBuiltInOids::TEXTOID),
                 PgOid::from(PgBuiltInOids::TEXTOID),
-                vector_oid,
-                vector_oid,
+                PgOid::from(PgBuiltInOids::FLOAT4ARRAYOID),
+                PgOid::from(PgBuiltInOids::FLOAT4ARRAYOID),
             ],
         )?;
 
