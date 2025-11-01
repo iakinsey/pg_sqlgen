@@ -54,7 +54,7 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
                 || CASE WHEN a.attidentity IN ('a','d') AND coalesce(a.attgenerated,'') = '' THEN
                     ' GENERATED ' || CASE a.attidentity WHEN 'a' THEN 'ALWAYS' ELSE 'BY DEFAULT' END || ' AS IDENTITY'
                 ELSE '' END
-                | CASE WHEN a.attgenerated = 's' THEN
+                || CASE WHEN a.attgenerated = 's' THEN
                     ' GENERATED ALWAYS AS (' || pg_get_expr(ad.adbin, ad.adrelid) || ') STORED'
                 ELSE '' END
                 || CASE WHEN ad.adbin IS NOT NULL AND coalesce(a.attgenerated,'') = '' THEN
