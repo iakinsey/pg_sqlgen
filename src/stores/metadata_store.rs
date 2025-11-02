@@ -199,7 +199,7 @@ mod tests {
         types::structs::{
             engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig,
         },
-        utils::sql::{get_column, get_column_heap},
+        utils::sql::get_column_heap,
     };
 
     fn create_engine(name: &str, schema_name: &str) -> TextToSqlEngine {
@@ -387,29 +387,36 @@ mod tests {
         let query = format!(
             r#"
                 SELECT
+                    schema_name,
+                    table_name,
+                    column_name,
+                    ddl,
+                    comment,
                     ddl_vector::TEXT as ddl_vector,
                     comment_vector::TEXT as comment_vector
                 FROM sqlgen_internal.db_metadata_{}
-                WHERE schema_name = $1
-                AND table_name = $2;
+                WHERE table_name = $1
                 "#,
             engine_name
         );
-        Spi::connect(|client| {
-            let rows = client
-                .select(&query, None, &[schema_name.into(), table_name.into()])
-                .unwrap();
 
-            if rows.is_empty() {
-                panic!("db metadata rows are empty")
+        let mut count = 0;
+        Spi::connect(|client| {
+            let rows = client.select(&query, None, &["authors".into()]).unwrap();
+
+            for row in rows {
+                count += 1;
+
+                let schema_name: String = get_column_heap(&row, "schema_name").unwrap();
+                let table_name: String = get_column_heap(&row, "table_name").unwrap();
+                let ddl_vector: String = get_column_heap(&row, "ddl_vector").unwrap();
+
+                assert_eq!(schema_name, "test_example");
+                assert_eq!(table_name, "authors");
+                assert_eq!(ddl_vector, "[0,0.1,0.2,0.3]");
             }
 
-            let row = rows.first();
-            let ddl_vector: String = get_column(&row, "ddl_vector").unwrap();
-            let comment_vector: String = get_column(&row, "comment_vector").unwrap();
-
-            assert_eq!(ddl_vector, "[0,0.1,0.2,0.3]");
-            assert_eq!(comment_vector, "[0,0.1,0.2,0.3]");
+            assert_eq!(count, 2)
         });
 
         // Alter table
