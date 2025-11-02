@@ -199,7 +199,7 @@ mod tests {
         types::structs::{
             engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig,
         },
-        utils::sql::get_column_heap,
+        utils::sql::{get_column, get_column_heap},
     };
 
     fn create_engine(name: &str, schema_name: &str) -> TextToSqlEngine {
@@ -420,6 +420,47 @@ mod tests {
         });
 
         // Alter table
+        let table_name = format!("{}.authors", engine.schema_name);
+        Spi::run(
+            format!(
+                r#"
+                ALTER TABLE {} ADD COLUMN age INT;
+                "#,
+                table_name
+            )
+            .as_str(),
+        )
+        .unwrap();
+
+        let query = format!(
+            r#"
+                SELECT
+                    schema_name,
+                    table_name,
+                    column_name,
+                    ddl,
+                    comment,
+                    ddl_vector::TEXT as ddl_vector,
+                    comment_vector::TEXT as comment_vector
+                FROM sqlgen_internal.db_metadata_{}
+                WHERE table_name = 'authors'
+                AND column_name = 'age';
+                "#,
+            engine_name
+        );
+
+        Spi::connect(|client| {
+            let rows = client.select(&query, None, &[]).unwrap();
+            let row = rows.first();
+
+            let schema_name: String = get_column(&row, "schema_name").unwrap();
+            let table_name: String = get_column(&row, "table_name").unwrap();
+            let ddl_vector: String = get_column(&row, "ddl_vector").unwrap();
+
+            assert_eq!(schema_name, "test_example");
+            assert_eq!(table_name, "authors");
+            assert_eq!(ddl_vector, "[0,0.1,0.2,0.3]");
+        });
 
         // Delete table
 
