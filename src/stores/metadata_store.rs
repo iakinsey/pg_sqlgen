@@ -39,7 +39,6 @@ impl MetadataStore {
             let mut schemas: Vec<CrawlSchema> = Vec::new();
             let rows = client.select(query, None, &[schema.into()])?;
 
-            // TODO start here next time
             for row in rows {
                 let crawl_schema = CrawlSchema::from_row(row)?;
 
@@ -463,7 +462,38 @@ mod tests {
         });
 
         // Delete table
+        let table_name = format!("{}.authors", engine.schema_name);
+        Spi::run(
+            format!(
+                r#"
+                DROP TABLE {};
+                "#,
+                table_name
+            )
+            .as_str(),
+        )
+        .unwrap();
 
+        let query = format!(
+            r#"
+                SELECT
+                    count(*)::TEXT as row_count
+                FROM sqlgen_internal.db_metadata_{}
+                WHERE table_name = 'authors'
+                "#,
+            engine_name
+        );
+
+        Spi::connect(|client| {
+            let rows = client.select(&query, None, &[]).unwrap();
+            let row = rows.first();
+
+            let row_count: String = get_column(&row, "row_count").unwrap();
+
+            assert_eq!(row_count, "0");
+        });
+
+        // TODO start here next, figure out adding comments and changing row count to integer
         // Add comment
     }
 
