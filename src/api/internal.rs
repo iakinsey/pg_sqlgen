@@ -47,7 +47,7 @@ fn internal_add_table(engine: &str, schema_name: &str, table_name: &str) {
 fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(), SqlgenError> {
     let table_metadata_query = r#"
         SELECT
-            a.attname AS column_name,
+            a.attname::TEXT AS column_name,
             (
                 format('%I %s', a.attname, format_type(a.atttypid, a.atttypmod))
                 || CASE WHEN a.attidentity IN ('a','d') AND coalesce(a.attgenerated,'') = '' THEN
