@@ -133,6 +133,7 @@ BEGIN
     DROP EVENT TRIGGER IF EXISTS trigger_create_table_%1$I;
     DROP EVENT TRIGGER IF EXISTS trigger_alter_table_%1$I;
     DROP EVENT TRIGGER IF EXISTS trigger_drop_table_%1$I;
+    DROP EVENT TRIGGER IF EXISTS trigger_comment_%1$I;
 
     -- Create table function
     CREATE OR REPLACE FUNCTION sqlgen_internal.on_create_table_%1$I()
@@ -199,6 +200,24 @@ BEGIN
       END LOOP;
     END; $fn$;
 
+    -- Comment table function
+    CREATE OR REPLACE FUNCTION sqlgen_internal.on_comment_%1$I()
+    RETURNS event_trigger
+    LANGUAGE plpgsql AS $fn$
+    DECLARE
+      v_tbl text;
+    BEGIN
+      FOR v_tbl IN
+        SELECT DISTINCT split_part(object_identity, '.', 2) AS table_name
+        FROM pg_event_trigger_ddl_commands()
+        WHERE command_tag = 'COMMENT'
+          AND object_type = 'column'
+          AND schema_name = %2$L
+      LOOP
+        PERFORM sqlgen_internal.update_table(%1$L, %2$L, v_tbl);
+      END LOOP;
+    END; $fn$;
+
     -- Create table trigger
     CREATE EVENT TRIGGER trigger_create_table_%1$I
       ON ddl_command_end
@@ -215,6 +234,12 @@ BEGIN
     CREATE EVENT TRIGGER trigger_drop_table_%1$I
       ON sql_drop
       EXECUTE FUNCTION sqlgen_internal.on_drop_table_%1$I();
+
+    -- Comment column trigger
+    CREATE EVENT TRIGGER trigger_comment_%1$I
+      ON ddl_command_end
+      WHEN TAG IN ('COMMENT')
+      EXECUTE FUNCTION sqlgen_internal.on_comment_%1$I();
   $fmt$,
     engine,       -- %1$*
     schema_name   -- %2$*

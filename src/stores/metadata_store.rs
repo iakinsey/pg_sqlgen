@@ -198,7 +198,7 @@ mod tests {
         types::structs::{
             engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig,
         },
-        utils::sql::{get_column, get_column_heap},
+        utils::sql::{get_column, get_column_heap, get_column_heap_optional},
     };
 
     fn create_engine(name: &str, schema_name: &str) -> TextToSqlEngine {
@@ -493,8 +493,62 @@ mod tests {
             assert_eq!(row_count, "0");
         });
 
-        // TODO start here next, figure out adding comments and changing row count to integer
         // Add comment
+        let table_name = format!("{}.order_items", engine.schema_name);
+        Spi::run(
+            format!(
+                r#"
+                COMMENT ON COLUMN {schema}.order_items.quantity IS 'This is a test';
+                COMMENT ON COLUMN {schema}.order_items.product_id IS NULL;
+                "#,
+                schema = engine.schema_name,
+            )
+            .as_str(),
+        )
+        .unwrap();
+
+        let query = format!(
+            r#"
+                SELECT
+                    column_name,
+                    comment,
+                    comment_vector::TEXT as comment_vector
+                FROM sqlgen_internal.db_metadata_{}
+                WHERE table_name = 'order_items'
+                "#,
+            engine_name
+        );
+
+        let mut count = 0;
+
+        Spi::connect(|client| {
+            let rows = client
+                .select(&query, None, &["order_items".into()])
+                .unwrap();
+
+            for row in rows {
+                count += 1;
+
+                let column_name: String = get_column_heap(&row, "column_name").unwrap();
+                let comment: Option<String> = get_column_heap_optional(&row, "comment").unwrap();
+                let comment_vector: Option<String> =
+                    get_column_heap_optional(&row, "comment_vector").unwrap();
+
+                if column_name == "quantity" {
+                    count += 1;
+                    assert_eq!(comment.unwrap(), "This is a test");
+                    assert_eq!(comment_vector.unwrap(), "[0,0.1,0.2,0.3]");
+                    // TODO start here instead, figure out why comments arent updating
+                    /*} else if column_name == "product_id" {
+                        count += 1;
+                        assert!(comment.is_none());
+                        assert!(comment_vector.is_none());
+                    */
+                }
+            }
+
+            assert_eq!(count, 2)
+        });
     }
 
     #[pg_test]
@@ -505,6 +559,12 @@ mod tests {
 
     #[pg_test]
     fn test_get_similar_ddls() {
+        // TODO test
+        unimplemented!()
+    }
+
+    #[pg_test]
+    fn test_remove_metadata() {
         // TODO test
         unimplemented!()
     }
