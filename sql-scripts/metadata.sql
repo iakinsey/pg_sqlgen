@@ -324,8 +324,8 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  EXECUTE sqlgen_internal.remove_table(engine, schema_name, table_name);
-  EXECUTE sqlgen_internal.add_table(engine, schema_name, table_name);
+  PERFORM sqlgen_internal.remove_table(engine, schema_name, table_name);
+  PERFORM sqlgen_internal.add_table(engine, schema_name, table_name);
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_table FROM public;
