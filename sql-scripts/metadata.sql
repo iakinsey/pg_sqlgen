@@ -204,9 +204,6 @@ BEGIN
     CREATE OR REPLACE FUNCTION sqlgen_internal.on_comment_%1$I()
     RETURNS event_trigger
     LANGUAGE plpgsql AS $fn$
-    DECLARE
-      r RECORD;
-      v_tbl text;
     BEGIN
       PERFORM sqlgen_internal.update_comment();
     END; $fn$;
@@ -374,15 +371,37 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   r RECORD;
+  v_comment TEXT;
+  v_schema TEXT;
 BEGIN
-    FOR r IN
-        SELECT * FROM pg_event_trigger_ddl_commands()
-        WHERE command_tag = 'COMMENT'
-    LOOP
-        RAISE NOTICE 'Comment changed on %.%.: %',
-            r.schema_name,
-            r.object_identity,
-            r.command;
-    END LOOP;
+  FOR r IN
+    SELECT classid, objid, objsubid, object_identity, schema_name
+    FROM pg_event_trigger_ddl_commands()
+    WHERE command_tag = 'COMMENT'
+  LOOP
+    SELECT d.description
+      INTO v_comment
+      FROM pg_description d
+     WHERE d.classoid = r.classid
+       AND d.objoid  = r.objid
+       AND d.objsubid = COALESCE(r.objsubid, 0);
+
+    IF v_comment IS NULL THEN
+      SELECT sd.description
+        INTO v_comment
+        FROM pg_shdescription sd
+       WHERE sd.classoid = r.classid
+         AND sd.objoid  = r.objid;
+    END IF;
+
+    v_schema := COALESCE(r.schema_name, 'public');
+
+    RAISE EXCEPTION 'COMMENT on %.%: %',
+      v_schema,
+      r.object_identity,
+      COALESCE(v_comment, '(NULL)');
+  END LOOP;
+END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_comment FROM public;
+
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_comment() FROM public;
