@@ -418,7 +418,10 @@ mod tests {
             assert_eq!(count, 2)
         });
 
-        // Alter table
+        // Alter table change column
+        // TODO
+        
+        // Alter table add column
         let table_name = format!("{}.authors", engine.schema_name);
         Spi::run(
             format!(

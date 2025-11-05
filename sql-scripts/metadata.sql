@@ -200,6 +200,17 @@ BEGIN
       END LOOP;
     END; $fn$;
 
+    -- Comment function
+    CREATE OR REPLACE FUNCTION sqlgen_internal.on_comment_%1$I()
+    RETURNS event_trigger
+    LANGUAGE plpgsql AS $fn$
+    DECLARE
+      r RECORD;
+      v_tbl text;
+    BEGIN
+      PERFORM sqlgen_internal.update_comment();
+    END; $fn$;
+
     -- Create table trigger
     CREATE EVENT TRIGGER trigger_create_table_%1$I
       ON ddl_command_end
@@ -209,8 +220,13 @@ BEGIN
     -- Alter table trigger
     CREATE EVENT TRIGGER trigger_alter_table_%1$I
       ON ddl_command_end
-      WHEN TAG IN ('ALTER TABLE', 'COMMENT')
+      WHEN TAG IN ('ALTER TABLE')
       EXECUTE FUNCTION sqlgen_internal.on_alter_table_%1$I();
+
+     CREATE EVENT TRIGGER trigger_comment_%1$I
+      ON ddl_command_end
+      WHEN TAG IN ('COMMENT')
+      EXECUTE FUNCTION sqlgen_internal.on_comment_%1$I();
 
     -- Drop table trigger
     CREATE EVENT TRIGGER trigger_drop_table_%1$I
@@ -346,3 +362,27 @@ BEGIN
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers FROM public;
+
+
+--------------------------------------------------------------------------------
+-- Remove schema triggers
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.update_comment()
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  r RECORD;
+BEGIN
+    FOR r IN
+        SELECT * FROM pg_event_trigger_ddl_commands()
+        WHERE command_tag = 'COMMENT'
+    LOOP
+        RAISE NOTICE 'Comment changed on %.%.: %',
+            r.schema_name,
+            r.object_identity,
+            r.command;
+    END LOOP;
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_comment FROM public;
