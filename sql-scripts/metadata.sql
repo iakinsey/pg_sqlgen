@@ -205,7 +205,7 @@ BEGIN
     RETURNS event_trigger
     LANGUAGE plpgsql AS $fn$
     BEGIN
-      PERFORM sqlgen_internal.update_comment();
+      PERFORM sqlgen_internal.update_comment(%1$L);
     END; $fn$;
 
     -- Create table trigger
@@ -362,10 +362,10 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers FROM public;
 
 
 --------------------------------------------------------------------------------
--- Remove schema triggers
+-- Update comments
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.update_comment()
+CREATE OR REPLACE FUNCTION sqlgen_internal.update_comment(engine TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
@@ -396,12 +396,35 @@ BEGIN
 
     v_schema := COALESCE(r.schema_name, 'public');
 
+    PERFORM sqlgen_internal.do_update_comment(
+      engine,
+      v_schema,
+      r.object_identity,
+      v_comment
+    );
+
+/*
     RAISE EXCEPTION 'COMMENT on %.%: %',
       v_schema,
       r.object_identity,
       COALESCE(v_comment, '(NULL)');
+*/
   END LOOP;
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_comment FROM public;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_comment() FROM public;
+CREATE OR REPLACE FUNCTION sqlgen_internal.do_update_comment(
+  engine TEXT,
+  schema_name TEXT,
+  table_name TEXT,
+  comment TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'engine: %, schema: %, table: %, comment: %',
+    engine, schema_name, table_name, comment;
+END
+$$;
