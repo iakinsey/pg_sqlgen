@@ -15,8 +15,10 @@ use crate::utils::sql::get_column_heap_optional;
 // These functions live in sqlgen_internal
 
 #[pg_extern]
-fn internal_encode_text(model: &str, text_value: &str) -> Vec<f32> {
-    let profile = ModelStore::get_model_profile(model).unwrap_or_else(|e| error!("{}", e));
+fn internal_encode_text(engine: &str, text_value: &str) -> Vec<f32> {
+    let engine = EngineStore::get_engine(engine).unwrap();
+    let profile =
+        ModelStore::get_model_profile(&engine.encoder_model).unwrap_or_else(|e| error!("{}", e));
     let model = profile
         .get_text_encoder_model()
         .unwrap_or_else(|e| error!("{}", e));

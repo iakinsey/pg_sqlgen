@@ -2,12 +2,12 @@
 ALTER FUNCTION internal_encode_text(TEXT, TEXT) SET SCHEMA sqlgen_internal;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.internal_encode_text(TEXT, TEXT) FROM public;
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.encode_text(model TEXT, text_value TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.encode_text(engine TEXT, text_value TEXT)
 RETURNS vector
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    RETURN sqlgen_internal.internal_encode_text(model, text_value)::vector;
+    RETURN sqlgen_internal.internal_encode_text(engine, text_value)::vector;
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.encode_text(TEXT, TEXT) FROM public;

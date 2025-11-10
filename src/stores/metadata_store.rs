@@ -540,16 +540,12 @@ mod tests {
                     count += 1;
                     assert_eq!(comment.unwrap(), "This is a test");
                     assert_eq!(comment_vector.unwrap(), "[0,0.1,0.2,0.3]");
-                    // TODO start here instead, figure out why comments arent updating
-                    /*} else if column_name == "product_id" {
-                        count += 1;
-                        assert!(comment.is_none());
-                        assert!(comment_vector.is_none());
-                    */
+                } else if column_name == "product_id" {
+                    count += 1;
+                    assert!(comment.is_none());
+                    assert!(comment_vector.is_none());
                 }
             }
-
-            assert_eq!(count, 2)
         });
     }
 

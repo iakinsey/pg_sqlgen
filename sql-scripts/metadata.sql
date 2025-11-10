@@ -205,7 +205,7 @@ BEGIN
     RETURNS event_trigger
     LANGUAGE plpgsql AS $fn$
     BEGIN
-      PERFORM sqlgen_internal.update_comment(%1$L);
+      PERFORM sqlgen_internal.update_comment(%1$L, %2$L);
     END; $fn$;
 
     -- Create table trigger
@@ -365,7 +365,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers FROM public;
 -- Update comments
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.update_comment(engine TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.update_comment(engine TEXT, expected_schema TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
@@ -373,6 +373,8 @@ DECLARE
   r RECORD;
   v_comment TEXT;
   v_schema TEXT;
+  v_table TEXT;
+  v_column TEXT;
 BEGIN
   FOR r IN
     SELECT classid, objid, objsubid, object_identity, schema_name
@@ -395,20 +397,18 @@ BEGIN
     END IF;
 
     v_schema := COALESCE(r.schema_name, 'public');
+    v_table := (string_to_array(r.object_identity, '.'))[array_length(string_to_array(r.object_identity, '.'), 1) - 1];
+    v_column := (string_to_array(r.object_identity, '.'))[array_length(string_to_array(r.object_identity, '.'), 1)];
 
-    PERFORM sqlgen_internal.do_update_comment(
-      engine,
-      v_schema,
-      r.object_identity,
-      v_comment
-    );
-
-/*
-    RAISE EXCEPTION 'COMMENT on %.%: %',
-      v_schema,
-      r.object_identity,
-      COALESCE(v_comment, '(NULL)');
-*/
+    IF r.schema_name = expected_schema THEN
+      PERFORM sqlgen_internal.do_update_comment(
+        engine,
+        v_schema,
+        v_table,
+        v_column,
+        v_comment
+      );
+    END IF;
   END LOOP;
 END;
 $$;
@@ -418,13 +418,23 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.do_update_comment(
   engine TEXT,
   schema_name TEXT,
   table_name TEXT,
+  column_name TEXT,
   comment TEXT
 )
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  comment_vector TEXT;
 BEGIN
-  RAISE EXCEPTION 'engine: %, schema: %, table: %, comment: %',
-    engine, schema_name, table_name, comment;
+  comment_vector := sqlgen_internal.encode_text(engine, comment);
+
+  EXECUTE format($fmt$
+  UPDATE sqlgen_internal.db_metadata_%I
+  SET comment = %L, comment_vector = %L
+  WHERE table_name = %L
+  AND column_name = %L
+  $fmt$, engine, comment, comment_vector, table_name, column_name);
+
 END
 $$;
