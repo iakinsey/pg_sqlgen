@@ -191,9 +191,8 @@ mod tests {
         stores::{
             engine_store::EngineStore, metadata_store::MetadataStore, model_store::ModelStore,
         },
-        types::{
-            errors::SqlgenError,
-            structs::{engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig},
+        types::structs::{
+            engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig,
         },
         utils::sql::{get_column, get_column_heap, get_column_heap_optional},
     };
