@@ -126,14 +126,10 @@ impl MetadataStore {
         })
     }
 
-    pub fn remove_metadata(
-        engine: &str,
-        model_name: &str,
-        schema: &str,
-    ) -> Result<(), SqlgenError> {
-        let query = "SELECT sqlgen_internal.remove_metadata($1, $2, $3);";
+    pub fn remove_metadata(engine: &str, model_name: &str) -> Result<(), SqlgenError> {
+        let query = "SELECT sqlgen_internal.remove_metadata($1, $2);";
 
-        Spi::run_with_args(query, &[engine.into(), model_name.into(), schema.into()])?;
+        Spi::run_with_args(query, &[engine.into(), model_name.into()])?;
 
         Ok(())
     }
@@ -195,8 +191,9 @@ mod tests {
         stores::{
             engine_store::EngineStore, metadata_store::MetadataStore, model_store::ModelStore,
         },
-        types::structs::{
-            engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig,
+        types::{
+            errors::SqlgenError,
+            structs::{engine::TextToSqlEngine, model_profile::ModelConfig, profiles::StubConfig},
         },
         utils::sql::{get_column, get_column_heap, get_column_heap_optional},
     };
@@ -494,7 +491,6 @@ mod tests {
         });
 
         // Add comment
-        let table_name = format!("{}.order_items", engine.schema_name);
         Spi::run(
             format!(
                 r#"
@@ -594,7 +590,22 @@ mod tests {
 
     #[pg_test]
     fn test_remove_metadata() {
-        // TODO test
-        unimplemented!()
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let engine = create_engine(engine_name, schema_name);
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+
+        create_schema(schema_name);
+
+        rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap()
+        });
+
+        MetadataStore::remove_metadata(engine_name, &engine.encoder_model).unwrap();
+
+        assert!(MetadataStore::get_ddls(engine_name).is_err());
     }
 }

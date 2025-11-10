@@ -249,9 +249,6 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  -- Remove triggers for the specified schema/model
-  PERFORM sqlgen_internal.remove_schema_triggers(engine, model_name, schema_name);
-
   -- Drop the metadata table for this engine
   EXECUTE format($fmt$
     DROP TABLE IF EXISTS sqlgen_internal.db_metadata_%I
@@ -355,12 +352,19 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-
   EXECUTE format($fmt$
-    DROP TABLE sqlgen_internal.db_metadata_%I;
+    -- Drop event triggers
+    DROP EVENT TRIGGER IF EXISTS trigger_create_table_%1$I;
+    DROP EVENT TRIGGER IF EXISTS trigger_alter_table_%1$I;
+    DROP EVENT TRIGGER IF EXISTS trigger_drop_table_%1$I;
+    DROP EVENT TRIGGER IF EXISTS trigger_comment_%1$I;
+
+    -- Drop associated event trigger functions
+    DROP FUNCTION IF EXISTS sqlgen_internal.on_create_table_%1$I();
+    DROP FUNCTION IF EXISTS sqlgen_internal.on_alter_table_%1$I();
+    DROP FUNCTION IF EXISTS sqlgen_internal.on_drop_table_%1$I();
+    DROP FUNCTION IF EXISTS sqlgen_internal.on_comment_%1$I();
   $fmt$, engine);
-
-
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers FROM public;

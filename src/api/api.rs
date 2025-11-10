@@ -127,8 +127,7 @@ fn create_engine(
 fn remove_engine(name: &str) {
     let engine = EngineStore::get_engine(name).unwrap_or_else(|e| error!("{}", e));
 
-    MetadataStore::remove_metadata(name, &engine.encoder_model, &engine.schema_name)
-        .unwrap_or_else(|e| error!("{}", e));
+    MetadataStore::remove_metadata(name, &engine.encoder_model).unwrap_or_else(|e| error!("{}", e));
     EngineStore::remove_engine(name).unwrap_or_else(|e| error!("{}", e));
 }
 
