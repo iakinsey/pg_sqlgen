@@ -355,7 +355,12 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  -- TODO
+
+  EXECUTE format($fmt$
+    DROP TABLE sqlgen_internal.db_metadata_%I;
+  $fmt$, engine);
+
+
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers FROM public;

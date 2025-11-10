@@ -165,7 +165,7 @@ impl MetadataStore {
     }
 
     pub fn get_ddls(engine: &str) -> Result<Vec<String>, SqlgenError> {
-        let query = "SELECT sqlgen_internal.get_ddls($1)";
+        let query = "SELECT ddl FROM sqlgen_internal.get_ddls($1) AS t(ddl)";
 
         Spi::connect(|client| {
             let rows = client.select(query, None, &[engine.into()])?;
@@ -418,8 +418,6 @@ mod tests {
             assert_eq!(count, 2)
         });
 
-        // Alter table modify column
-
         // Alter table add column
         let table_name = format!("{}.authors", engine.schema_name);
         Spi::run(
@@ -551,8 +549,23 @@ mod tests {
 
     #[pg_test]
     fn test_get_ddls() {
-        // TODO test
-        unimplemented!()
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let engine = create_engine(engine_name, schema_name);
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+
+        create_schema(schema_name);
+
+        rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap()
+        });
+
+        let ddls = MetadataStore::get_ddls(engine_name).unwrap();
+
+        assert_eq!(ddls.len(), 18);
     }
 
     #[pg_test]
