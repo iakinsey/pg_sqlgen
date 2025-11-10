@@ -143,7 +143,7 @@ impl MetadataStore {
         user_query: Vec<f32>,
         limit: i32,
     ) -> Result<Vec<String>, SqlgenError> {
-        let query = "SELECT sqlgen_internal.get_similar_ddls($1, $2, $3::REAL[]::VECTOR) AS ddl;";
+        let query = "SELECT sqlgen_internal.get_similar_ddls($1, $2::VECTOR, $3) AS ddl;";
 
         Spi::connect(|client| {
             let rows = client.select(
@@ -570,8 +570,26 @@ mod tests {
 
     #[pg_test]
     fn test_get_similar_ddls() {
-        // TODO test
-        unimplemented!()
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let engine = create_engine(engine_name, schema_name);
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+        let count = 10;
+
+        let user_query = rt.block_on(async { encoder.encode("test").await.unwrap() });
+
+        create_schema(schema_name);
+
+        rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap()
+        });
+
+        let ddls = MetadataStore::get_similar_ddls(engine_name, user_query, count.clone()).unwrap();
+
+        assert_eq!(ddls.len(), count as usize);
     }
 
     #[pg_test]
