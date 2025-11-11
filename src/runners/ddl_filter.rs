@@ -9,6 +9,7 @@ use crate::{
         traits::driver::{TextEncoderDriver, TextInstructDriver},
     },
 };
+use pgrx::pg_schema;
 use tera::{Context, Tera};
 
 pub struct DDLFilterRunner {
@@ -67,8 +68,6 @@ impl DDLFilterRunner {
         }
     }
 
-    // TODO start with this next
-    // TODO integrate runners with api module
     async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
         let mut prompt_ctx = Context::new();
         let relevant_ddls = MetadataStore::get_ddls(&self.engine.name)?;
@@ -109,20 +108,58 @@ impl DDLFilterRunner {
 }
 
 #[cfg(any(test, feature = "pg_test"))]
+#[pg_schema]
 mod tests {
-    use pgrx::Spi;
+    use tokio::runtime::Runtime;
 
-    use crate::pg_test;
+    use crate::{
+        pg_test,
+        runners::ddl_filter::DDLFilterRunner,
+        stores::{metadata_store::MetadataStore, model_store::ModelStore},
+        utils::test_utils::{create_engine, create_schema},
+    };
 
     #[pg_test]
     fn test_filter_smart() {
-        // TODO test
-        unimplemented!()
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let engine = create_engine(engine_name, schema_name, "smart");
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+        let user_query = "Test user query.";
+
+        create_schema(schema_name);
+
+        rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap();
+            let mut runner = DDLFilterRunner::new(engine).unwrap();
+            let ddls = runner.generate(user_query).await.unwrap();
+
+            assert_eq!(ddls.len(), 4);
+        });
     }
 
     #[pg_test]
     fn test_filter_fast() {
-        // TODO test
-        unimplemented!()
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let engine = create_engine(engine_name, schema_name, "quick");
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+        let user_query = "Test user query.";
+
+        create_schema(schema_name);
+
+        rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap();
+            let mut runner = DDLFilterRunner::new(engine).unwrap();
+            let ddls = runner.generate(user_query).await.unwrap();
+
+            assert_eq!(ddls.len(), 18);
+        });
     }
 }
