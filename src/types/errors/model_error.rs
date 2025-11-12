@@ -11,7 +11,11 @@ pub enum SqlgenError {
     #[error("{0}")]
     ResponseError(String),
     #[error("{0}")]
+    GenerateError(String),
+    #[error("{0}")]
     DeviceError(String),
+    #[error("SQL generation model returned no response")]
+    EmptyResponse,
     #[error("unsupported model config: {0}")]
     UnsupportedModelConfig(String),
     #[error("unknown device: {0}")]

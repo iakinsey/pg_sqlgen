@@ -4,11 +4,14 @@ use crate::{
         errors::SqlgenError,
         structs::{
             engine::TextToSqlEngine,
+            generate_response::GenerateResponse,
             instruct_message::{InstructMessage, InstructRole},
         },
         traits::driver::TextInstructDriver,
     },
 };
+use pgrx::pg_schema;
+use serde_json::from_str;
 use tera::{Context, Tera};
 
 pub struct SQLGenerationRunner {
@@ -149,15 +152,61 @@ impl SQLGenerationRunner {
             },
         ];
 
-        Ok(self.model.get_assistant_response(messages).await?)
+        let payload = self.model.get_assistant_response(messages).await?;
+        let response: GenerateResponse = from_str(&payload)?;
+
+        match response.error {
+            Some(s) => Err(SqlgenError::GenerateError(s)),
+            None => match response.query {
+                Some(s) => Ok(s),
+                None => Err(SqlgenError::EmptyResponse),
+            },
+        }
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "pg_test"))]
+#[pg_schema]
 mod tests {
-    #[test]
+    use pgrx::pg_schema;
+    use serde_json::to_string;
+    use tokio::runtime::Runtime;
+
+    use crate::{
+        pg_test,
+        runners::sql_generation::SQLGenerationRunner,
+        stores::{metadata_store::MetadataStore, model_store::ModelStore},
+        types::structs::generate_response::GenerateResponse,
+        utils::test_utils::{create_engine, create_schema},
+    };
+
+    #[pg_test]
     fn test_generate_query() {
-        // TODO test
-        unimplemented!()
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let expected_query = "SELECT * from test;";
+        let response = GenerateResponse {
+            query: Some(expected_query.to_string()),
+            error: None,
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+
+        create_schema(schema_name);
+
+        let generate_response = rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap();
+            let mut engine = SQLGenerationRunner::new(engine).unwrap();
+            engine
+                .generate_query("test_query", vec![""], vec![""])
+                .await
+                .unwrap()
+        });
+
+        assert_eq!(expected_query, generate_response);
     }
 }

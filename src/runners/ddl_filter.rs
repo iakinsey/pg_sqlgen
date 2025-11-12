@@ -123,7 +123,8 @@ mod tests {
     fn test_filter_smart() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
-        let engine = create_engine(engine_name, schema_name, "smart");
+        let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
+        let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
         let rt = Runtime::new().unwrap();
         let user_query = "Test user query.";
@@ -145,7 +146,8 @@ mod tests {
     fn test_filter_fast() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
-        let engine = create_engine(engine_name, schema_name, "quick");
+        let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
+        let engine = create_engine(engine_name, schema_name, "quick", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
         let rt = Runtime::new().unwrap();
         let user_query = "Test user query.";
