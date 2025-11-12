@@ -153,7 +153,10 @@ impl SQLGenerationRunner {
         ];
 
         let payload = self.model.get_assistant_response(messages).await?;
-        let response: GenerateResponse = from_str(&payload)?;
+        let response = match from_str::<GenerateResponse>(&payload) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(SqlgenError::GenerateParseError(e.to_string())),
+        }?;
 
         match response.error {
             Some(s) => Err(SqlgenError::GenerateError(s)),
@@ -181,7 +184,7 @@ mod tests {
     };
 
     #[pg_test]
-    fn test_generate_query() {
+    fn test_generate_query_success() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
         let expected_query = "SELECT * from test;";
@@ -208,5 +211,93 @@ mod tests {
         });
 
         assert_eq!(expected_query, generate_response);
+    }
+
+    #[pg_test]
+    fn test_generate_query_model_outputs_error() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let expected_error_text = "example error";
+        let response = GenerateResponse {
+            query: None,
+            error: Some(expected_error_text.to_string()),
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+
+        create_schema(schema_name);
+
+        let generate_error = rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap();
+            let mut engine = SQLGenerationRunner::new(engine).unwrap();
+            engine
+                .generate_query("test_query", vec![""], vec![""])
+                .await
+                .unwrap_err()
+        });
+
+        assert_eq!(expected_error_text, generate_error.to_string());
+    }
+
+    #[pg_test]
+    fn test_generate_query_malformed_response() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let engine = create_engine(engine_name, schema_name, "smart", "}{");
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+
+        create_schema(schema_name);
+
+        let generate_error = rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap();
+            let mut engine = SQLGenerationRunner::new(engine).unwrap();
+            engine
+                .generate_query("test_query", vec![""], vec![""])
+                .await
+                .unwrap_err()
+        });
+
+        assert!(generate_error
+            .to_string()
+            .starts_with("failed to parse model output when generating sql: "));
+    }
+
+    #[pg_test]
+    fn test_generate_query_empty_response() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let response = GenerateResponse {
+            query: None,
+            error: None,
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = Runtime::new().unwrap();
+
+        create_schema(schema_name);
+
+        let generate_response = rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap();
+            let mut engine = SQLGenerationRunner::new(engine).unwrap();
+            engine
+                .generate_query("test_query", vec![""], vec![""])
+                .await
+                .unwrap_err()
+        });
+
+        assert_eq!(
+            "SQL generation model returned no response",
+            generate_response.to_string()
+        );
     }
 }
