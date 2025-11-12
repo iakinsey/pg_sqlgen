@@ -132,3 +132,38 @@ fn remove_engine(name: &str) {
 }
 
 // TODO test each function
+#[cfg(any(test, feature = "pg_test"))]
+#[pg_schema]
+mod tests {
+    use crate::pg_test;
+
+    #[pg_test]
+    fn test_get_descriptions() {
+        unimplemented!();
+    }
+
+    #[pg_test]
+    fn test_add_list_and_remove_models() {
+        unimplemented!();
+    }
+
+    #[pg_test]
+    fn test_generate() {
+        unimplemented!();
+    }
+
+    #[pg_test]
+    fn test_get_default_engine() {
+        unimplemented!();
+    }
+
+    #[pg_test]
+    fn test_get_default_engine_without_setting() {
+        unimplemented!();
+    }
+
+    #[pg_test]
+    fn test_create_and_remove_engine() {
+        unimplemented!();
+    }
+}
