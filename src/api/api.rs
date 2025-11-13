@@ -15,18 +15,6 @@ use crate::{
 };
 
 #[pg_extern]
-fn get_descriptions() -> TableIterator<
-    'static,
-    (
-        name!(id, &'static str),
-        name!(name, &'static str),
-        name!(description, &'static str),
-    ),
-> {
-    TableIterator::new(get_model_descriptions().into_iter())
-}
-
-#[pg_extern]
 fn add_model(model_name: &str, config_str: &str) {
     ModelStore::create_model_profile(model_name, config_str).unwrap_or_else(|e| error!("{}", e));
 }
@@ -135,12 +123,7 @@ fn remove_engine(name: &str) {
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
 mod tests {
-    use crate::pg_test;
-
-    #[pg_test]
-    fn test_get_descriptions() {
-        unimplemented!();
-    }
+    use crate::{drivers::get_model_descriptions, pg_test};
 
     #[pg_test]
     fn test_add_list_and_remove_models() {

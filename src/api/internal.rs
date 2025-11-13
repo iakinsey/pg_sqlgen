@@ -5,6 +5,7 @@ use pgrx::prelude::*;
 use pgrx::spi::Query;
 use tokio::runtime::Runtime;
 
+use crate::drivers::get_model_descriptions;
 use crate::stores::engine_store::EngineStore;
 use crate::stores::model_store::ModelStore;
 use crate::types::errors::SqlgenError;
@@ -200,12 +201,39 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
     })
 }
 
+#[pg_extern]
+fn internal_get_descriptions() -> TableIterator<
+    'static,
+    (
+        name!(id, &'static str),
+        name!(name, &'static str),
+        name!(description, &'static str),
+    ),
+> {
+    TableIterator::new(get_model_descriptions().into_iter())
+}
+
 #[cfg(any(test, feature = "pg_test"))]
+#[pg_schema]
 mod tests {
-    use crate::pg_test;
+    use pgrx::Spi;
+
+    use crate::{drivers::get_model_descriptions, pg_test};
 
     #[pg_test]
-    fn test_add_table() {
-        unimplemented!()
+    fn test_get_descriptions() {
+        Spi::connect(|client| {
+            let rows = client
+                .select("SELECT * FROM sqlgen.model_descriptions;", None, &[])
+                .unwrap();
+
+            if rows.is_empty() {
+                panic!("description rows are empty")
+            }
+
+            // Comparison seems a little silly here, we mostly just want to be sure
+            // that the view is accessible.
+            assert_eq!(get_model_descriptions().len(), rows.len());
+        });
     }
 }
