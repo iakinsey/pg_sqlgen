@@ -2,7 +2,6 @@ use pgrx::prelude::*;
 use tokio::runtime::Runtime;
 
 use crate::{
-    drivers::get_model_descriptions,
     runners::{ddl_filter::DDLFilterRunner, sql_generation::SQLGenerationRunner},
     stores::{
         config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
@@ -123,7 +122,7 @@ fn remove_engine(name: &str) {
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
 mod tests {
-    use crate::{drivers::get_model_descriptions, pg_test};
+    use crate::pg_test;
 
     #[pg_test]
     fn test_add_list_and_remove_models() {
