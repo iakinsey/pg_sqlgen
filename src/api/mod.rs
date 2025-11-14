@@ -19,6 +19,7 @@ extension_sql_file!(
     "../../sql-scripts/model_profile.sql",
     name = "model_profile"
 );
+extension_sql_file!("../../sql-scripts/profiles.sql", name = "profiles");
 extension_sql_file!("../../sql-scripts/metadata.sql", name = "metadata");
 extension_sql_file!(
     "../../sql-scripts/finalized.sql",

@@ -35,7 +35,7 @@ impl ModelStore {
             name: name.to_string(),
             config: config,
         };
-        let query = "SELECT sqlgen.create_model($1, $2);";
+        let query = "SELECT sqlgen.create_model($1, $2::JSONB);";
 
         Spi::run_with_args(query, &[name.into(), config_str.into()])?;
 

@@ -64,14 +64,14 @@ REVOKE EXECUTE ON FUNCTION sqlgen.create_model FROM public;
 --------------------------------------------------------------------------------
 -- Delete model profile
 --------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION sqlgen.delete_model(model_name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen.delete_model(name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 STRICT
 AS $$
 BEGIN
     DELETE FROM sqlgen_internal.model_profile mp
-    WHERE mp.model_name = model_name;
+    WHERE mp.model_name = name;
 END;
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen.delete_model FROM public;

@@ -122,11 +122,46 @@ fn remove_engine(name: &str) {
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
 mod tests {
+    use pgrx::Spi;
+
     use crate::pg_test;
 
     #[pg_test]
     fn test_add_list_and_remove_models() {
-        unimplemented!();
+        let add_query = "SELECT add_model($1, sqlgen.stub_config('test'))";
+        let get_query = "SELECT * FROM sqlgen.models WHERE model_name = $1";
+        let remove_query = "SELECT remove_model($1)";
+        let model_name = "test_model_name";
+
+        Spi::connect(|client| {
+            client
+                .select(add_query, None, &[model_name.into()])
+                .unwrap();
+        });
+
+        let count = Spi::connect(|client| {
+            client
+                .select(get_query, None, &[model_name.into()])
+                .unwrap()
+                .count()
+        });
+
+        assert_eq!(count, 1);
+
+        Spi::connect(|client| {
+            client
+                .select(remove_query, None, &[model_name.into()])
+                .unwrap();
+        });
+
+        let count = Spi::connect(|client| {
+            client
+                .select(get_query, None, &[model_name.into()])
+                .unwrap()
+                .count()
+        });
+
+        assert_eq!(count, 0);
     }
 
     #[pg_test]
