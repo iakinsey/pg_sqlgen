@@ -43,7 +43,7 @@ lazy_static! {
 }
 
 pub fn get_current_schema() -> Result<String, SqlgenError> {
-    match Spi::get_one::<String>("SELECT current_schema()")? {
+    match Spi::get_one::<String>("SELECT current_schema()::TEXT")? {
         Some(v) => Ok(v),
         None => Err(SqlgenError::NoSchema()),
     }

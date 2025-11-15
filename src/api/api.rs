@@ -60,8 +60,24 @@ fn set_default_engine(engine: &str) {
         .unwrap_or_else(|e| error!("{}", e));
 }
 
-#[pg_extern]
-fn create_engine(
+#[pg_extern(name = "create_engine")]
+fn create_engine_3(name: &str, instruct_model: &str, encoder_model: &str) {
+    create_engine_10(
+        name,
+        instruct_model,
+        encoder_model,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+}
+
+#[pg_extern(name = "create_engine")]
+fn create_engine_10(
     name: &str,
     instruct_model: &str,
     encoder_model: &str,
@@ -128,7 +144,7 @@ mod tests {
 
     #[pg_test]
     fn test_add_list_and_remove_models() {
-        let add_query = "SELECT add_model($1, sqlgen.stub_config('test'))";
+        let add_query = "SELECT add_model($1, sqlgen.stub_config('test')";
         let get_query = "SELECT * FROM sqlgen.models WHERE model_name = $1";
         let remove_query = "SELECT remove_model($1)";
         let model_name = "test_model_name";
@@ -165,8 +181,28 @@ mod tests {
     }
 
     #[pg_test]
-    fn test_generate() {
-        unimplemented!();
+    fn test_generate_and_execute() {
+        let engine_name = "engine_name";
+        let model_name = "stub_model";
+        let create_model_query =
+            "SELECT add_model($1, sqlgen.stub_config('SELECT 1', ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT create_engine($1, $2, $2)";
+
+        Spi::connect(|client| {
+            client
+                .select(create_model_query, None, &[model_name.into()])
+                .unwrap();
+        });
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_engine_query,
+                    None,
+                    &[engine_name.into(), model_name.into()],
+                )
+                .unwrap();
+        });
     }
 
     #[pg_test]
