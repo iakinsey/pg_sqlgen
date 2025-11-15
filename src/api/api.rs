@@ -23,8 +23,13 @@ fn remove_model(model_name: &str) {
     ModelStore::delete_model_profile(model_name).unwrap_or_else(|e| error!("{}", e));
 }
 
-#[pg_extern]
-fn generate(user_query: &str, engine: Option<&str>) -> String {
+#[pg_extern(name = "generate")]
+fn generate_1(user_query: &str) -> String {
+    generate_2(user_query, None)
+}
+
+#[pg_extern(name = "generate")]
+fn generate_2(user_query: &str, engine: Option<&str>) -> String {
     let engine_name = match engine {
         Some(e) => e.to_string(),
         None => ConfigStore::get_config_value(DEFAULT_ENGINE_CONFIG_KEY)
@@ -139,8 +144,9 @@ fn remove_engine(name: &str) {
 #[pg_schema]
 mod tests {
     use pgrx::Spi;
+    use serde_json::to_string;
 
-    use crate::pg_test;
+    use crate::{pg_test, types::structs::generate_response::GenerateResponse};
 
     #[pg_test]
     fn test_add_list_and_remove_models() {
@@ -184,13 +190,26 @@ mod tests {
     fn test_generate_and_execute() {
         let engine_name = "engine_name";
         let model_name = "stub_model";
+        let user_query = "I am a user query.";
+        let expected_query = "SELECT 'Hello world!'";
+        let model_response = GenerateResponse {
+            query: Some(expected_query.to_string()),
+            error: None,
+        };
+        let model_response_json = to_string(&model_response);
         let create_model_query =
-            "SELECT add_model($1, sqlgen.stub_config('SELECT 1', ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+            "SELECT add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
         let create_engine_query = "SELECT create_engine($1, $2, $2)";
+        let generate_query = "SELECT generate($1, $2);";
+        let execute_query = "SELECT sqlgen.query($1, $2);";
 
         Spi::connect(|client| {
             client
-                .select(create_model_query, None, &[model_name.into()])
+                .select(
+                    create_model_query,
+                    None,
+                    &[model_name.into(), model_response_json.into()],
+                )
                 .unwrap();
         });
 
@@ -203,6 +222,38 @@ mod tests {
                 )
                 .unwrap();
         });
+
+        let generated_query: String = Spi::connect(|client| {
+            client
+                .select(
+                    generate_query,
+                    None,
+                    &[user_query.into(), engine_name.into()],
+                )
+                .unwrap()
+                .first()
+                .get_one::<String>()
+                .unwrap()
+                .expect("generate returned NULL")
+        });
+
+        assert_eq!(expected_query, generated_query);
+
+        let executed_result: String = Spi::connect(|client| {
+            client
+                .select(
+                    execute_query,
+                    None,
+                    &[user_query.into(), engine_name.into()],
+                )
+                .unwrap()
+                .first()
+                .get_one::<String>()
+                .unwrap()
+                .expect("execute returned NULL")
+        });
+
+        assert_eq!(executed_result, "Hello world!");
     }
 
     #[pg_test]

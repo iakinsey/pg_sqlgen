@@ -9,7 +9,7 @@ AS $$
 DECLARE
     dyn_sql TEXT;
 BEGIN
-    SELECT sqlgen.generate(user_query, engine) INTO dyn_sql;
+    SELECT generate(user_query, engine) INTO dyn_sql;
     RETURN QUERY EXECUTE dyn_sql;
 END;
 $$;
