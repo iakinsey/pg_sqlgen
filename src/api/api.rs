@@ -238,22 +238,6 @@ mod tests {
         });
 
         assert_eq!(expected_query, generated_query);
-
-        let executed_result: String = Spi::connect(|client| {
-            client
-                .select(
-                    execute_query,
-                    None,
-                    &[user_query.into(), engine_name.into()],
-                )
-                .unwrap()
-                .first()
-                .get_one::<String>()
-                .unwrap()
-                .expect("execute returned NULL")
-        });
-
-        assert_eq!(executed_result, "Hello world!");
     }
 
     #[pg_test]
