@@ -201,7 +201,6 @@ mod tests {
             "SELECT add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
         let create_engine_query = "SELECT create_engine($1, $2, $2)";
         let generate_query = "SELECT generate($1, $2);";
-        let execute_query = "SELECT sqlgen.query($1, $2);";
 
         Spi::connect(|client| {
             client
