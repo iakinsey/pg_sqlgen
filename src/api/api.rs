@@ -251,6 +251,62 @@ mod tests {
 
     #[pg_test]
     fn test_create_and_remove_engine() {
-        unimplemented!();
+        let engine_name = "engine_name";
+        let model_name = "stub_model";
+        let expected_query = "SELECT 'Hello world!'";
+        let model_response = GenerateResponse {
+            query: Some(expected_query.to_string()),
+            error: None,
+        };
+        let model_response_json = to_string(&model_response);
+        let create_model_query =
+            "SELECT add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT create_engine($1, $2, $2)";
+        let get_engine_query = "SELECT * FROM sqlgen.engines WHERE engine_name = $1";
+        let remove_engine_query = "SELECT remove_engine($1);";
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_model_query,
+                    None,
+                    &[model_name.into(), model_response_json.into()],
+                )
+                .unwrap();
+        });
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_engine_query,
+                    None,
+                    &[engine_name.into(), model_name.into()],
+                )
+                .unwrap();
+        });
+
+        let count = Spi::connect(|client| {
+            client
+                .select(get_engine_query, None, &[engine_name.into()])
+                .unwrap()
+                .count()
+        });
+
+        assert_eq!(count, 1);
+
+        Spi::connect(|client| {
+            client
+                .select(remove_engine_query, None, &[engine_name.into()])
+                .unwrap();
+        });
+
+        let count = Spi::connect(|client| {
+            client
+                .select(get_engine_query, None, &[engine_name.into()])
+                .unwrap()
+                .count()
+        });
+
+        assert_eq!(count, 0);
     }
 }
