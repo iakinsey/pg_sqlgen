@@ -35,6 +35,15 @@ impl ConfigStore {
 
         Ok(())
     }
+
+    pub fn remove_config_value(key: &str) -> Result<(), SqlgenError> {
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.remove_config_value($1);",
+            &[key.into()],
+        )?;
+
+        Ok(())
+    }
 }
 
 #[cfg(any(test, feature = "pg_test"))]

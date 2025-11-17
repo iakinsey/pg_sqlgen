@@ -9,7 +9,7 @@ use crate::{
         metadata_store::MetadataStore,
         model_store::ModelStore,
     },
-    types::structs::engine::TableFilterType,
+    types::{errors::SqlgenError, structs::engine::TableFilterType},
     utils::sql::get_current_schema,
 };
 
@@ -32,8 +32,11 @@ fn generate_1(user_query: &str) -> String {
 fn generate_2(user_query: &str, engine: Option<&str>) -> String {
     let engine_name = match engine {
         Some(e) => e.to_string(),
-        None => ConfigStore::get_config_value(DEFAULT_ENGINE_CONFIG_KEY)
-            .unwrap_or_else(|e| error!("{}", e)),
+        None => match ConfigStore::get_config_value(DEFAULT_ENGINE_CONFIG_KEY) {
+            Ok(c) => c,
+            Err(SqlgenError::ConfigDoesntExist(e)) => error!("default text to sql engine not set"),
+            Err(e) => error!("{}", e),
+        },
     };
     let engine = EngineStore::get_engine(&engine_name).unwrap_or_else(|e| error!("{}", e));
     let mut ddl_filter_runner =
@@ -63,6 +66,11 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> String {
 fn set_default_engine(engine: &str) {
     ConfigStore::set_config_value(DEFAULT_ENGINE_CONFIG_KEY, engine)
         .unwrap_or_else(|e| error!("{}", e));
+}
+
+#[pg_extern]
+fn remove_default_engine() {
+    ConfigStore::remove_config_value(DEFAULT_ENGINE_CONFIG_KEY).unwrap_or_else(|e| error!("{}", e));
 }
 
 #[pg_extern(name = "create_engine")]
@@ -241,12 +249,58 @@ mod tests {
 
     #[pg_test]
     fn test_get_default_engine() {
-        unimplemented!();
-    }
+        let engine_name = "engine_name";
+        let model_name = "stub_model";
+        let expected_query = "SELECT 'Hello world!'";
+        let model_response = GenerateResponse {
+            query: Some(expected_query.to_string()),
+            error: None,
+        };
+        let model_response_json = to_string(&model_response);
+        let create_model_query =
+            "SELECT add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT create_engine($1, $2, $2)";
+        let set_default_engine_query = "SELECT set_default_engine($1)";
+        let remove_default_engine_query = "SELECT remove_default_engine();";
+        let generate_query = "SELECT generate('example query');";
 
-    #[pg_test]
-    fn test_get_default_engine_without_setting() {
-        unimplemented!();
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_model_query,
+                    None,
+                    &[model_name.into(), model_response_json.into()],
+                )
+                .unwrap();
+        });
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_engine_query,
+                    None,
+                    &[engine_name.into(), model_name.into()],
+                )
+                .unwrap();
+        });
+
+        Spi::connect(|client| {
+            client
+                .select(set_default_engine_query, None, &[engine_name.into()])
+                .unwrap();
+        });
+
+        let generated_query: String = Spi::connect(|client| {
+            client
+                .select(generate_query, None, &[])
+                .unwrap()
+                .first()
+                .get_one::<String>()
+                .unwrap()
+                .expect("generate returned NULL")
+        });
+
+        assert_eq!(generated_query, expected_query);
     }
 
     #[pg_test]

@@ -52,3 +52,18 @@ END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.set_config_value FROM public;
+
+--------------------------------------------------------------------------------
+-- Remove config
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.remove_config_value(k TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    DELETE FROM sqlgen_internal.config
+    WHERE key = k;
+END
+$$;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_config_value FROM public;
