@@ -1,17 +1,31 @@
 use std::{fs::read_to_string, str::FromStr};
 
+use async_trait::async_trait;
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_nn::VarBuilder;
-use candle_transformers::{generation::LogitsProcessor, models::phi3::{Config, Model}, utils::apply_repeat_penalty};
+use candle_transformers::{
+    generation::LogitsProcessor,
+    models::phi3::{Config, Model},
+    utils::apply_repeat_penalty,
+};
 use hf_hub::{api::sync::Api, Repo};
 use serde_json::from_str;
-use tokenizers::Tokenizer;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
+use tokenizers::Tokenizer;
 
-use crate::{types::{errors::SqlgenError, structs::{instruct_message::{InstructMessage, InstructRole}, profiles::LocalPhiConfig}, traits::driver::TextInstructDriver}, utils::model::get_device};
-
+use crate::{
+    types::{
+        errors::SqlgenError,
+        structs::{
+            instruct_message::{InstructMessage, InstructRole},
+            profiles::LocalPhiConfig,
+        },
+        traits::driver::{ModelDriver, TextInstructDriver},
+    },
+    utils::model::get_device,
+};
 
 pub struct LocalPhiInstructDriver {
     model: Model,
@@ -27,8 +41,15 @@ fn write_string_to_file<P: AsRef<Path>>(path: P, contents: &str) -> io::Result<(
     file.write_all(contents.as_bytes())
 }
 
+impl ModelDriver for LocalPhiInstructDriver {
+    const ID: &'static str = "local_phi";
+    const NAME: &'static str = "Local PHI";
+    const DESCRIPTION: &'static str =
+        "A small language model developed by Microsoft, runs locally.";
+}
+
 impl LocalPhiInstructDriver {
-    pub fn new(phi_config: LocalPhiConfig) -> Result<Self, SqlgenError> {
+    pub fn new(phi_config: &LocalPhiConfig) -> Result<Self, SqlgenError> {
         let self_config = phi_config.clone();
         let device = get_device(&phi_config.compute_device)?;
         let repo = Repo::with_revision(
@@ -43,20 +64,30 @@ impl LocalPhiInstructDriver {
         let config_json = read_to_string(config_file)?;
         let config: Config = from_str(&config_json)?;
         write_string_to_file("/home/agent/wat", "worked")?;
-        let dtype = match phi_config.data_type {
+        let dtype = match phi_config.data_type.clone() {
             Some(s) => DType::from_str(&s)?,
             None => device.bf16_default_to_f32(),
         };
         let weights_files: Vec<_> = phi_config
+            .clone()
             .weights_filenames
             .into_iter()
             .map(|weights_filename| api.get(&weights_filename))
             .collect::<Result<_, _>>()?;
-        let var_builder = unsafe { VarBuilder::from_mmaped_safetensors(&weights_files, dtype, &device)? };
+        let var_builder =
+            unsafe { VarBuilder::from_mmaped_safetensors(&weights_files, dtype, &device)? };
         let model = Model::new(&config, var_builder)?;
-        let logits_processor = LogitsProcessor::new(phi_config.seed, phi_config.temperature, phi_config.top_p);
-        let eos_token = tokenizer.get_vocab(true).get("<|endoftext|>").copied().ok_or(SqlgenError::Any("eos token does not exist".to_string()))?;
-        
+        let logits_processor = LogitsProcessor::new(
+            phi_config.seed,
+            phi_config.get_temperature(),
+            phi_config.get_top_p(),
+        );
+        let eos_token = tokenizer
+            .get_vocab(true)
+            .get("<|endoftext|>")
+            .copied()
+            .ok_or(SqlgenError::Any("eos token does not exist".to_string()))?;
+
         Ok(Self {
             model,
             tokenizer,
@@ -86,12 +117,17 @@ impl LocalPhiInstructDriver {
     }
 }
 
+#[async_trait]
 impl TextInstructDriver for LocalPhiInstructDriver {
-    async fn get_assistant_response(&mut self, messages: Vec<InstructMessage>) -> Result<String, SqlgenError> {
+    async fn get_assistant_response(
+        &mut self,
+        messages: Vec<InstructMessage>,
+    ) -> Result<String, SqlgenError> {
         let prompt = self.gen_prompt(messages);
         let tokens = self.tokenizer.encode(prompt, true)?.get_ids().to_vec();
         let mut pos = 0;
         let mut out_tokens = Vec::new();
+        let repeat_penalty = self.config.get_repeat_penalty()?;
 
         for index in 0..self.config.sample_len {
             let context_size = if index > 0 { 1 } else { tokens.len() };
@@ -99,11 +135,11 @@ impl TextInstructDriver for LocalPhiInstructDriver {
             let input = Tensor::new(ctx, &self.device)?.unsqueeze(0)?;
             let logits = self.model.forward(&input, pos)?.i((.., 0, ..))?;
             let logits = logits.squeeze(0)?.to_dtype(DType::F32)?;
-            let logits = if self.config.repeat_penalty == 1. {
+            let logits = if repeat_penalty == 1. {
                 logits
             } else {
                 let start_at = tokens.len().saturating_sub(self.config.repeat_last_n);
-                apply_repeat_penalty(&logits, self.config.repeat_penalty, &tokens[start_at..])?
+                apply_repeat_penalty(&logits, repeat_penalty, &tokens[start_at..])?
             };
             let next_token = self.logits_processor.sample(&logits)?;
 
@@ -118,7 +154,7 @@ impl TextInstructDriver for LocalPhiInstructDriver {
 
         Ok(match out_tokens.is_empty() {
             true => String::new(),
-            false => self.tokenizer.decode(&out_tokens, true)?
+            false => self.tokenizer.decode(&out_tokens, true)?,
         })
     }
 }
@@ -126,37 +162,49 @@ impl TextInstructDriver for LocalPhiInstructDriver {
 #[cfg(test)]
 mod tests {
     use serde_json::from_str;
+    use tokio::runtime::Runtime;
 
-    use crate::{drivers::LocalPhiInstructDriver, types::{structs::{instruct_message::{InstructMessage, InstructRole}, profiles::LocalPhiConfig}, traits::driver::TextInstructDriver}};
+    use crate::{
+        drivers::LocalPhiInstructDriver,
+        types::{
+            structs::{
+                instruct_message::{InstructMessage, InstructRole},
+                profiles::LocalPhiConfig,
+            },
+            traits::driver::TextInstructDriver,
+        },
+    };
 
     fn setup_scenario() -> LocalPhiInstructDriver {
         let phi_config: LocalPhiConfig = from_str("{}").unwrap();
-        LocalPhiInstructDriver::new(phi_config).unwrap()
+        LocalPhiInstructDriver::new(&phi_config).unwrap()
     }
 
     #[test]
-    fn test_generate_sql_statement() {
-    }
+    fn test_generate_sql_statement() {}
 
     #[test]
     fn test_genrate_sentence() {}
 
     #[test]
     fn test_question_answer() {
+        let rt = Runtime::new().unwrap();
         let messages = vec![
             InstructMessage {
                 role: InstructRole::System,
                 message: "You are a helpful agent, you answer questions.".to_string(),
             },
             InstructMessage {
-                role:InstructRole::User,
+                role: InstructRole::User,
                 message: "What colors are on the flag of the United States?".to_string(),
-            }
+            },
         ];
 
         let mut model = setup_scenario();
-        let response = model.get_assistant_response(messages).unwrap();
+        rt.block_on(async {
+            let response = model.get_assistant_response(messages).await.unwrap();
 
-        assert_eq!(response, "hello world");
+            assert_eq!(response, "hello world");
+        });
     }
 }

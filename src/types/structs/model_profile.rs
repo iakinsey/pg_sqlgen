@@ -2,10 +2,10 @@ use pgrx::spi::SpiTupleTable;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    drivers::{LocalBertDriver, OllamaDriver, StubDriver},
+    drivers::{LocalBertDriver, LocalPhiInstructDriver, OllamaDriver, StubDriver},
     types::{
         errors::SqlgenError,
-        structs::profiles::{LocalBertConfig, OllamaConfig, StubConfig},
+        structs::profiles::{LocalBertConfig, LocalPhiConfig, OllamaConfig, StubConfig},
         traits::driver::{TextEncoderDriver, TextInstructDriver},
     },
     utils::sql::get_column,
@@ -20,6 +20,7 @@ pub struct ModelProfile {
 #[serde(tag = "type", content = "config")]
 pub enum ModelConfig {
     LocalBert(LocalBertConfig),
+    LocalPhi(LocalPhiConfig),
     Ollama(OllamaConfig),
     Stub(StubConfig),
 }
@@ -36,6 +37,7 @@ impl ModelProfile {
     pub fn has_valid_config(&self) -> bool {
         match &self.config {
             ModelConfig::LocalBert(_) => true,
+            ModelConfig::LocalPhi(_) => true,
             ModelConfig::Ollama(_) => true,
             ModelConfig::Stub(_) => true,
         }
@@ -46,6 +48,7 @@ impl ModelProfile {
             ModelConfig::LocalBert(cfg) => Box::new(LocalBertDriver::new(&cfg)?),
             ModelConfig::Ollama(cfg) => Box::new(OllamaDriver::new(cfg)?),
             ModelConfig::Stub(cfg) => Box::new(StubDriver::new(cfg)?),
+            _ => return Err(SqlgenError::UnsupportedModelConfig(self.name.clone())),
         };
 
         Ok(driver)
@@ -53,6 +56,7 @@ impl ModelProfile {
 
     pub fn get_text_instruct_model(&self) -> Result<Box<dyn TextInstructDriver>, SqlgenError> {
         let driver: Box<dyn TextInstructDriver> = match &self.config {
+            ModelConfig::LocalPhi(cfg) => Box::new(LocalPhiInstructDriver::new(cfg)?),
             ModelConfig::Ollama(cfg) => Box::new(OllamaDriver::new(cfg)?),
             ModelConfig::Stub(cfg) => Box::new(StubDriver::new(cfg)?),
             _ => return Err(SqlgenError::UnsupportedModelConfig(self.name.clone())),

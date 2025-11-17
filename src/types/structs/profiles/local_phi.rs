@@ -1,9 +1,7 @@
-use crate::{
-    utils::model::default_compute_device,
-};
+use crate::{types::errors::SqlgenError, utils::model::default_compute_device};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LocalPhiConfig {
     #[serde(default = "default_model_name")]
     pub model_name: String,
@@ -20,15 +18,32 @@ pub struct LocalPhiConfig {
     #[serde(default = "default_sample_len")]
     pub sample_len: usize,
     #[serde(default = "default_repeat_penalty")]
-    pub repeat_penalty: f32,
+    pub repeat_penalty: String,
     #[serde(default = "default_repeat_last_n")]
     pub repeat_last_n: usize,
     #[serde(default = "default_seed")]
     pub seed: u64,
 
-    pub temperature: Option<f64>,
-    pub top_p: Option<f64>,
+    pub temperature: Option<String>,
+    pub top_p: Option<String>,
     pub data_type: Option<String>,
+}
+
+impl LocalPhiConfig {
+    // Some values stored as String to allow PartialEq/Eq
+    pub fn get_temperature(&self) -> Option<f64> {
+        self.temperature
+            .as_ref()
+            .and_then(|s| s.parse::<f64>().ok())
+    }
+
+    pub fn get_top_p(&self) -> Option<f64> {
+        self.top_p.as_ref().and_then(|s| s.parse::<f64>().ok())
+    }
+
+    pub fn get_repeat_penalty(&self) -> Result<f32, SqlgenError> {
+        Ok(self.repeat_penalty.parse::<f32>()?)
+    }
 }
 
 fn default_model_name() -> String {
@@ -58,8 +73,8 @@ fn default_sample_len() -> usize {
     5000
 }
 
-fn default_repeat_penalty() -> f32 {
-    1.1
+fn default_repeat_penalty() -> String {
+    "1.1".to_string()
 }
 
 fn default_repeat_last_n() -> usize {

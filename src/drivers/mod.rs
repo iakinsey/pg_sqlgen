@@ -1,4 +1,5 @@
 mod local_bert;
+mod local_phi_instruct;
 mod ollama;
 mod openai_completions;
 mod openai_embeddings;
@@ -6,6 +7,7 @@ mod stub;
 
 use crate::types::traits::driver::ModelDriver;
 pub use local_bert::*;
+pub use local_phi_instruct::*;
 pub use ollama::*;
 pub use openai_completions::*;
 pub use openai_embeddings::*;

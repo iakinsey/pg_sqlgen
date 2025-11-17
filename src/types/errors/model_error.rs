@@ -64,6 +64,8 @@ pub enum SqlgenError {
     ColumnParseFailed(String),
     #[error(transparent)]
     ParseIntError(#[from] std::num::ParseIntError),
+    #[error(transparent)]
+    ParseFloatError(#[from] std::num::ParseFloatError),
 }
 
 impl<T> From<PoisonError<T>> for SqlgenError {

@@ -30,7 +30,7 @@ AS $$
 DECLARE
     results float4[][];
 BEGIN
-    results := sqlgen_internal.batch_text_encode(model, text_values);
+    results := sqlgen_internal.internal_batch_text_encode(model, text_values);
     RETURN ARRAY(SELECT (v)::vector FROM unnest(results) AS v);
 END
 $$;
