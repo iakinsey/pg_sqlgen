@@ -34,7 +34,7 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> String {
         Some(e) => e.to_string(),
         None => match ConfigStore::get_config_value(DEFAULT_ENGINE_CONFIG_KEY) {
             Ok(c) => c,
-            Err(SqlgenError::ConfigDoesntExist(e)) => error!("default text to sql engine not set"),
+            Err(SqlgenError::ConfigDoesntExist(_)) => error!("default text to sql engine not set"),
             Err(e) => error!("{}", e),
         },
     };
