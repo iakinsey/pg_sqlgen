@@ -1,13 +1,10 @@
 use pgrx::{pg_schema, Spi};
 use serde_json::from_str;
 
-use crate::{
-    drivers::{LocalBertDriver, OllamaDriver, StubDriver},
-    types::{
-        errors::SqlgenError,
-        structs::model_profile::{ModelConfig, ModelProfile},
-        traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
-    },
+use crate::types::{
+    errors::SqlgenError,
+    structs::model_profile::{ModelConfig, ModelProfile},
+    traits::driver::{TextEncoderDriver, TextInstructDriver},
 };
 
 pub struct ModelStore {}
