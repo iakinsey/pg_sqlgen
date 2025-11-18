@@ -53,11 +53,7 @@ pub enum SqlgenError {
     #[error(transparent)]
     TokenizerError(#[from] tokenizers::Error),
     #[error(transparent)]
-    CandleCoreError(#[from] candle_core::Error),
-    #[error(transparent)]
     IoError(#[from] std::io::Error),
-    #[error(transparent)]
-    DTypeParseError(#[from] candle_core::DTypeParseError),
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
     #[error("{0}")]

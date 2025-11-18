@@ -1,11 +1,3 @@
-use candle_core::Tensor;
-
-use crate::types::errors::SqlgenError;
-
-pub fn l2_norm(v: &Tensor) -> Result<Tensor, SqlgenError> {
-    Ok(v.broadcast_div(&v.sqr()?.sum_keepdim(1)?.sqrt()?)?)
-}
-
 pub fn cosine_similarity(a: &Vec<f32>, b: &Vec<f32>) -> f32 {
     let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
     let norm_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
