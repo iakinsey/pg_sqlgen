@@ -2,10 +2,10 @@ use pgrx::spi::SpiTupleTable;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    drivers::{OllamaDriver, StubDriver},
+    drivers::{OllamaDriver, OpenAICompletionsDriver, StubDriver},
     types::{
         errors::SqlgenError,
-        structs::profiles::{OllamaConfig, StubConfig},
+        structs::profiles::{OllamaConfig, OpenAICompletionsConfig, StubConfig},
         traits::driver::{TextEncoderDriver, TextInstructDriver},
     },
     utils::sql::get_column,
@@ -19,6 +19,7 @@ pub struct ModelProfile {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", content = "config")]
 pub enum ModelConfig {
+    OpenAICompletions(OpenAICompletionsConfig),
     Ollama(OllamaConfig),
     Stub(StubConfig),
 }
@@ -30,13 +31,6 @@ impl ModelProfile {
         let config: ModelConfig = serde_json::from_str(&config_json)?;
 
         Ok(Self { name, config })
-    }
-
-    pub fn has_valid_config(&self) -> bool {
-        match &self.config {
-            ModelConfig::Ollama(_) => true,
-            ModelConfig::Stub(_) => true,
-        }
     }
 
     pub fn get_text_encoder_model(&self) -> Result<Box<dyn TextEncoderDriver>, SqlgenError> {
@@ -51,6 +45,7 @@ impl ModelProfile {
 
     pub fn get_text_instruct_model(&self) -> Result<Box<dyn TextInstructDriver>, SqlgenError> {
         let driver: Box<dyn TextInstructDriver> = match &self.config {
+            ModelConfig::OpenAICompletions(cfg) => Box::new(OpenAICompletionsDriver::new(cfg)?),
             ModelConfig::Ollama(cfg) => Box::new(OllamaDriver::new(cfg)?),
             ModelConfig::Stub(cfg) => Box::new(StubDriver::new(cfg)?),
             _ => return Err(SqlgenError::UnsupportedModelConfig(self.name.clone())),

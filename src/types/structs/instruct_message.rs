@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum InstructRole {
     System,
     User,
@@ -15,6 +18,7 @@ impl InstructRole {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct InstructMessage {
     pub role: InstructRole,
     pub message: String,

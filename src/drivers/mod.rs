@@ -12,6 +12,11 @@ pub use stub::*;
 pub fn get_model_descriptions() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         (
+            OpenAICompletionsDriver::ID,
+            OpenAICompletionsDriver::NAME,
+            OpenAICompletionsDriver::DESCRIPTION,
+        ),
+        (
             OllamaDriver::ID,
             OllamaDriver::NAME,
             OllamaDriver::DESCRIPTION,
