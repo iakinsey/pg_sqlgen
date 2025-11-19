@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::to_string;
+use serde_json::{from_str, to_string};
 
 use crate::types::{
     errors::SqlgenError,
@@ -19,6 +19,21 @@ pub struct OpenAICompletionsDriver {
 pub struct OpenAICompletionsRequest {
     model: String,
     messages: Vec<InstructMessage>,
+}
+
+#[derive(Deserialize)]
+pub struct OpenAICompletionsResponse {
+    choices: Vec<Choice>,
+}
+
+#[derive(Deserialize)]
+pub struct Choice {
+    message: Message,
+}
+
+#[derive(Deserialize)]
+pub struct Message {
+    content: String,
 }
 
 impl ModelDriver for OpenAICompletionsDriver {
@@ -70,16 +85,107 @@ impl TextInstructDriver for OpenAICompletionsDriver {
         let body = self.get_request_body()?;
         let url = self.config.url.clone();
         let auth_header = self.get_auth_header();
-        let resp = self
+        let req = self
             .client
             .post(url)
             .body(body)
             .header("Content-Type", "application/json");
-        let resp = match auth_header {
-            Some(h) => resp.header("Authorization", &h),
-            None => resp,
+
+        let req = match auth_header {
+            Some(h) => req.header("Authorization", &h),
+            None => req,
         };
 
-        unimplemented!();
+        let resp = req.send().await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+
+        if !status.is_success() {
+            return Err(SqlgenError::ResponseError(format!(
+                "HTTP {}: {}",
+                status, text
+            )));
+        }
+
+        match from_str::<OpenAICompletionsResponse>(&text) {
+            Ok(response) => {
+                let first = response
+                    .choices
+                    .first()
+                    .ok_or_else(|| SqlgenError::ResponseError("no choices returned".to_string()))?;
+                Ok(first.message.content.clone())
+            }
+            Err(_) => Err(SqlgenError::ResponseError(format!(
+                "HTTP {}, failed to parse: {}",
+                status, text
+            ))),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::types::structs::instruct_message::InstructRole;
+
+    use super::*;
+    use httpmock::{Method::POST, MockServer};
+
+    #[tokio::test]
+    async fn test_get_assistant_response() {
+        let response_text = "test-response-text";
+        let assistant_response = format!(
+            r#"{{
+            "choices": [{{
+                "message": {{
+                    "content": "{}"
+                }}
+            }}]
+        }}"#,
+            response_text
+        );
+        let model_name = "test-model";
+        let model_path = "/v1/chat/completions";
+        let server = MockServer::start();
+        let api_key = "test-api-key";
+        let authorization_type = "Bearer";
+        let message = "test-message";
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path(model_path)
+                .body_contains(model_name)
+                .body_contains(message)
+                .header(
+                    "Authorization",
+                    format!("{} {}", authorization_type, api_key),
+                );
+
+            then.status(200).body(assistant_response);
+        });
+        let config = OpenAICompletionsConfig {
+            url: format!("http://{}:{}{}", server.host(), server.port(), model_path),
+            model: model_name.to_string(),
+            api_key: Some(api_key.to_string()),
+            authorization_type: authorization_type.to_string(),
+        };
+        let messages = vec![InstructMessage {
+            role: InstructRole::User,
+            message: message.to_string(),
+        }];
+
+        let mut driver = OpenAICompletionsDriver::new(&config).unwrap();
+        let response = driver.get_assistant_response(messages).await.unwrap();
+
+        mock.assert();
+        assert_eq!(response, response_text);
+    }
+
+    #[tokio::test]
+    async fn test_get_assistant_response_failed() {
+        unimplemented!()
+    }
+
+    #[tokio::test]
+    async fn test_get_assistant_response_parse_failed() {
+        unimplemented!()
     }
 }
