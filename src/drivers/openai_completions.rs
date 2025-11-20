@@ -195,7 +195,45 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_assistant_response_failed() {
-        unimplemented!()
+        let model_name = "test-model";
+        let model_path = "/v1/chat/completions";
+        let api_key = "test-api-key";
+        let authorization_type = "Bearer";
+        let error_response = r#"{"error": "test"}"#;
+        let message = "test-message";
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path(model_path)
+                .body_contains(model_name)
+                .body_contains(message)
+                .header(
+                    "Authorization",
+                    format!("{} {}", authorization_type, api_key),
+                );
+
+            then.status(500).body(error_response);
+        });
+
+        let config = OpenAICompletionsConfig {
+            url: format!("http://{}:{}{}", server.host(), server.port(), model_path),
+            model: model_name.to_string(),
+            api_key: Some(api_key.to_string()),
+            authorization_type: authorization_type.to_string(),
+        };
+
+        let messages = vec![InstructMessage {
+            role: InstructRole::User,
+            message: message.to_string(),
+        }];
+
+        let mut driver = OpenAICompletionsDriver::new(&config).unwrap();
+        let response = driver.get_assistant_response(messages).await;
+
+        mock.assert();
+
+        let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
     }
 
     #[tokio::test]
