@@ -11,14 +11,20 @@ use crate::types::{
 
 pub struct OpenAICompletionsDriver {
     config: OpenAICompletionsConfig,
-    messages: Vec<InstructMessage>,
+    messages: Vec<CompletionsMessage>,
     client: Client,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct OpenAICompletionsRequest {
     model: String,
-    messages: Vec<InstructMessage>,
+    messages: Vec<CompletionsMessage>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct CompletionsMessage {
+    role: String,
+    content: String,
 }
 
 #[derive(Deserialize)]
@@ -72,6 +78,14 @@ impl OpenAICompletionsDriver {
                 .to_string(),
         )
     }
+
+    fn append_messages(&mut self, messages: Vec<InstructMessage>) {
+        self.messages
+            .extend(messages.iter().map(|m| CompletionsMessage {
+                role: m.role.to_string().to_lowercase(),
+                content: m.message.clone(),
+            }));
+    }
 }
 
 #[async_trait]
@@ -80,7 +94,7 @@ impl TextInstructDriver for OpenAICompletionsDriver {
         &mut self,
         messages: Vec<InstructMessage>,
     ) -> Result<String, SqlgenError> {
-        self.messages.extend(messages);
+        self.append_messages(messages);
 
         let body = self.get_request_body()?;
         let url = self.config.url.clone();
