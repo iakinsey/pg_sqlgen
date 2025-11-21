@@ -158,11 +158,65 @@ mod tests {
 
     #[tokio::test]
     async fn test_encode_response_failed() {
-        unimplemented!();
+        let url_part = "/v1/embeddings";
+        let model_name = "test-model-name";
+        let input = "test-input";
+        let api_key = "api-key";
+        let auth_type = "Bearer";
+        let error_response = r#"{"error": "test"}"#;
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path(url_part)
+                .body_contains(model_name)
+                .body_contains(input)
+                .header("Authorization", format!("{} {}", auth_type, api_key));
+
+            then.status(500).body(error_response);
+        });
+        let config = OpenAIEmbeddingsConfig {
+            url: format!("http://{}:{}{}", server.host(), server.port(), url_part),
+            model: model_name.to_string(),
+            api_key: Some(api_key.to_string()),
+            authorization_type: auth_type.to_string(),
+        };
+        let driver = OpenAIEmbeddingsDriver::new(&config).unwrap();
+        let response = driver.encode(input).await;
+
+        mock.assert();
+        let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
     }
 
     #[tokio::test]
     async fn test_encode_parse_failed() {
-        unimplemented!();
+        let bad_response = "}{";
+        let url_part = "/v1/embeddings";
+        let model_name = "test-model-name";
+        let input = "test-input";
+        let api_key = "api-key";
+        let auth_type = "Bearer";
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path(url_part)
+                .body_contains(model_name)
+                .body_contains(input)
+                .header("Authorization", format!("{} {}", auth_type, api_key));
+
+            then.status(200).body(bad_response);
+        });
+        let config = OpenAIEmbeddingsConfig {
+            url: format!("http://{}:{}{}", server.host(), server.port(), url_part),
+            model: model_name.to_string(),
+            api_key: Some(api_key.to_string()),
+            authorization_type: auth_type.to_string(),
+        };
+        let driver = OpenAIEmbeddingsDriver::new(&config).unwrap();
+        let response = driver.encode(input).await;
+
+        mock.assert();
+        let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
     }
 }

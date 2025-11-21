@@ -231,7 +231,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_assistant_response_parse_failed() {
-        let bad_response = r#"}{"#;
+        let bad_response = "}{";
         let model_name = "test-model";
         let model_path = "/v1/chat/completions";
         let api_key = "test-api-key";
