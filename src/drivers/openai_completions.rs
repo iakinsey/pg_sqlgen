@@ -3,10 +3,13 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string};
 
-use crate::types::{
-    errors::SqlgenError,
-    structs::{instruct_message::InstructMessage, profiles::OpenAICompletionsConfig},
-    traits::driver::{ModelDriver, TextInstructDriver},
+use crate::{
+    types::{
+        errors::SqlgenError,
+        structs::{instruct_message::InstructMessage, profiles::OpenAICompletionsConfig},
+        traits::driver::{ModelDriver, TextInstructDriver},
+    },
+    utils::rpc::get_auth_header,
 };
 
 pub struct OpenAICompletionsDriver {
@@ -66,19 +69,6 @@ impl OpenAICompletionsDriver {
         Ok(to_string(&request)?)
     }
 
-    fn get_auth_header(&self) -> Option<String> {
-        let api_key = match self.config.api_key.clone() {
-            Some(k) => k,
-            None => return None,
-        };
-
-        Some(
-            format!("{} {}", self.config.authorization_type, api_key)
-                .trim()
-                .to_string(),
-        )
-    }
-
     fn append_messages(&mut self, messages: Vec<InstructMessage>) {
         self.messages
             .extend(messages.iter().map(|m| CompletionsMessage {
@@ -98,7 +88,10 @@ impl TextInstructDriver for OpenAICompletionsDriver {
 
         let body = self.get_request_body()?;
         let url = self.config.url.clone();
-        let auth_header = self.get_auth_header();
+        let auth_header = get_auth_header(
+            self.config.api_key.clone(),
+            self.config.authorization_type.clone(),
+        );
         let req = self
             .client
             .post(url)

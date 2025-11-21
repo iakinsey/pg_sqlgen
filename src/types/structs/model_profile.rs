@@ -2,10 +2,12 @@ use pgrx::spi::SpiTupleTable;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    drivers::{OllamaDriver, OpenAICompletionsDriver, StubDriver},
+    drivers::{OllamaDriver, OpenAICompletionsDriver, OpenAIEmbeddingsDriver, StubDriver},
     types::{
         errors::SqlgenError,
-        structs::profiles::{OllamaConfig, OpenAICompletionsConfig, StubConfig},
+        structs::profiles::{
+            OllamaConfig, OpenAICompletionsConfig, OpenAIEmbeddingsConfig, StubConfig,
+        },
         traits::driver::{TextEncoderDriver, TextInstructDriver},
     },
     utils::sql::get_column,
@@ -20,6 +22,7 @@ pub struct ModelProfile {
 #[serde(tag = "type", content = "config")]
 pub enum ModelConfig {
     OpenAICompletions(OpenAICompletionsConfig),
+    OpenAIEmbeddings(OpenAIEmbeddingsConfig),
     Ollama(OllamaConfig),
     Stub(StubConfig),
 }
@@ -35,6 +38,7 @@ impl ModelProfile {
 
     pub fn get_text_encoder_model(&self) -> Result<Box<dyn TextEncoderDriver>, SqlgenError> {
         let driver: Box<dyn TextEncoderDriver> = match &self.config {
+            ModelConfig::OpenAIEmbeddings(cfg) => Box::new(OpenAIEmbeddingsDriver::new(cfg)?),
             ModelConfig::Ollama(cfg) => Box::new(OllamaDriver::new(cfg)?),
             ModelConfig::Stub(cfg) => Box::new(StubDriver::new(cfg)?),
             _ => return Err(SqlgenError::UnsupportedModelConfig(self.name.clone())),

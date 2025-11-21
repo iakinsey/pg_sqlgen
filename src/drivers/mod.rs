@@ -17,6 +17,11 @@ pub fn get_model_descriptions() -> Vec<(&'static str, &'static str, &'static str
             OpenAICompletionsDriver::DESCRIPTION,
         ),
         (
+            OpenAIEmbeddingsDriver::ID,
+            OpenAIEmbeddingsDriver::NAME,
+            OpenAIEmbeddingsDriver::DESCRIPTION,
+        ),
+        (
             OllamaDriver::ID,
             OllamaDriver::NAME,
             OllamaDriver::DESCRIPTION,
