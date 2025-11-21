@@ -110,3 +110,24 @@ impl TextEncoderDriver for OpenAIEmbeddingsDriver {
         unimplemented!();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use httpmock::{Method::POST, MockServer};
+
+    #[tokio::test]
+    async fn test_encode() {
+        unimplemented!();
+    }
+
+    #[tokio::test]
+    async fn test_encode_response_failed() {
+        unimplemented!();
+    }
+
+    #[tokio::test]
+    async fn test_encode_parse_failed() {
+        unimplemented!();
+    }
+}
