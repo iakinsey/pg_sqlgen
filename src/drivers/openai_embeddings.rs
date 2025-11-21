@@ -118,7 +118,42 @@ mod tests {
 
     #[tokio::test]
     async fn test_encode() {
-        unimplemented!();
+        let embedding = vec![0.0023064255, -0.009327292, -0.0028842222];
+        let embedding_json = to_string(&embedding).unwrap();
+        let encode_response = format!(
+            r#"{{
+            "data": [{{
+                "embedding": {}
+            }}]
+        }}"#,
+            embedding_json
+        );
+        let url_part = "/v1/embeddings";
+        let model_name = "test-model-name";
+        let input = "test-input";
+        let api_key = "api-key";
+        let auth_type = "Bearer";
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path(url_part)
+                .body_contains(model_name)
+                .body_contains(input)
+                .header("Authorization", format!("{} {}", auth_type, api_key));
+
+            then.status(200).body(encode_response);
+        });
+        let config = OpenAIEmbeddingsConfig {
+            url: format!("http://{}:{}{}", server.host(), server.port(), url_part),
+            model: model_name.to_string(),
+            api_key: Some(api_key.to_string()),
+            authorization_type: auth_type.to_string(),
+        };
+        let driver = OpenAIEmbeddingsDriver::new(&config).unwrap();
+        let response = driver.encode(input).await.unwrap();
+
+        mock.assert();
+        assert_eq!(response, embedding);
     }
 
     #[tokio::test]
