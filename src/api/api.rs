@@ -86,6 +86,7 @@ fn create_engine_3(name: &str, instruct_model: &str, encoder_model: &str) {
         None,
         None,
         None,
+        None,
     )
 }
 
@@ -101,6 +102,7 @@ fn create_engine_10(
     relevant_ddls_template: Option<&str>,
     similar_queries_template: Option<&str>,
     filter_ddls_template: Option<&str>,
+    error_correction_template: Option<&str>,
 ) {
     let schema_name = match schema_name {
         Some(s) => s.to_string(),
@@ -127,6 +129,7 @@ fn create_engine_10(
         relevant_ddls_template,
         similar_queries_template,
         filter_ddls_template,
+        error_correction_template,
     )
     .unwrap_or_else(|e| error!("{}", e));
 
