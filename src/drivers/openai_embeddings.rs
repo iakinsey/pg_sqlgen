@@ -160,7 +160,7 @@ mod tests {
     use httpmock::{Method::POST, MockServer};
 
     #[tokio::test]
-    async fn test_encode_batch() {
+    async fn test_encode_many() {
         let response = EmbeddingsResponse {
             data: vec![
                 EmbeddingsData {
@@ -213,7 +213,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encode_batch_response_failed() {
+    async fn test_encode_many_response_failed() {
         let error_response = r#"{"error": "test"}"#;
         let url_part = "/v1/embeddings";
         let model_name = "test-model-name";
@@ -247,7 +247,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encode_batch_parse_failed() {
+    async fn test_encode_many_parse_failed() {
         let bad_response = r#"}{"#;
         let url_part = "/v1/embeddings";
         let model_name = "test-model-name";

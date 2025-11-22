@@ -7,6 +7,8 @@ pub struct OllamaConfig {
     pub model_name: String,
     #[serde(default = "default_use_https")]
     pub use_https: bool,
+    #[serde(default = "default_request_batch_size")]
+    pub request_batch_size: usize,
 }
 
 fn default_host() -> String {
@@ -15,4 +17,8 @@ fn default_host() -> String {
 
 fn default_use_https() -> bool {
     false
+}
+
+fn default_request_batch_size() -> usize {
+    64
 }

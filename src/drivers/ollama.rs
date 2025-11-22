@@ -1,13 +1,13 @@
-use async_trait::async_trait;
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use serde_json::{from_str, to_string, Value};
-
 use crate::types::{
     errors::SqlgenError,
     structs::{instruct_message::InstructMessage, profiles::OllamaConfig},
     traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
 };
+use async_trait::async_trait;
+use futures::{stream, StreamExt, TryStreamExt};
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use serde_json::{from_str, to_string};
 
 #[derive(Serialize)]
 struct ChatBody {
@@ -114,10 +114,6 @@ impl TextEncoderDriver for OllamaDriver {
     }
 
     async fn encode(&self, input: &str) -> Result<Vec<f32>, SqlgenError> {
-        if input == "" {
-            return Ok(vec![]);
-        }
-
         let url = self.get_request_url("embeddings");
         let body = self.get_encode_body(input)?;
         let resp = self.client.post(url).body(body).send().await?;
@@ -141,7 +137,16 @@ impl TextEncoderDriver for OllamaDriver {
     }
 
     async fn encode_many(&self, inputs: &[&str]) -> Result<Vec<Vec<f32>>, SqlgenError> {
-        unimplemented!();
+        let mut futures = Vec::with_capacity(inputs.len());
+
+        for i in inputs {
+            futures.push(async { self.encode(i).await });
+        }
+
+        stream::iter(futures)
+            .buffer_unordered(self.config.request_batch_size)
+            .try_collect()
+            .await
     }
 }
 
@@ -207,6 +212,7 @@ mod tests {
             host: format!("{}:{}", server.host(), server.port()),
             model_name: "test-model".to_string(),
             use_https: false,
+            request_batch_size: 1,
         };
 
         let messages = vec![InstructMessage {
@@ -237,6 +243,7 @@ mod tests {
             host: format!("{}:{}", server.host(), server.port()),
             model_name: "test-model".to_string(),
             use_https: false,
+            request_batch_size: 1,
         };
 
         let messages = vec![InstructMessage {
@@ -270,6 +277,7 @@ mod tests {
             host: format!("{}:{}", server.host(), server.port()),
             model_name: "test-model".to_string(),
             use_https: false,
+            request_batch_size: 1,
         };
 
         let messages = vec![InstructMessage {
@@ -281,6 +289,114 @@ mod tests {
         let response = driver.get_assistant_response(messages).await;
 
         mock.assert();
+
+        let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
+    }
+
+    #[tokio::test]
+    async fn test_encode_many() {
+        let encoding_response = r#"{
+            "embedding": [
+                0.2139129936695099,
+                0.05833360552787781
+            ]
+        }"#;
+        let inputs = vec![
+            "test-input-1",
+            "test-input-2",
+            "test-input-3",
+            "test-input-4",
+            "test-input-5",
+        ];
+
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/embeddings")
+                .body_contains("test-model");
+
+            then.status(200).body(encoding_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+            request_batch_size: 2,
+        };
+
+        let driver = OllamaDriver::new(&config).unwrap();
+        let response = driver.encode_many(&inputs).await.unwrap();
+
+        mock.assert_hits(inputs.len());
+
+        assert_eq!(response.len(), inputs.len())
+    }
+
+    #[tokio::test]
+    async fn test_encode_many_response_failed() {
+        let error_response = r#"{"error": "test"}"#;
+        let inputs = vec![
+            "test-input-1",
+            "test-input-2",
+            "test-input-3",
+            "test-input-4",
+            "test-input-5",
+        ];
+
+        let server = MockServer::start();
+        server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/embeddings")
+                .body_contains("test-model");
+
+            then.status(500).body(error_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+            request_batch_size: 2,
+        };
+
+        let driver = OllamaDriver::new(&config).unwrap();
+        let response = driver.encode_many(&inputs).await;
+
+        let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
+        assert_eq!(response.unwrap_err().to_string(), expected_err);
+    }
+
+    #[tokio::test]
+    async fn test_encode_many_parse_failed() {
+        let bad_response = "}{";
+        let inputs = vec![
+            "test-input-1",
+            "test-input-2",
+            "test-input-3",
+            "test-input-4",
+            "test-input-5",
+        ];
+
+        let server = MockServer::start();
+        server.mock(|when, then| {
+            when.method(POST)
+                .path("/api/embeddings")
+                .body_contains("test-model");
+
+            then.status(200).body(bad_response);
+        });
+
+        let config = OllamaConfig {
+            host: format!("{}:{}", server.host(), server.port()),
+            model_name: "test-model".to_string(),
+            use_https: false,
+            request_batch_size: 2,
+        };
+
+        let driver = OllamaDriver::new(&config).unwrap();
+        let response = driver.encode_many(&inputs).await;
 
         let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
         assert_eq!(response.unwrap_err().to_string(), expected_err);
@@ -308,6 +424,7 @@ mod tests {
             host: format!("{}:{}", server.host(), server.port()),
             model_name: "test-model".to_string(),
             use_https: false,
+            request_batch_size: 1,
         };
 
         let driver = OllamaDriver::new(&config).unwrap();
@@ -334,6 +451,7 @@ mod tests {
             host: format!("{}:{}", server.host(), server.port()),
             model_name: "test-model".to_string(),
             use_https: false,
+            request_batch_size: 1,
         };
 
         let driver = OllamaDriver::new(&config).unwrap();
@@ -361,6 +479,7 @@ mod tests {
             host: format!("{}:{}", server.host(), server.port()),
             model_name: "test-model".to_string(),
             use_https: false,
+            request_batch_size: 1,
         };
 
         let driver = OllamaDriver::new(&config).unwrap();
@@ -394,6 +513,7 @@ mod tests {
             host: format!("{}:{}", server.host(), server.port()),
             model_name: "test-model".to_string(),
             use_https: false,
+            request_batch_size: 1,
         };
 
         let driver = OllamaDriver::new(&config).unwrap();
