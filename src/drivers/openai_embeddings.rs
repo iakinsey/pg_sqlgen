@@ -63,10 +63,6 @@ impl TextEncoderDriver for OpenAIEmbeddingsDriver {
     }
 
     async fn encode(&self, input: &str) -> Result<Vec<f32>, SqlgenError> {
-        if input == "" {
-            return Ok(vec![]);
-        }
-
         let request_json = EmbeddingsRequest {
             input: input,
             model: &self.config.model,
