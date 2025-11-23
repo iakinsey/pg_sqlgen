@@ -81,19 +81,19 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> String {
 }
 
 #[pg_extern(name = "explain_query")]
-fn explain_query_1(user_query: &str) -> String {
-    explain_query_2(user_query, None)
+fn explain_query_1(sql_query: &str) -> String {
+    explain_query_2(sql_query, None)
 }
 
 #[pg_extern(name = "explain_query")]
-fn explain_query_2(user_query: &str, engine: Option<&str>) -> String {
+fn explain_query_2(sql_query: &str, engine: Option<&str>) -> String {
     let engine = get_engine(engine);
     let mut explain_runner = ExplainQueryRunner::new(engine).unwrap_or_else(|e| error!("{}", e));
     let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
 
     rt.block_on(async {
         explain_runner
-            .explain(user_query)
+            .explain(sql_query)
             .await
             .unwrap_or_else(|e| error!("{}", e))
     })
