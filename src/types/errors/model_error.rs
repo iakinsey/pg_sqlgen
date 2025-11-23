@@ -14,16 +14,10 @@ pub enum SqlgenError {
     GenerateError(String),
     #[error("failed to parse model output when generating sql: {0}")]
     GenerateParseError(String),
-    #[error("{0}")]
-    DeviceError(String),
     #[error("SQL generation model returned no response")]
     EmptyResponse,
     #[error("unsupported model config: {0}")]
     UnsupportedModelConfig(String),
-    #[error("unknown device: {0}")]
-    UnknownDevice(String),
-    #[error("model encoding error: {0}")]
-    EncodeError(String),
     #[error("model doesn't exist: {0}")]
     ModelDoesntExist(String),
     #[error("engine doesn't exist: {0}")]
@@ -36,8 +30,6 @@ pub enum SqlgenError {
     ConfigDoesntExist(String),
     #[error("mutex poisoned")]
     Poisoned,
-    #[error("not found: {0}")]
-    NotFound(String),
     #[error("no schema available")]
     NoSchema(),
     #[error(transparent)]

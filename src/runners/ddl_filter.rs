@@ -9,7 +9,6 @@ use crate::{
         traits::driver::{TextEncoderDriver, TextInstructDriver},
     },
 };
-use pgrx::pg_schema;
 use tera::{Context, Tera};
 
 pub struct DDLFilterRunner {
@@ -108,7 +107,7 @@ impl DDLFilterRunner {
 }
 
 #[cfg(any(test, feature = "pg_test"))]
-#[pg_schema]
+#[pgrx::pg_schema]
 mod tests {
     use tokio::runtime::Runtime;
 

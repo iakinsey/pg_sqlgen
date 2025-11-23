@@ -24,7 +24,6 @@ pub static ERROR_MESSAGE_VAR_KEY: &str = "error_message";
 pub struct SyntaxCorrectionRunner {
     tera: Tera,
     model: Box<dyn TextInstructDriver>,
-    engine: TextToSqlEngine,
 }
 
 impl SyntaxCorrectionRunner {
@@ -37,11 +36,7 @@ impl SyntaxCorrectionRunner {
             &engine.syntax_correction_template,
         )?;
 
-        Ok(Self {
-            tera,
-            model,
-            engine,
-        })
+        Ok(Self { tera, model })
     }
 
     pub async fn correct(&mut self, query: String) -> Result<String, SqlgenError> {

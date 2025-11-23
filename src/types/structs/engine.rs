@@ -41,6 +41,7 @@ impl TableFilterType {
 #[derive(Clone)]
 pub struct TextToSqlEngine {
     pub name: String,
+    #[allow(dead_code)]
     pub schema_name: String,
     pub encoder_model: String,
     pub instruct_model: String,

@@ -1,4 +1,3 @@
-pub mod math;
 pub mod rpc;
 pub mod sql;
 #[cfg(any(test, feature = "pg_test"))]

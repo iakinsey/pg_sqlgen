@@ -1,4 +1,4 @@
-use pgrx::{pg_schema, Spi};
+use pgrx::Spi;
 use serde_json::from_str;
 
 use crate::types::{
@@ -67,7 +67,7 @@ impl ModelStore {
 }
 
 #[cfg(any(test, feature = "pg_test"))]
-#[pg_schema]
+#[pgrx::pg_schema]
 mod tests {
     use pgrx::prelude::*;
 

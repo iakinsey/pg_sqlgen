@@ -1,6 +1,6 @@
 // TODO
 
-use pgrx::{pg_schema, Spi};
+use pgrx::Spi;
 
 use crate::types::{errors::SqlgenError, structs::engine::TextToSqlEngine};
 
@@ -68,22 +68,18 @@ impl EngineStore {
 }
 
 #[cfg(any(test, feature = "pg_test"))]
-#[pg_schema]
+#[pgrx::pg_schema]
 mod tests {
-    use std::net;
 
-    use pgrx::{pg_schema, PgTryBuilder, Spi};
-    use serde_json::{from_str, to_string};
+    use pgrx::{PgTryBuilder, Spi};
+    use serde_json::to_string;
 
     use crate::{
         pg_test,
         stores::engine_store::EngineStore,
         types::{
             errors::SqlgenError,
-            structs::{
-                model_profile::{ModelConfig, ModelProfile},
-                profiles::StubConfig,
-            },
+            structs::{model_profile::ModelConfig, profiles::StubConfig},
         },
     };
 

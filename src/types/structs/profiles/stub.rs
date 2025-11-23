@@ -1,4 +1,3 @@
-use pgrx::pg_extern;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

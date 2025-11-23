@@ -10,14 +10,12 @@ use crate::{
         traits::driver::TextInstructDriver,
     },
 };
-use pgrx::pg_schema;
 use serde_json::from_str;
 use tera::{Context, Tera};
 
 pub struct SQLGenerationRunner {
     tera: Tera,
     model: Box<dyn TextInstructDriver>,
-    engine: TextToSqlEngine,
     system_prompt: String,
 }
 
@@ -93,7 +91,6 @@ impl SQLGenerationRunner {
         Ok(Self {
             tera: tera,
             model,
-            engine,
             system_prompt,
         })
     }
@@ -169,9 +166,8 @@ impl SQLGenerationRunner {
 }
 
 #[cfg(any(test, feature = "pg_test"))]
-#[pg_schema]
+#[pgrx::pg_schema]
 mod tests {
-    use pgrx::pg_schema;
     use serde_json::to_string;
     use tokio::runtime::Runtime;
 

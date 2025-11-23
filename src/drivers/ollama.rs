@@ -36,7 +36,7 @@ pub struct OllamaDriver {
 
 #[derive(Deserialize)]
 pub struct OllamaChatResponse {
-    pub message: ChatMessage,
+    message: ChatMessage,
 }
 
 #[derive(Deserialize, Debug)]
