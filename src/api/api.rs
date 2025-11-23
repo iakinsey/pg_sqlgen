@@ -3,8 +3,8 @@ use tokio::runtime::Runtime;
 
 use crate::{
     runners::{
-        ddl_filter::DDLFilterRunner, sql_generation::SQLGenerationRunner,
-        syntax_correction::SyntaxCorrectionRunner,
+        ddl_filter::DDLFilterRunner, explain::ExplainQueryRunner,
+        sql_generation::SQLGenerationRunner, syntax_correction::SyntaxCorrectionRunner,
     },
     stores::{
         config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
@@ -12,9 +12,25 @@ use crate::{
         metadata_store::MetadataStore,
         model_store::ModelStore,
     },
-    types::{errors::SqlgenError, structs::engine::TableFilterType},
+    types::{
+        errors::SqlgenError,
+        structs::engine::{TableFilterType, TextToSqlEngine},
+    },
     utils::sql::get_current_schema,
 };
+
+fn get_engine(name: Option<&str>) -> TextToSqlEngine {
+    let engine_name = match name {
+        Some(e) => e.to_string(),
+        None => match ConfigStore::get_config_value(DEFAULT_ENGINE_CONFIG_KEY) {
+            Ok(c) => c,
+            Err(SqlgenError::ConfigDoesntExist(_)) => error!("default text to sql engine not set"),
+            Err(e) => error!("{}", e),
+        },
+    };
+
+    EngineStore::get_engine(&engine_name).unwrap_or_else(|e| error!("{}", e))
+}
 
 #[pg_extern]
 fn add_model(model_name: &str, config_str: &str) {
@@ -33,15 +49,7 @@ fn generate_1(user_query: &str) -> String {
 
 #[pg_extern(name = "generate")]
 fn generate_2(user_query: &str, engine: Option<&str>) -> String {
-    let engine_name = match engine {
-        Some(e) => e.to_string(),
-        None => match ConfigStore::get_config_value(DEFAULT_ENGINE_CONFIG_KEY) {
-            Ok(c) => c,
-            Err(SqlgenError::ConfigDoesntExist(_)) => error!("default text to sql engine not set"),
-            Err(e) => error!("{}", e),
-        },
-    };
-    let engine = EngineStore::get_engine(&engine_name).unwrap_or_else(|e| error!("{}", e));
+    let engine = get_engine(engine);
     let mut ddl_filter_runner =
         DDLFilterRunner::new(engine.clone()).unwrap_or_else(|e| error!("{}", e));
     let mut text_to_sql_runner =
@@ -72,6 +80,25 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> String {
     })
 }
 
+#[pg_extern(name = "explain_query")]
+fn explain_query_1(user_query: &str) -> String {
+    explain_query_2(user_query, None)
+}
+
+#[pg_extern(name = "explain_query")]
+fn explain_query_2(user_query: &str, engine: Option<&str>) -> String {
+    let engine = get_engine(engine);
+    let mut explain_runner = ExplainQueryRunner::new(engine).unwrap_or_else(|e| error!("{}", e));
+    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
+
+    rt.block_on(async {
+        explain_runner
+            .explain(user_query)
+            .await
+            .unwrap_or_else(|e| error!("{}", e))
+    })
+}
+
 #[pg_extern]
 fn set_default_engine(engine: &str) {
     ConfigStore::set_config_value(DEFAULT_ENGINE_CONFIG_KEY, engine)
@@ -85,10 +112,12 @@ fn remove_default_engine() {
 
 #[pg_extern(name = "create_engine")]
 fn create_engine_3(name: &str, instruct_model: &str, encoder_model: &str) {
-    create_engine_10(
+    create_engine(
         name,
         instruct_model,
         encoder_model,
+        None,
+        None,
         None,
         None,
         None,
@@ -101,7 +130,7 @@ fn create_engine_3(name: &str, instruct_model: &str, encoder_model: &str) {
 }
 
 #[pg_extern(name = "create_engine")]
-fn create_engine_10(
+fn create_engine(
     name: &str,
     instruct_model: &str,
     encoder_model: &str,
@@ -113,6 +142,8 @@ fn create_engine_10(
     similar_queries_template: Option<&str>,
     filter_ddls_template: Option<&str>,
     syntax_correction_template: Option<&str>,
+    explain_query_template: Option<&str>,
+    interpret_query_template: Option<&str>,
 ) {
     let schema_name = match schema_name {
         Some(s) => s.to_string(),
@@ -140,6 +171,8 @@ fn create_engine_10(
         similar_queries_template,
         filter_ddls_template,
         syntax_correction_template,
+        explain_query_template,
+        interpret_query_template,
     )
     .unwrap_or_else(|e| error!("{}", e));
 

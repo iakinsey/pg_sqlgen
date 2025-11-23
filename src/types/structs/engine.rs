@@ -11,6 +11,8 @@ pub static DEFAULT_RELEVANT_TABLES_TEMPLATE: &str = "TODO";
 pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = "TODO";
 pub static DEFAULT_FILTER_DDLS_TEMPLATE: &str = "TODO";
 pub static DEFAULT_SYNTAX_CORRECTION_TEMPLATE: &str = "TODO";
+pub static DEFAULT_EXPLAIN_QUERY_TEMPLATE: &str = "TODO";
+pub static DEFAULT_INTERPRET_QUERY_TEMPLATE: &str = "TODO";
 
 #[derive(PostgresEnum, Eq, PartialEq, Clone)]
 pub enum TableFilterType {
@@ -51,6 +53,8 @@ pub struct TextToSqlEngine {
     pub similar_queries_template: String,
     pub filter_ddls_template: String,
     pub syntax_correction_template: String,
+    pub explain_query_template: String,
+    pub interpret_query_template: String,
     pub filter_type: TableFilterType,
 }
 
@@ -86,6 +90,16 @@ impl TextToSqlEngine {
                 Some(v) => v,
                 None => DEFAULT_SYNTAX_CORRECTION_TEMPLATE.to_string(),
             };
+        let explain_query_template: String =
+            match get_column_optional(&row, "explain_query_template")? {
+                Some(v) => v,
+                None => DEFAULT_EXPLAIN_QUERY_TEMPLATE.to_string(),
+            };
+        let interpret_query_template: String =
+            match get_column_optional(&row, "interpret_query_template")? {
+                Some(v) => v,
+                None => DEFAULT_INTERPRET_QUERY_TEMPLATE.to_string(),
+            };
 
         let name = get_column(&row, "engine_name")?;
         let schema_name = get_column(&row, "schema_name")?;
@@ -105,6 +119,8 @@ impl TextToSqlEngine {
             similar_queries_template,
             filter_ddls_template,
             syntax_correction_template,
+            explain_query_template,
+            interpret_query_template,
             filter_type,
         })
     }
