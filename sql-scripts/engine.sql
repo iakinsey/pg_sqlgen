@@ -12,7 +12,7 @@ CREATE TABLE sqlgen_internal.engine (
     relevant_ddls_template TEXT,
     similar_queries_template TEXT,
     filter_ddls_template TEXT,
-    error_correction_template TEXT,
+    syntax_correction_template TEXT,
     table_filter_type TEXT,
     CONSTRAINT fk_encoder_model
         FOREIGN KEY (encoder_model)
@@ -50,7 +50,7 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_engine(
     relevant_ddls_template TEXT DEFAULT NULL,
     similar_queries_template TEXT DEFAULT NULL,
     filter_ddls_template TEXT DEFAULT NULL,
-    error_correction_template TEXT DEFAULT NULL
+    syntax_correction_template TEXT DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -66,7 +66,7 @@ BEGIN
         relevant_ddls_template,
         similar_queries_template,
         filter_ddls_template,
-        error_correction_template,
+        syntax_correction_template,
         table_filter_type
     ) VALUES (
         engine_name,
@@ -78,7 +78,7 @@ BEGIN
         relevant_ddls_template,
         similar_queries_template,
         filter_ddls_template,
-        error_correction_template,
+        syntax_correction_template,
         table_filter_type
     );
 END

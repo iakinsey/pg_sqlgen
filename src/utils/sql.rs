@@ -1,4 +1,5 @@
 use std::{collections::HashMap, sync::Mutex};
+use uuid::Uuid;
 
 use lazy_static::lazy_static;
 use pgrx::{
@@ -46,5 +47,22 @@ pub fn get_current_schema() -> Result<String, SqlgenError> {
     match Spi::get_one::<String>("SELECT current_schema()::TEXT")? {
         Some(v) => Ok(v),
         None => Err(SqlgenError::NoSchema()),
+    }
+}
+
+pub fn get_unique_prepared_statement_id() -> String {
+    format!("stmt{}", Uuid::new_v4().simple().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::sql::get_unique_prepared_statement_id;
+
+    #[test]
+    fn test_get_assistant_response() {
+        let id = get_unique_prepared_statement_id();
+
+        assert!(!id.contains("-"));
+        assert!(id.starts_with("stmt"));
     }
 }

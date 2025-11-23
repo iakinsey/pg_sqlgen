@@ -2,7 +2,10 @@ use pgrx::prelude::*;
 use tokio::runtime::Runtime;
 
 use crate::{
-    runners::{ddl_filter::DDLFilterRunner, sql_generation::SQLGenerationRunner},
+    runners::{
+        ddl_filter::DDLFilterRunner, sql_generation::SQLGenerationRunner,
+        syntax_correction::SyntaxCorrectionRunner,
+    },
     stores::{
         config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
         engine_store::EngineStore,
@@ -42,7 +45,9 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> String {
     let mut ddl_filter_runner =
         DDLFilterRunner::new(engine.clone()).unwrap_or_else(|e| error!("{}", e));
     let mut text_to_sql_runner =
-        SQLGenerationRunner::new(engine).unwrap_or_else(|e| error!("{}", e));
+        SQLGenerationRunner::new(engine.clone()).unwrap_or_else(|e| error!("{}", e));
+    let mut syntax_correction_runner =
+        SyntaxCorrectionRunner::new(engine).unwrap_or_else(|e| error!("{}", e));
     let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
 
     rt.block_on(async {
@@ -51,12 +56,17 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> String {
             .await
             .unwrap_or_else(|e| error!("{}", e));
 
-        text_to_sql_runner
+        let query = text_to_sql_runner
             .generate_query(
                 user_query,
                 ddls.iter().map(|s| s.as_str()).collect(),
                 vec![],
             )
+            .await
+            .unwrap_or_else(|e| error!("{}", e));
+
+        syntax_correction_runner
+            .correct(query)
             .await
             .unwrap_or_else(|e| error!("{}", e))
     })
@@ -102,7 +112,7 @@ fn create_engine_10(
     relevant_ddls_template: Option<&str>,
     similar_queries_template: Option<&str>,
     filter_ddls_template: Option<&str>,
-    error_correction_template: Option<&str>,
+    syntax_correction_template: Option<&str>,
 ) {
     let schema_name = match schema_name {
         Some(s) => s.to_string(),
@@ -129,7 +139,7 @@ fn create_engine_10(
         relevant_ddls_template,
         similar_queries_template,
         filter_ddls_template,
-        error_correction_template,
+        syntax_correction_template,
     )
     .unwrap_or_else(|e| error!("{}", e));
 

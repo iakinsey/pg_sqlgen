@@ -10,7 +10,7 @@ pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = "TODO";
 pub static DEFAULT_RELEVANT_TABLES_TEMPLATE: &str = "TODO";
 pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = "TODO";
 pub static DEFAULT_FILTER_DDLS_TEMPLATE: &str = "TODO";
-pub static DEFAULT_ERROR_CORRECTION_TEMPLATE: &str = "TODO";
+pub static DEFAULT_SYNTAX_CORRECTION_TEMPLATE: &str = "TODO";
 
 #[derive(PostgresEnum, Eq, PartialEq, Clone)]
 pub enum TableFilterType {
@@ -49,7 +49,7 @@ pub struct TextToSqlEngine {
     pub relevant_ddls_template: String,
     pub similar_queries_template: String,
     pub filter_ddls_template: String,
-    pub error_correction_template: String,
+    pub syntax_correction_template: String,
     pub filter_type: TableFilterType,
 }
 
@@ -80,10 +80,10 @@ impl TextToSqlEngine {
             Some(v) => v,
             None => DEFAULT_FILTER_DDLS_TEMPLATE.to_string(),
         };
-        let error_correction_template: String =
-            match get_column_optional(&row, "error_correction_template")? {
+        let syntax_correction_template: String =
+            match get_column_optional(&row, "syntax_correction_template")? {
                 Some(v) => v,
-                None => DEFAULT_ERROR_CORRECTION_TEMPLATE.to_string(),
+                None => DEFAULT_SYNTAX_CORRECTION_TEMPLATE.to_string(),
             };
 
         let name = get_column(&row, "engine_name")?;
@@ -103,7 +103,7 @@ impl TextToSqlEngine {
             relevant_ddls_template,
             similar_queries_template,
             filter_ddls_template,
-            error_correction_template,
+            syntax_correction_template,
             filter_type,
         })
     }

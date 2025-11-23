@@ -18,7 +18,7 @@ impl EngineStore {
         relevant_ddls_template: Option<&str>,
         similar_queries_template: Option<&str>,
         filter_ddls_template: Option<&str>,
-        error_correction_template: Option<&str>,
+        syntax_correction_template: Option<&str>,
     ) -> Result<(), SqlgenError> {
         Spi::run_with_args(
             "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
@@ -33,7 +33,7 @@ impl EngineStore {
                 relevant_ddls_template.into(),
                 similar_queries_template.into(),
                 filter_ddls_template.into(),
-                error_correction_template.into(),
+                syntax_correction_template.into(),
             ],
         )?;
 
