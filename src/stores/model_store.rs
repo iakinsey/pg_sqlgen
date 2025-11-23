@@ -12,7 +12,7 @@ pub struct ModelStore {}
 // TODO add get_model_capabilities, provide a way to check if a model could be instruct/encoder/etc
 impl ModelStore {
     pub fn get_model_profile(name: &str) -> Result<ModelProfile, SqlgenError> {
-        let query = "SELECT model_name, config::TEXT AS config FROM sqlgen.get_model($1)";
+        let query = "SELECT model_name, config::TEXT AS config FROM sqlgen_internal.get_model($1)";
         let result = Spi::connect(|client| {
             let row = client.select(query, None, &[name.into()])?;
 
@@ -32,7 +32,7 @@ impl ModelStore {
             name: name.to_string(),
             config: config,
         };
-        let query = "SELECT sqlgen.create_model($1, $2::JSONB);";
+        let query = "SELECT sqlgen_internal.create_model($1, $2::JSONB);";
 
         Spi::run_with_args(query, &[name.into(), config_str.into()])?;
 
@@ -42,7 +42,7 @@ impl ModelStore {
     pub fn delete_model_profile(name: &str) -> Result<(), SqlgenError> {
         Self::get_model_profile(name)?;
 
-        let query = "SELECT sqlgen.delete_model($1)";
+        let query = "SELECT sqlgen_internal.delete_model($1)";
 
         Spi::run_with_args(query, &[name.into()])?;
 

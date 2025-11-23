@@ -19,7 +19,7 @@ FROM sqlgen_internal.model_profile;
 --------------------------------------------------------------------------------
 -- Get model profile
 --------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION sqlgen.get_model(n TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.get_model(n TEXT)
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql 
 STRICT
@@ -34,13 +34,13 @@ BEGIN
     RETURN r;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen.get_model FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_model FROM public;
 
 --------------------------------------------------------------------------------
 -- Create model profile
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen.create_model(
+CREATE OR REPLACE FUNCTION sqlgen_internal.create_model(
     model_name TEXT,
     config JSONB
 )
@@ -59,12 +59,12 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen.create_model FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_model FROM public;
 
 --------------------------------------------------------------------------------
 -- Delete model profile
 --------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION sqlgen.delete_model(name TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.delete_model(name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 STRICT
@@ -74,4 +74,4 @@ BEGIN
     WHERE mp.model_name = name;
 END;
 $$;
-REVOKE EXECUTE ON FUNCTION sqlgen.delete_model FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.delete_model FROM public;
