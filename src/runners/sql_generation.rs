@@ -19,49 +19,12 @@ pub struct SQLGenerationRunner {
     system_prompt: String,
 }
 
-/*
-    Example system template:
-
-    You are a helpful SQL generation system.
-    Output in the following format:
-    {output_format_description}
-
-    ----------------------------------------
-
-    Example user_template:
-
-    Generate SQL from the following query:
-    {user_query}
-
-    {relevant_ddl_block}
-
-    {similar_queries_block}
-
-    ----------------------------------------
-
-    Example relevant ddls block:
-
-    Here are some relevant ddls:
-    {relevant_ddls}
-
-    ----------------------------------------
-
-    Example similar queries:
-
-    Here are some similar queries:
-    {similar_queries}
-*/
-
-pub static OUTPUT_FORMAT_DESCRIPTION: &str = "TODO";
-
 // Template keys
-pub static SYSTEM_PROMPT_TEMPLATE_KEY: &str = "system";
 pub static USER_PROMPT_TEMPLATE_KEY: &str = "user";
 pub static RELEVANT_DDLS_TEMPLATE_KEY: &str = "relevant_ddls";
 pub static SIMILAR_QUERIES_TEMPLATE_KEY: &str = "similar_queries";
 
 // Template variable keys
-pub static OUTPUT_FORMAT_VAR_KEY: &str = "output_format_description";
 pub static RELEVANT_DDLS_VAR_KEY: &str = "relevant_ddls";
 pub static SIMILAR_QUERIES_VAR_KEY: &str = "similar_queries";
 pub static USER_QUERY_VAR_KEY: &str = "user_query";
@@ -74,7 +37,6 @@ impl SQLGenerationRunner {
     pub fn new(engine: TextToSqlEngine) -> Result<Self, SqlgenError> {
         let mut tera = Tera::default();
 
-        tera.add_raw_template(SYSTEM_PROMPT_TEMPLATE_KEY, &engine.system_prompt_template)?;
         tera.add_raw_template(USER_PROMPT_TEMPLATE_KEY, &engine.user_prompt_template)?;
         tera.add_raw_template(RELEVANT_DDLS_TEMPLATE_KEY, &engine.relevant_ddls_template)?;
         tera.add_raw_template(
@@ -82,11 +44,8 @@ impl SQLGenerationRunner {
             &engine.similar_queries_template,
         )?;
 
-        let mut sys_ctx = Context::new();
-        sys_ctx.insert(OUTPUT_FORMAT_VAR_KEY, OUTPUT_FORMAT_DESCRIPTION);
-
-        let system_prompt = tera.render(SYSTEM_PROMPT_TEMPLATE_KEY, &sys_ctx)?;
         let model = ModelStore::get_text_instruct_model(&engine.instruct_model)?;
+        let system_prompt = engine.get_generate_system_prompt()?;
 
         Ok(Self {
             tera: tera,
@@ -102,7 +61,7 @@ impl SQLGenerationRunner {
         similar_queries: Vec<&str>,
     ) -> Result<String, SqlgenError> {
         // Render relevant tables block
-        let relevant_tables_block = match relevant_ddls.is_empty() {
+        let relevant_ddls_block = match relevant_ddls.is_empty() {
             true => "".to_string(),
             false => {
                 let list = relevant_ddls.join("\n");
@@ -134,7 +93,7 @@ impl SQLGenerationRunner {
         let mut user_ctx = Context::new();
 
         user_ctx.insert(USER_QUERY_VAR_KEY, user_query);
-        user_ctx.insert(RELEVANT_DDLS_BLOCK_KEY, &relevant_tables_block);
+        user_ctx.insert(RELEVANT_DDLS_BLOCK_KEY, &relevant_ddls_block);
         user_ctx.insert(SIMILAR_QUERIES_BLOCK_KEY, &similar_queries_block);
 
         let user_prompt = self.tera.render(USER_PROMPT_TEMPLATE_KEY, &user_ctx)?;

@@ -3,8 +3,8 @@ use crate::{
     types::{
         errors::SqlgenError,
         structs::{
-            engine::TextToSqlEngine,
-            generate_response::GenerateResponse,
+            engine::{TextToSqlEngine, EXPLAIN_OUTPUT_FORMAT_DESCRIPTION},
+            explain_response::ExplainResponse,
             instruct_message::{InstructMessage, InstructRole},
         },
         traits::driver::TextInstructDriver,
@@ -17,6 +17,7 @@ use tera::{Context, Tera};
 pub static USER_PROMPT_TEMPLATE_KEY: &str = "explain";
 pub static SQL_QUERY_VAR_KEY: &str = "sql_query";
 pub static EXPLAIN_VAR_KEY: &str = "explain";
+pub static OUTPUT_FORMAT_DESCRIPTION: &str = "output_format_description";
 
 pub struct ExplainQueryRunner {
     tera: Tera,
@@ -39,6 +40,7 @@ impl ExplainQueryRunner {
 
         ctx.insert(SQL_QUERY_VAR_KEY, &sql_query);
         ctx.insert(EXPLAIN_VAR_KEY, &explain_query);
+        ctx.insert(OUTPUT_FORMAT_DESCRIPTION, EXPLAIN_OUTPUT_FORMAT_DESCRIPTION);
 
         let prompt = self.tera.render(USER_PROMPT_TEMPLATE_KEY, &ctx)?;
 
@@ -48,14 +50,14 @@ impl ExplainQueryRunner {
         }];
 
         let payload = self.model.get_assistant_response(messages).await?;
-        let response = match from_str::<GenerateResponse>(&payload) {
+        let response = match from_str::<ExplainResponse>(&payload) {
             Ok(v) => Ok(v),
             Err(e) => Err(SqlgenError::GenerateParseError(e.to_string())),
         }?;
 
         match response.error {
             Some(s) => Err(SqlgenError::GenerateError(s)),
-            None => match response.query {
+            None => match response.text {
                 Some(s) => Ok(s),
                 None => Err(SqlgenError::EmptyResponse),
             },

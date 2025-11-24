@@ -74,7 +74,7 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> String {
             .unwrap_or_else(|e| error!("{}", e));
 
         syntax_correction_runner
-            .correct(query)
+            .correct(&query)
             .await
             .unwrap_or_else(|e| error!("{}", e))
     })

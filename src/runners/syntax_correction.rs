@@ -20,10 +20,12 @@ pub static SYNTAX_CORRECTION_PROMPT_TEMPLATE_KEY: &str = "error_correction";
 
 // Template variable keys
 pub static ERROR_MESSAGE_VAR_KEY: &str = "error_message";
+pub static QUERY_VAR_KEY: &str = "query";
 
 pub struct SyntaxCorrectionRunner {
     tera: Tera,
     model: Box<dyn TextInstructDriver>,
+    system_prompt: String,
 }
 
 impl SyntaxCorrectionRunner {
@@ -35,24 +37,29 @@ impl SyntaxCorrectionRunner {
             SYNTAX_CORRECTION_PROMPT_TEMPLATE_KEY,
             &engine.syntax_correction_template,
         )?;
+        let system_prompt = engine.get_generate_system_prompt()?;
 
-        Ok(Self { tera, model })
+        Ok(Self {
+            tera,
+            model,
+            system_prompt,
+        })
     }
 
-    pub async fn correct(&mut self, query: String) -> Result<String, SqlgenError> {
+    pub async fn correct(&mut self, query: &str) -> Result<String, SqlgenError> {
         let id = get_unique_prepared_statement_id();
-        let query = format!("PREPARE {} AS {}", id, query);
-        let query = match query.ends_with(";") {
-            true => query,
+        let prepare_query = format!("PREPARE {} AS {}", id, query);
+        let prepare_query = match prepare_query.ends_with(";") {
+            true => query.to_string(),
             false => format!("{};", query),
         };
 
-        let error = match Spi::run(&query) {
+        let error = match Spi::run(&prepare_query) {
             Ok(_) => {
                 let dealloc_query = format!("DEALLOCATE {}", id);
                 Spi::run(&dealloc_query)?;
 
-                return Ok(query);
+                return Ok(query.to_string());
             }
             Err(e) => e.to_string(),
         };
@@ -60,15 +67,22 @@ impl SyntaxCorrectionRunner {
         let mut prompt_ctx = Context::new();
 
         prompt_ctx.insert(ERROR_MESSAGE_VAR_KEY, &error);
+        prompt_ctx.insert(QUERY_VAR_KEY, &query);
 
         let prompt = self
             .tera
             .render(SYNTAX_CORRECTION_PROMPT_TEMPLATE_KEY, &prompt_ctx)?;
 
-        let messages = vec![InstructMessage {
-            role: InstructRole::User,
-            message: prompt,
-        }];
+        let messages = vec![
+            InstructMessage {
+                role: InstructRole::System,
+                message: self.system_prompt.clone(),
+            },
+            InstructMessage {
+                role: InstructRole::User,
+                message: prompt,
+            },
+        ];
 
         let payload = self.model.get_assistant_response(messages).await?;
         let response = match from_str::<GenerateResponse>(&payload) {
