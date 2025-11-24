@@ -63,8 +63,7 @@ impl EngineStore {
                 return Err(SqlgenError::EngineDoesntExist(engine_name.to_string()));
             }
 
-            Ok(TextToSqlEngine::from_row(row.first())
-                .map_err(|_| SqlgenError::EngineDoesntExist(engine_name.to_string()))?)
+            Ok(TextToSqlEngine::from_row(row.first())?)
         });
 
         Ok(result?)

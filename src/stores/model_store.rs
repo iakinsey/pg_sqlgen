@@ -70,13 +70,23 @@ impl ModelStore {
 #[pgrx::pg_schema]
 mod tests {
     use pgrx::prelude::*;
+    use serde_json::to_string;
 
-    use crate::stores::model_store::ModelStore;
+    use crate::{
+        stores::model_store::ModelStore,
+        types::structs::{model_profile::ModelConfig, profiles::StubConfig},
+    };
 
     #[pg_test]
     fn test_model_store_crud() {
         let model_name = "test_model";
-        let created_profile = ModelStore::create_model_profile(model_name, "{}").unwrap();
+        let model_config = StubConfig {
+            instruct_output: "".to_string(),
+            encode_output: vec![],
+        };
+        let config = ModelConfig::Stub(model_config);
+        let config_json = to_string(&config).unwrap();
+        let created_profile = ModelStore::create_model_profile(model_name, &config_json).unwrap();
         let got_profile = ModelStore::get_model_profile(model_name).unwrap();
 
         assert_eq!(created_profile.name, got_profile.name);

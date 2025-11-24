@@ -182,6 +182,8 @@ impl MetadataStore {
 #[cfg(any(test, feature = "pg_test"))]
 #[pgrx::pg_schema]
 mod tests {
+    use std::panic::catch_unwind;
+
     use pgrx::Spi;
 
     use crate::{
@@ -494,6 +496,8 @@ mod tests {
 
         MetadataStore::remove_metadata(engine_name, &engine.encoder_model).unwrap();
 
-        assert!(MetadataStore::get_ddls(engine_name).is_err());
+        let result = catch_unwind(|| MetadataStore::get_ddls(engine_name));
+
+        assert!(result.is_err());
     }
 }
