@@ -113,21 +113,19 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_engine FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_engine(n TEXT)
-RETURNS sqlgen_internal.engine
+RETURNS SETOF sqlgen_internal.engine
 LANGUAGE plpgsql
 AS $$
-DECLARE
-    r sqlgen_internal.engine%ROWTYPE;
 BEGIN
-    SELECT *
-    INTO r
+    RETURN QUERY
+    SELECT e.*
     FROM sqlgen_internal.engine e
     WHERE e.engine_name = n;
-
-    RETURN r;
 END
 $$;
+
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_engine FROM public;
+
 
 --------------------------------------------------------------------------------
 -- List engines

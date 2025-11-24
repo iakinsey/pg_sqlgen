@@ -46,7 +46,7 @@ impl SyntaxCorrectionRunner {
         })
     }
 
-    pub async fn correct(&mut self, query: &str) -> Result<String, SqlgenError> {
+    pub async fn correct(&mut self, query: String) -> Result<String, SqlgenError> {
         let id = get_unique_prepared_statement_id();
         let prepare_query = format!("PREPARE {} AS {}", id, query);
         let prepare_query = match prepare_query.ends_with(";") {
@@ -59,7 +59,7 @@ impl SyntaxCorrectionRunner {
                 let dealloc_query = format!("DEALLOCATE {}", id);
                 Spi::run(&dealloc_query)?;
 
-                return Ok(query.to_string());
+                return Ok(query);
             }
             Err(e) => e.to_string(),
         };

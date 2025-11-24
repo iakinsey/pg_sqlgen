@@ -67,7 +67,7 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> Result<String, SqlgenEr
             )
             .await?;
 
-        syntax_correction_runner.correct(&query).await
+        syntax_correction_runner.correct(query).await
     })
 }
 
