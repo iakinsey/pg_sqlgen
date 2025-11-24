@@ -68,28 +68,44 @@ impl DDLFilterRunner {
     }
 
     async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
-        let mut prompt_ctx = Context::new();
         let relevant_ddls = MetadataStore::get_ddls(&self.engine.name)?;
-
-        prompt_ctx.insert(USER_QUERY_VAR_KEY, user_query);
-        prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &relevant_ddls);
-
-        let prompt = self.tera.render(FILTER_DDL_TEMPLATE_KEY, &prompt_ctx)?;
         let model = self.instruct_model.as_deref_mut().ok_or(SqlgenError::Any(
             "generate_smart called without model reference".to_string(),
         ))?;
 
-        let messages = vec![InstructMessage {
-            role: InstructRole::User,
-            message: prompt,
-        }];
+        let limit = self.engine.ddl_prompt_limit as usize;
+        let chunks: Vec<&[String]> = if limit <= 0 {
+            vec![relevant_ddls.as_slice()]
+        } else {
+            relevant_ddls.chunks(limit).collect()
+        };
 
-        Ok(model
-            .get_assistant_response(messages)
-            .await?
-            .lines()
-            .map(|line| line.trim().to_string())
-            .collect())
+        let mut results = Vec::new();
+
+        for chunk in chunks {
+            let mut prompt_ctx = Context::new();
+            prompt_ctx.insert(USER_QUERY_VAR_KEY, user_query);
+            prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &chunk);
+
+            let prompt = self.tera.render(FILTER_DDL_TEMPLATE_KEY, &prompt_ctx)?;
+
+            let messages = vec![InstructMessage {
+                role: InstructRole::User,
+                message: prompt,
+            }];
+
+            let response = model.get_assistant_response(messages).await?;
+
+            results.extend(
+                response
+                    .lines()
+                    .map(|line| line.trim())
+                    .filter(|line| !line.is_empty())
+                    .map(|line| line.to_string()),
+            );
+        }
+
+        Ok(results)
     }
 
     async fn generate_quick(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {

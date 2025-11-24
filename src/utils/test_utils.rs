@@ -25,13 +25,13 @@ pub(crate) fn create_engine(
     let instruct_profile_json = to_string(&instruct_profile).unwrap();
 
     Spi::run_with_args(
-        "SELECT sqlgen.create_model($1, $2::JSONB);",
+        "SELECT sqlgen_internal.create_model($1, $2::JSONB);",
         &[encoder_model_name.into(), encoder_profile_json.into()],
     )
     .unwrap();
 
     Spi::run_with_args(
-        "SELECT sqlgen.create_model($1, $2::JSONB);",
+        "SELECT sqlgen_internal.create_model($1, $2::JSONB);",
         &[instruct_model_name.into(), instruct_profile_json.into()],
     )
     .unwrap();
