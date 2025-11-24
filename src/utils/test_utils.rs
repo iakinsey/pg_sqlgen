@@ -42,6 +42,7 @@ pub(crate) fn create_engine(
         encoder_model_name,
         instruct_model_name,
         table_filter_type,
+        128,
         None,
         None,
         None,

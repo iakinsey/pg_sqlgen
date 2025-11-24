@@ -7,6 +7,7 @@ CREATE TABLE sqlgen_internal.engine (
     schema_name TEXT NOT NULL,
     encoder_model TEXT NOT NULL,
     instruct_model TEXT NOT NULL,
+    ddl_prompt_limit INT NOT NULL,
     system_prompt_template TEXT,
     user_prompt_template TEXT,
     relevant_ddls_template TEXT,
@@ -46,6 +47,7 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_engine(
     encoder_model TEXT,
     instruct_model TEXT,
     table_filter_type TEXT DEFAULT 'smart',
+    ddl_prompt_limit INT DEFAULT NULL,
     system_prompt_template TEXT DEFAULT NULL,
     user_prompt_template TEXT DEFAULT NULL,
     relevant_ddls_template TEXT DEFAULT NULL,
@@ -63,27 +65,29 @@ BEGIN
         schema_name,
         encoder_model,
         instruct_model,
+        table_filter_type,
+        ddl_prompt_limit,
         system_prompt_template,
         user_prompt_template,
         relevant_ddls_template,
         similar_queries_template,
         filter_ddls_template,
         syntax_correction_template,
-        explain_query_template,
-        table_filter_type
+        explain_query_template
     ) VALUES (
         engine_name,
         schema_name,
         encoder_model,
         instruct_model,
+        table_filter_type,
+        ddl_prompt_limit,
         system_prompt_template,
         user_prompt_template,
         relevant_ddls_template,
         similar_queries_template,
         filter_ddls_template,
         syntax_correction_template,
-        explain_query_template,
-        table_filter_type
+        explain_query_template
     );
 END
 $$;

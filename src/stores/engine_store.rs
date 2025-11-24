@@ -13,6 +13,7 @@ impl EngineStore {
         encoder_model: &str,
         instruct_model: &str,
         table_filter_type: &str,
+        ddl_prompt_limit: i32,
         system_prompt_template: Option<&str>,
         user_prompt_template: Option<&str>,
         relevant_ddls_template: Option<&str>,
@@ -22,13 +23,14 @@ impl EngineStore {
         explain_query_template: Option<&str>,
     ) -> Result<(), SqlgenError> {
         Spi::run_with_args(
-            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
+            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
             &[
                 engine_name.into(),
                 schema_name.into(),
                 encoder_model.into(),
                 instruct_model.into(),
                 table_filter_type.into(),
+                ddl_prompt_limit.into(),
                 system_prompt_template.into(),
                 user_prompt_template.into(),
                 relevant_ddls_template.into(),
@@ -104,13 +106,13 @@ mod tests {
         let instruct_profile_json = to_string(&instruct_profile).unwrap();
 
         Spi::run_with_args(
-            "SELECT sqlgen.create_model($1, $2::JSONB);",
+            "SELECT sqlgen_internal.create_model($1, $2::JSONB);",
             &[encoder_model_name.into(), encoder_profile_json.into()],
         )
         .unwrap();
 
         Spi::run_with_args(
-            "SELECT sqlgen.create_model($1, $2::JSONB);",
+            "SELECT sqlgen_internal.create_model($1, $2::JSONB);",
             &[instruct_model_name.into(), instruct_profile_json.into()],
         )
         .unwrap();
@@ -121,6 +123,7 @@ mod tests {
             encoder_model_name,
             instruct_model_name,
             table_filter_type,
+            128,
             None,
             None,
             None,
@@ -162,6 +165,7 @@ mod tests {
                 encoder_model_name,
                 instruct_model_name,
                 table_filter_type,
+                128,
                 None,
                 None,
                 None,

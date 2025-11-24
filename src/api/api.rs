@@ -125,6 +125,7 @@ fn create_engine_3(name: &str, instruct_model: &str, encoder_model: &str) {
         None,
         None,
         None,
+        None,
     )
 }
 
@@ -135,6 +136,7 @@ fn create_engine(
     encoder_model: &str,
     schema_name: Option<&str>,
     table_filter_type: Option<TableFilterType>,
+    ddl_prompt_limit: Option<i32>,
     system_prompt_template: Option<&str>,
     user_prompt_template: Option<&str>,
     relevant_ddls_template: Option<&str>,
@@ -153,6 +155,11 @@ fn create_engine(
         None => TableFilterType::Smart,
     };
 
+    let ddl_prompt_limit = match ddl_prompt_limit {
+        Some(i) => i,
+        None => 128,
+    };
+
     ModelStore::get_model_profile(instruct_model).unwrap_or_else(|e| error!("{}", e));
     let encoder =
         ModelStore::get_text_encoder_model(encoder_model).unwrap_or_else(|e| error!("{}", e));
@@ -163,6 +170,7 @@ fn create_engine(
         encoder_model,
         instruct_model,
         table_filter_type.to_str(),
+        ddl_prompt_limit,
         system_prompt_template,
         user_prompt_template,
         relevant_ddls_template,
