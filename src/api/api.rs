@@ -33,36 +33,32 @@ fn get_engine(name: Option<&str>) -> TextToSqlEngine {
 }
 
 #[pg_extern]
-fn add_model(model_name: &str, config_str: &str) {
-    ModelStore::create_model_profile(model_name, config_str).unwrap_or_else(|e| error!("{}", e));
+fn add_model(model_name: &str, config_str: &str) -> Result<(), SqlgenError> {
+    ModelStore::create_model_profile(model_name, config_str)?;
+
+    Ok(())
 }
 
 #[pg_extern]
-fn remove_model(model_name: &str) {
-    ModelStore::delete_model_profile(model_name).unwrap_or_else(|e| error!("{}", e));
+fn remove_model(model_name: &str) -> Result<(), SqlgenError> {
+    ModelStore::delete_model_profile(model_name)
 }
 
 #[pg_extern(name = "generate")]
-fn generate_1(user_query: &str) -> String {
+fn generate_1(user_query: &str) -> Result<String, SqlgenError> {
     generate_2(user_query, None)
 }
 
 #[pg_extern(name = "generate")]
-fn generate_2(user_query: &str, engine: Option<&str>) -> String {
+fn generate_2(user_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
     let engine = get_engine(engine);
-    let mut ddl_filter_runner =
-        DDLFilterRunner::new(engine.clone()).unwrap_or_else(|e| error!("{}", e));
-    let mut text_to_sql_runner =
-        SQLGenerationRunner::new(engine.clone()).unwrap_or_else(|e| error!("{}", e));
-    let mut syntax_correction_runner =
-        SyntaxCorrectionRunner::new(engine).unwrap_or_else(|e| error!("{}", e));
-    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
+    let mut ddl_filter_runner = DDLFilterRunner::new(engine.clone())?;
+    let mut text_to_sql_runner = SQLGenerationRunner::new(engine.clone())?;
+    let mut syntax_correction_runner = SyntaxCorrectionRunner::new(engine)?;
+    let rt = Runtime::new()?;
 
     rt.block_on(async {
-        let ddls = ddl_filter_runner
-            .generate(user_query)
-            .await
-            .unwrap_or_else(|e| error!("{}", e));
+        let ddls = ddl_filter_runner.generate(user_query).await?;
 
         let query = text_to_sql_runner
             .generate_query(
@@ -70,48 +66,42 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> String {
                 ddls.iter().map(|s| s.as_str()).collect(),
                 vec![],
             )
-            .await
-            .unwrap_or_else(|e| error!("{}", e));
+            .await?;
 
-        syntax_correction_runner
-            .correct(&query)
-            .await
-            .unwrap_or_else(|e| error!("{}", e))
+        syntax_correction_runner.correct(&query).await
     })
 }
 
 #[pg_extern(name = "explain_query")]
-fn explain_query_1(sql_query: &str) -> String {
+fn explain_query_1(sql_query: &str) -> Result<String, SqlgenError> {
     explain_query_2(sql_query, None)
 }
 
 #[pg_extern(name = "explain_query")]
-fn explain_query_2(sql_query: &str, engine: Option<&str>) -> String {
+fn explain_query_2(sql_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
     let engine = get_engine(engine);
-    let mut explain_runner = ExplainQueryRunner::new(engine).unwrap_or_else(|e| error!("{}", e));
-    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
+    let mut explain_runner = ExplainQueryRunner::new(engine)?;
+    let rt = Runtime::new()?;
 
-    rt.block_on(async {
-        explain_runner
-            .explain(sql_query)
-            .await
-            .unwrap_or_else(|e| error!("{}", e))
-    })
+    rt.block_on(async { explain_runner.explain(sql_query).await })
 }
 
 #[pg_extern]
-fn set_default_engine(engine: &str) {
+fn set_default_engine(engine: &str) -> Result<(), SqlgenError> {
     ConfigStore::set_config_value(DEFAULT_ENGINE_CONFIG_KEY, engine)
-        .unwrap_or_else(|e| error!("{}", e));
 }
 
 #[pg_extern]
-fn remove_default_engine() {
-    ConfigStore::remove_config_value(DEFAULT_ENGINE_CONFIG_KEY).unwrap_or_else(|e| error!("{}", e));
+fn remove_default_engine() -> Result<(), SqlgenError> {
+    ConfigStore::remove_config_value(DEFAULT_ENGINE_CONFIG_KEY)
 }
 
 #[pg_extern(name = "create_engine")]
-fn create_engine_3(name: &str, instruct_model: &str, encoder_model: &str) {
+fn create_engine_3(
+    name: &str,
+    instruct_model: &str,
+    encoder_model: &str,
+) -> Result<(), SqlgenError> {
     create_engine(
         name,
         instruct_model,
@@ -144,10 +134,10 @@ fn create_engine(
     filter_ddls_template: Option<&str>,
     syntax_correction_template: Option<&str>,
     explain_query_template: Option<&str>,
-) {
+) -> Result<(), SqlgenError> {
     let schema_name = match schema_name {
         Some(s) => s.to_string(),
-        None => get_current_schema().unwrap_or_else(|e| error!("{}", e)),
+        None => get_current_schema()?,
     };
 
     let table_filter_type = match table_filter_type {
@@ -160,9 +150,8 @@ fn create_engine(
         None => 128,
     };
 
-    ModelStore::get_model_profile(instruct_model).unwrap_or_else(|e| error!("{}", e));
-    let encoder =
-        ModelStore::get_text_encoder_model(encoder_model).unwrap_or_else(|e| error!("{}", e));
+    ModelStore::get_model_profile(instruct_model)?;
+    let encoder = ModelStore::get_text_encoder_model(encoder_model)?;
 
     EngineStore::create_engine(
         name,
@@ -178,24 +167,19 @@ fn create_engine(
         filter_ddls_template,
         syntax_correction_template,
         explain_query_template,
-    )
-    .unwrap_or_else(|e| error!("{}", e));
+    )?;
 
-    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
+    let rt = Runtime::new()?;
 
-    rt.block_on(async {
-        MetadataStore::initialize_metadata(name, &schema_name, encoder)
-            .await
-            .unwrap_or_else(|e| error!("{}", e));
-    })
+    rt.block_on(async { MetadataStore::initialize_metadata(name, &schema_name, encoder).await })
 }
 
 #[pg_extern]
-fn remove_engine(name: &str) {
-    let engine = EngineStore::get_engine(name).unwrap_or_else(|e| error!("{}", e));
+fn remove_engine(name: &str) -> Result<(), SqlgenError> {
+    let engine = EngineStore::get_engine(name)?;
 
-    MetadataStore::remove_metadata(name, &engine.encoder_model).unwrap_or_else(|e| error!("{}", e));
-    EngineStore::remove_engine(name).unwrap_or_else(|e| error!("{}", e));
+    MetadataStore::remove_metadata(name, &engine.encoder_model)?;
+    EngineStore::remove_engine(name)
 }
 
 // TODO test each function
@@ -209,7 +193,7 @@ mod tests {
 
     #[pg_test]
     fn test_add_list_and_remove_models() {
-        let add_query = "SELECT add_model($1, sqlgen.stub_config('test')";
+        let add_query = "SELECT add_model($1, sqlgen.stub_config('test'))";
         let get_query = "SELECT * FROM sqlgen.models WHERE model_name = $1";
         let remove_query = "SELECT remove_model($1)";
         let model_name = "test_model_name";
@@ -246,7 +230,7 @@ mod tests {
     }
 
     #[pg_test]
-    fn test_generate_and_execute() {
+    fn test_generate() {
         let engine_name = "engine_name";
         let model_name = "stub_model";
         let user_query = "I am a user query.";

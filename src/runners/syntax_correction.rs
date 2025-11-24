@@ -50,8 +50,8 @@ impl SyntaxCorrectionRunner {
         let id = get_unique_prepared_statement_id();
         let prepare_query = format!("PREPARE {} AS {}", id, query);
         let prepare_query = match prepare_query.ends_with(";") {
-            true => query.to_string(),
-            false => format!("{};", query),
+            true => prepare_query.to_string(),
+            false => format!("{};", prepare_query),
         };
 
         let error = match Spi::run(&prepare_query) {
