@@ -3,51 +3,43 @@ use std::collections::HashMap;
 use pgrx::pg_extern;
 use pgrx::prelude::*;
 use pgrx::spi::Query;
-use tokio::runtime::Runtime;
 
 use crate::drivers::get_model_descriptions;
 use crate::stores::engine_store::EngineStore;
 use crate::stores::model_store::ModelStore;
 use crate::types::errors::SqlgenError;
 use crate::types::structs::table_metadata::TableMetadata;
+use crate::utils::globals::get_runtime;
 use crate::utils::sql::get_column_heap;
 use crate::utils::sql::get_column_heap_optional;
 
 // These functions live in sqlgen_internal
 
 #[pg_extern]
-fn internal_encode_text(engine: &str, text_value: &str) -> Vec<f32> {
+fn internal_encode_text(engine: &str, text_value: &str) -> Result<Vec<f32>, SqlgenError> {
     let engine = EngineStore::get_engine(engine).unwrap();
-    let profile =
-        ModelStore::get_model_profile(&engine.encoder_model).unwrap_or_else(|e| error!("{}", e));
-    let model = profile
-        .get_text_encoder_model()
-        .unwrap_or_else(|e| error!("{}", e));
-    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
+    let profile = ModelStore::get_model_profile(&engine.encoder_model)?;
+    let model = profile.get_text_encoder_model()?;
+    let rt = get_runtime();
 
     rt.block_on(async { model.encode(text_value).await })
-        .unwrap_or_else(|e| error!("{}", e))
 }
 
 #[pg_extern]
-fn internal_batch_text_encode(model: &str, values: Vec<String>) -> Vec<Vec<f32>> {
-    let profile = ModelStore::get_model_profile(model).unwrap_or_else(|e| error!("{}", e));
-    let model = profile
-        .get_text_encoder_model()
-        .unwrap_or_else(|e| error!("{}", e));
-    let rt = Runtime::new().unwrap_or_else(|e| error!("failed to initialize runtime: {}", e));
+fn internal_batch_text_encode(
+    model: &str,
+    values: Vec<String>,
+) -> Result<Vec<Vec<f32>>, SqlgenError> {
+    let profile = ModelStore::get_model_profile(model)?;
+    let model = profile.get_text_encoder_model()?;
+    let rt = get_runtime();
     let values: Vec<&str> = values.iter().map(|s| s.as_str()).collect();
 
     rt.block_on(async { model.encode_many(&values).await })
-        .unwrap_or_else(|e| error!("{}", e))
 }
 
 #[pg_extern]
-fn internal_add_table(engine: &str, schema_name: &str, table_name: &str) {
-    _internal_add_table(engine, schema_name, table_name).unwrap_or_else(|e| error!("{}", e));
-}
-
-fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(), SqlgenError> {
+fn internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(), SqlgenError> {
     let table_metadata_query = r#"
         SELECT
             a.attname::TEXT AS column_name,
@@ -115,7 +107,7 @@ fn _internal_add_table(engine_name: &str, schema: &str, table: &str) -> Result<(
 
     let model_name = EngineStore::get_engine(engine_name)?.encoder_model;
     let model = ModelStore::get_model_profile(&model_name)?.get_text_encoder_model()?;
-    let rt = Runtime::new()?;
+    let rt = get_runtime();
     let (ddl_encodings, comment_encodings): (Vec<Vec<f32>>, HashMap<usize, Vec<f32>>) = rt
         .block_on(async {
             let d = model.encode_many(&ddls).await?;

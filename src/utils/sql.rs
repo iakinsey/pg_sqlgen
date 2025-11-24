@@ -1,10 +1,8 @@
-use std::{collections::HashMap, sync::Mutex};
 use uuid::Uuid;
 
-use lazy_static::lazy_static;
 use pgrx::{
     spi::{SpiHeapTupleData, SpiTupleTable},
-    FromDatum, IntoDatum, PgOid, Spi,
+    FromDatum, IntoDatum, Spi,
 };
 
 use crate::types::errors::SqlgenError;
@@ -37,10 +35,6 @@ pub fn get_column_heap_optional<T: IntoDatum + FromDatum>(
     name: &str,
 ) -> Result<Option<T>, SqlgenError> {
     Ok(row.get_by_name::<T, _>(name)?)
-}
-
-lazy_static! {
-    pub static ref OID_MAP: Mutex<HashMap<String, PgOid>> = Mutex::new(HashMap::new());
 }
 
 pub fn get_current_schema() -> Result<String, SqlgenError> {

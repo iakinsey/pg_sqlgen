@@ -128,14 +128,16 @@ impl SQLGenerationRunner {
 #[pgrx::pg_schema]
 mod tests {
     use serde_json::to_string;
-    use tokio::runtime::Runtime;
 
     use crate::{
         pg_test,
         runners::sql_generation::SQLGenerationRunner,
         stores::{metadata_store::MetadataStore, model_store::ModelStore},
         types::structs::generate_response::GenerateResponse,
-        utils::test_utils::{create_engine, create_schema},
+        utils::{
+            globals::get_runtime,
+            test_utils::{create_engine, create_schema},
+        },
     };
 
     #[pg_test]
@@ -150,7 +152,7 @@ mod tests {
         let response_str = to_string(&response).unwrap();
         let engine = create_engine(engine_name, schema_name, "smart", &response_str);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
 
         create_schema(schema_name);
 
@@ -180,7 +182,7 @@ mod tests {
         let response_str = to_string(&response).unwrap();
         let engine = create_engine(engine_name, schema_name, "smart", &response_str);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
 
         create_schema(schema_name);
 
@@ -204,7 +206,7 @@ mod tests {
         let engine_name = "test_engine";
         let engine = create_engine(engine_name, schema_name, "smart", "}{");
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
 
         create_schema(schema_name);
 
@@ -235,7 +237,7 @@ mod tests {
         let response_str = to_string(&response).unwrap();
         let engine = create_engine(engine_name, schema_name, "smart", &response_str);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
 
         create_schema(schema_name);
 

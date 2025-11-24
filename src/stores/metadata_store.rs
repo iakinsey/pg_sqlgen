@@ -183,12 +183,12 @@ impl MetadataStore {
 #[pgrx::pg_schema]
 mod tests {
     use pgrx::Spi;
-    use tokio::runtime::Runtime;
 
     use crate::{
         pg_test,
         stores::{metadata_store::MetadataStore, model_store::ModelStore},
         utils::{
+            globals::get_runtime,
             sql::{get_column, get_column_heap, get_column_heap_optional},
             test_utils::{create_engine, create_schema},
         },
@@ -201,7 +201,7 @@ mod tests {
         let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
         let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
 
         create_schema(schema_name);
 
@@ -435,7 +435,7 @@ mod tests {
         let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
         let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
 
         create_schema(schema_name);
 
@@ -457,7 +457,7 @@ mod tests {
         let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
         let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
         let count = 10;
 
         let user_query = rt.block_on(async { encoder.encode("test").await.unwrap() });
@@ -482,7 +482,7 @@ mod tests {
         let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
         let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
 
         create_schema(schema_name);
 

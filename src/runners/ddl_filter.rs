@@ -125,13 +125,15 @@ impl DDLFilterRunner {
 #[cfg(any(test, feature = "pg_test"))]
 #[pgrx::pg_schema]
 mod tests {
-    use tokio::runtime::Runtime;
 
     use crate::{
         pg_test,
         runners::ddl_filter::DDLFilterRunner,
         stores::{metadata_store::MetadataStore, model_store::ModelStore},
-        utils::test_utils::{create_engine, create_schema},
+        utils::{
+            globals::get_runtime,
+            test_utils::{create_engine, create_schema},
+        },
     };
 
     #[pg_test]
@@ -141,7 +143,7 @@ mod tests {
         let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
         let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
         let user_query = "Test user query.";
 
         create_schema(schema_name);
@@ -164,7 +166,7 @@ mod tests {
         let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
         let engine = create_engine(engine_name, schema_name, "quick", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
-        let rt = Runtime::new().unwrap();
+        let rt = get_runtime();
         let user_query = "Test user query.";
 
         create_schema(schema_name);

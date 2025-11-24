@@ -1,3 +1,4 @@
+pub mod globals;
 pub mod rpc;
 pub mod sql;
 #[cfg(any(test, feature = "pg_test"))]

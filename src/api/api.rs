@@ -1,5 +1,4 @@
 use pgrx::prelude::*;
-use tokio::runtime::Runtime;
 
 use crate::{
     runners::{
@@ -16,7 +15,7 @@ use crate::{
         errors::SqlgenError,
         structs::engine::{TableFilterType, TextToSqlEngine},
     },
-    utils::sql::get_current_schema,
+    utils::{globals::get_runtime, sql::get_current_schema},
 };
 
 fn get_engine(name: Option<&str>) -> TextToSqlEngine {
@@ -55,7 +54,7 @@ fn generate_2(user_query: &str, engine: Option<&str>) -> Result<String, SqlgenEr
     let mut ddl_filter_runner = DDLFilterRunner::new(engine.clone())?;
     let mut text_to_sql_runner = SQLGenerationRunner::new(engine.clone())?;
     let mut syntax_correction_runner = SyntaxCorrectionRunner::new(engine)?;
-    let rt = Runtime::new()?;
+    let rt = get_runtime();
 
     rt.block_on(async {
         let ddls = ddl_filter_runner.generate(user_query).await?;
@@ -81,7 +80,7 @@ fn explain_query_1(sql_query: &str) -> Result<String, SqlgenError> {
 fn explain_query_2(sql_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
     let engine = get_engine(engine);
     let mut explain_runner = ExplainQueryRunner::new(engine)?;
-    let rt = Runtime::new()?;
+    let rt = get_runtime();
 
     rt.block_on(async { explain_runner.explain(sql_query).await })
 }
@@ -169,7 +168,7 @@ fn create_engine(
         explain_query_template,
     )?;
 
-    let rt = Runtime::new()?;
+    let rt = get_runtime();
 
     rt.block_on(async { MetadataStore::initialize_metadata(name, &schema_name, encoder).await })
 }
