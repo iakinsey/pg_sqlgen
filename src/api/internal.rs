@@ -6,6 +6,7 @@ use crate::types::errors::SqlgenError;
 use crate::utils::globals::get_runtime;
 use pgrx::prelude::*;
 
+// Allows internal SQL-defined functions to access text encoding models.
 #[pg_extern]
 fn internal_encode_text(engine: &str, text_value: &str) -> Result<Vec<f32>, SqlgenError> {
     let engine = EngineStore::get_engine(engine).unwrap();
@@ -16,6 +17,7 @@ fn internal_encode_text(engine: &str, text_value: &str) -> Result<Vec<f32>, Sqlg
     rt.block_on(async { model.encode(text_value).await })
 }
 
+// Allows internal SQL-defined functions to access batch text encoding models.
 #[pg_extern]
 fn internal_batch_text_encode(
     model: &str,
@@ -29,6 +31,7 @@ fn internal_batch_text_encode(
     rt.block_on(async { model.encode_many(&values).await })
 }
 
+// `sqlgen_internal` is a namespace restricted to internal sqlgen functions.
 #[pg_schema]
 mod sqlgen_internal {
 
@@ -47,6 +50,8 @@ mod sqlgen_internal {
     use crate::utils::sql::get_column_heap;
     use crate::utils::sql::get_column_heap_optional;
 
+    // Create associated metadata rows for a table so that it can be tracked for
+    // text-to-sql generation.
     #[pg_extern]
     fn add_table(engine_name: &str, schema: &str, table: &str) -> Result<(), SqlgenError> {
         let table_metadata_query = r#"
@@ -101,10 +106,8 @@ mod sqlgen_internal {
                 let ddl: String = get_column_heap(&row, "ddl")?;
                 let comment_opt: Option<String> = get_column_heap_optional(&row, "comment")?;
 
-                // For metadata (owned)
                 m.push((column_name, ddl.clone(), comment_opt.clone()));
 
-                // Leak to produce &'static str
                 d.push(Box::leak(ddl.into_boxed_str()));
                 if let Some(com) = comment_opt {
                     c.push((i, Box::leak(com.into_boxed_str())));
@@ -202,6 +205,8 @@ mod sqlgen_internal {
         })
     }
 
+    // Lists model names and descriptions, for use by the
+    // sqlgen.model_descriptions view.
     #[pg_extern]
     fn get_descriptions() -> TableIterator<
         'static,

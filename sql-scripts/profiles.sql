@@ -78,22 +78,28 @@ $$;
 
 CREATE OR REPLACE FUNCTION sqlgen.ollama_config(
     host                TEXT DEFAULT NULL,
-    model_name          TEXT,
+    model_name          TEXT DEFAULT NULL,
     use_https           BOOLEAN DEFAULT NULL,
     request_batch_size  INTEGER DEFAULT NULL
 )
 RETURNS TEXT
 LANGUAGE SQL
 AS $$
-SELECT jsonb_strip_nulls(
-    jsonb_build_object(
-        'type',   'Ollama',
-        'config', jsonb_build_object(
-            'host',               host,
-            'model_name',         model_name,
-            'use_https',          use_https,
-            'request_batch_size', request_batch_size
-        )
-    )
-)::TEXT;
+SELECT
+    CASE
+        WHEN model_name IS NULL THEN
+            raise_exception('model_name is required')
+        ELSE
+            jsonb_strip_nulls(
+                jsonb_build_object(
+                    'type',   'Ollama',
+                    'config', jsonb_build_object(
+                        'host',               host,
+                        'model_name',         model_name,
+                        'use_https',          use_https,
+                        'request_batch_size', request_batch_size
+                    )
+                )
+            )::TEXT
+    END;
 $$;

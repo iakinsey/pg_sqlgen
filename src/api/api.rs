@@ -8,6 +8,7 @@ use crate::{
     types::{errors::SqlgenError, structs::engine::TextToSqlEngine},
 };
 
+// Retrieve engine by name. If one isn't provided, return the default engine.
 fn get_engine(name: Option<&str>) -> TextToSqlEngine {
     let engine_name = match name {
         Some(e) => e.to_string(),
@@ -40,6 +41,7 @@ mod sqlgen {
     };
     use pgrx::pg_extern;
 
+    // Create a new model instance usable by engines.
     #[pg_extern]
     fn add_model(model_name: &str, config_str: &str) -> Result<(), SqlgenError> {
         ModelStore::create_model_profile(model_name, config_str)?;
@@ -47,16 +49,19 @@ mod sqlgen {
         Ok(())
     }
 
+    // Remove model instance.
     #[pg_extern]
     fn remove_model(model_name: &str) -> Result<(), SqlgenError> {
         ModelStore::delete_model_profile(model_name)
     }
 
+    // Call generate() with default engine.
     #[pg_extern(name = "generate")]
     fn generate_1(user_query: &str) -> Result<String, SqlgenError> {
         generate_2(user_query, None)
     }
 
+    // Generate SQL from provided text.
     #[pg_extern(name = "generate")]
     fn generate_2(user_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
         let engine = get_engine(engine);
@@ -80,11 +85,13 @@ mod sqlgen {
         })
     }
 
+    // Use explain_query() with default engine.
     #[pg_extern(name = "explain_query")]
     fn explain_query_1(sql_query: &str) -> Result<String, SqlgenError> {
         explain_query_2(sql_query, None)
     }
 
+    // Explains how a given an sql query works in natural language.
     #[pg_extern(name = "explain_query")]
     fn explain_query_2(sql_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
         let engine = get_engine(engine);
@@ -94,16 +101,20 @@ mod sqlgen {
         rt.block_on(async { explain_runner.explain(sql_query).await })
     }
 
+    // Sets default engine to be used by functions like generate() and
+    // explain_query().
     #[pg_extern]
     fn set_default_engine(engine: &str) -> Result<(), SqlgenError> {
         ConfigStore::set_config_value(DEFAULT_ENGINE_CONFIG_KEY, engine)
     }
 
+    // Removes default engine.
     #[pg_extern]
     fn remove_default_engine() -> Result<(), SqlgenError> {
         ConfigStore::remove_config_value(DEFAULT_ENGINE_CONFIG_KEY)
     }
 
+    // Overloads create_engine() without providing prompt arguments.
     #[pg_extern(name = "create_engine")]
     fn create_engine_3(
         name: &str,
@@ -127,6 +138,7 @@ mod sqlgen {
         )
     }
 
+    // Creates a new text to sql engine.
     #[pg_extern(name = "create_engine")]
     fn create_engine(
         name: &str,
@@ -191,7 +203,6 @@ mod sqlgen {
     }
 }
 
-// TODO test each function
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
 mod tests {
