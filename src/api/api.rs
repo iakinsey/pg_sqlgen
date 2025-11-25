@@ -51,9 +51,9 @@ fn generate_1(user_query: &str) -> Result<String, SqlgenError> {
 #[pg_extern(name = "generate")]
 fn generate_2(user_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
     let engine = get_engine(engine);
-    let mut ddl_filter_runner = DDLFilterRunner::new(engine.clone())?;
-    let mut text_to_sql_runner = SQLGenerationRunner::new(engine.clone())?;
-    let mut syntax_correction_runner = SyntaxCorrectionRunner::new(engine)?;
+    let mut ddl_filter_runner = DDLFilterRunner::new(&engine)?;
+    let mut text_to_sql_runner = SQLGenerationRunner::new(&engine)?;
+    let mut syntax_correction_runner = SyntaxCorrectionRunner::new(&engine)?;
     let rt = get_runtime();
 
     rt.block_on(async {

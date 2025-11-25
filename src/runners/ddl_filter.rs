@@ -11,9 +11,9 @@ use crate::{
 };
 use tera::{Context, Tera};
 
-pub struct DDLFilterRunner {
+pub struct DDLFilterRunner<'a> {
     tera: Tera,
-    engine: TextToSqlEngine,
+    engine: &'a TextToSqlEngine,
     encoder_model: Option<Box<dyn TextEncoderDriver>>,
     instruct_model: Option<Box<dyn TextInstructDriver>>,
 }
@@ -35,8 +35,8 @@ pub static RELEVANT_DDLS_VAR_KEY: &str = "relevant_ddls";
 pub static FILTER_DDL_TEMPLATE_KEY: &str = "filter_ddls";
 
 // TODO allow for segmenting multiple queries
-impl DDLFilterRunner {
-    pub fn new(engine: TextToSqlEngine) -> Result<Self, SqlgenError> {
+impl<'a> DDLFilterRunner<'a> {
+    pub fn new(engine: &'a TextToSqlEngine) -> Result<Self, SqlgenError> {
         let mut tera = Tera::default();
 
         tera.add_raw_template(FILTER_DDL_TEMPLATE_KEY, &engine.filter_ddls_template)?;
@@ -152,7 +152,7 @@ mod tests {
             MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
                 .await
                 .unwrap();
-            let mut runner = DDLFilterRunner::new(engine).unwrap();
+            let mut runner = DDLFilterRunner::new(&engine).unwrap();
             let ddls = runner.generate(user_query).await.unwrap();
 
             assert_eq!(ddls.len(), 4);
@@ -175,7 +175,7 @@ mod tests {
             MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
                 .await
                 .unwrap();
-            let mut runner = DDLFilterRunner::new(engine).unwrap();
+            let mut runner = DDLFilterRunner::new(&engine).unwrap();
             let ddls = runner.generate(user_query).await.unwrap();
 
             assert_eq!(ddls.len(), 18);

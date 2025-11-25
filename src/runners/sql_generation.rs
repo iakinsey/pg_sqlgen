@@ -34,7 +34,7 @@ pub static RELEVANT_DDLS_BLOCK_KEY: &str = "relevant_ddls_block";
 pub static SIMILAR_QUERIES_BLOCK_KEY: &str = "similar_queries_block";
 
 impl SQLGenerationRunner {
-    pub fn new(engine: TextToSqlEngine) -> Result<Self, SqlgenError> {
+    pub fn new(engine: &TextToSqlEngine) -> Result<Self, SqlgenError> {
         let mut tera = Tera::default();
 
         tera.add_raw_template(USER_PROMPT_TEMPLATE_KEY, &engine.user_prompt_template)?;
@@ -160,7 +160,7 @@ mod tests {
             MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
                 .await
                 .unwrap();
-            let mut engine = SQLGenerationRunner::new(engine).unwrap();
+            let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
                 .generate_query("test_query", vec![""], vec![""])
                 .await
@@ -190,7 +190,7 @@ mod tests {
             MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
                 .await
                 .unwrap();
-            let mut engine = SQLGenerationRunner::new(engine).unwrap();
+            let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
                 .generate_query("test_query", vec![""], vec![""])
                 .await
@@ -214,7 +214,7 @@ mod tests {
             MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
                 .await
                 .unwrap();
-            let mut engine = SQLGenerationRunner::new(engine).unwrap();
+            let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
                 .generate_query("test_query", vec![""], vec![""])
                 .await
@@ -245,7 +245,7 @@ mod tests {
             MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
                 .await
                 .unwrap();
-            let mut engine = SQLGenerationRunner::new(engine).unwrap();
+            let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
                 .generate_query("test_query", vec![""], vec![""])
                 .await

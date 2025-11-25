@@ -29,7 +29,7 @@ pub struct SyntaxCorrectionRunner {
 }
 
 impl SyntaxCorrectionRunner {
-    pub fn new(engine: TextToSqlEngine) -> Result<Self, SqlgenError> {
+    pub fn new(engine: &TextToSqlEngine) -> Result<Self, SqlgenError> {
         let mut tera = Tera::default();
         let model = ModelStore::get_text_instruct_model(&engine.instruct_model)?;
 
