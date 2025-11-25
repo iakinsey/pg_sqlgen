@@ -1,21 +1,11 @@
 use pgrx::prelude::*;
 
 use crate::{
-    runners::{
-        ddl_filter::DDLFilterRunner, explain::ExplainQueryRunner,
-        sql_generation::SQLGenerationRunner, syntax_correction::SyntaxCorrectionRunner,
-    },
     stores::{
         config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
         engine_store::EngineStore,
-        metadata_store::MetadataStore,
-        model_store::ModelStore,
     },
-    types::{
-        errors::SqlgenError,
-        structs::engine::{TableFilterType, TextToSqlEngine},
-    },
-    utils::{globals::get_runtime, sql::get_current_schema},
+    types::{errors::SqlgenError, structs::engine::TextToSqlEngine},
 };
 
 fn get_engine(name: Option<&str>) -> TextToSqlEngine {
@@ -31,154 +21,174 @@ fn get_engine(name: Option<&str>) -> TextToSqlEngine {
     EngineStore::get_engine(&engine_name).unwrap_or_else(|e| error!("{}", e))
 }
 
-#[pg_extern]
-fn add_model(model_name: &str, config_str: &str) -> Result<(), SqlgenError> {
-    ModelStore::create_model_profile(model_name, config_str)?;
-
-    Ok(())
-}
-
-#[pg_extern]
-fn remove_model(model_name: &str) -> Result<(), SqlgenError> {
-    ModelStore::delete_model_profile(model_name)
-}
-
-#[pg_extern(name = "generate")]
-fn generate_1(user_query: &str) -> Result<String, SqlgenError> {
-    generate_2(user_query, None)
-}
-
-#[pg_extern(name = "generate")]
-fn generate_2(user_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
-    let engine = get_engine(engine);
-    let mut ddl_filter_runner = DDLFilterRunner::new(&engine)?;
-    let mut text_to_sql_runner = SQLGenerationRunner::new(&engine)?;
-    let mut syntax_correction_runner = SyntaxCorrectionRunner::new(&engine)?;
-    let rt = get_runtime();
-
-    rt.block_on(async {
-        let ddls = ddl_filter_runner.generate(user_query).await?;
-
-        let query = text_to_sql_runner
-            .generate_query(
-                user_query,
-                ddls.iter().map(|s| s.as_str()).collect(),
-                vec![],
-            )
-            .await?;
-
-        syntax_correction_runner.correct(query).await
-    })
-}
-
-#[pg_extern(name = "explain_query")]
-fn explain_query_1(sql_query: &str) -> Result<String, SqlgenError> {
-    explain_query_2(sql_query, None)
-}
-
-#[pg_extern(name = "explain_query")]
-fn explain_query_2(sql_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
-    let engine = get_engine(engine);
-    let mut explain_runner = ExplainQueryRunner::new(engine)?;
-    let rt = get_runtime();
-
-    rt.block_on(async { explain_runner.explain(sql_query).await })
-}
-
-#[pg_extern]
-fn set_default_engine(engine: &str) -> Result<(), SqlgenError> {
-    ConfigStore::set_config_value(DEFAULT_ENGINE_CONFIG_KEY, engine)
-}
-
-#[pg_extern]
-fn remove_default_engine() -> Result<(), SqlgenError> {
-    ConfigStore::remove_config_value(DEFAULT_ENGINE_CONFIG_KEY)
-}
-
-#[pg_extern(name = "create_engine")]
-fn create_engine_3(
-    name: &str,
-    instruct_model: &str,
-    encoder_model: &str,
-) -> Result<(), SqlgenError> {
-    create_engine(
-        name,
-        instruct_model,
-        encoder_model,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-    )
-}
-
-#[pg_extern(name = "create_engine")]
-fn create_engine(
-    name: &str,
-    instruct_model: &str,
-    encoder_model: &str,
-    schema_name: Option<&str>,
-    table_filter_type: Option<TableFilterType>,
-    ddl_prompt_limit: Option<i32>,
-    system_prompt_template: Option<&str>,
-    user_prompt_template: Option<&str>,
-    relevant_ddls_template: Option<&str>,
-    similar_queries_template: Option<&str>,
-    filter_ddls_template: Option<&str>,
-    syntax_correction_template: Option<&str>,
-    explain_query_template: Option<&str>,
-) -> Result<(), SqlgenError> {
-    let schema_name = match schema_name {
-        Some(s) => s.to_string(),
-        None => get_current_schema()?,
+#[pg_schema]
+mod sqlgen {
+    use crate::{
+        api::api::get_engine,
+        runners::{
+            ddl_filter::DDLFilterRunner, explain::ExplainQueryRunner,
+            sql_generation::SQLGenerationRunner, syntax_correction::SyntaxCorrectionRunner,
+        },
+        stores::{
+            config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
+            engine_store::EngineStore,
+            metadata_store::MetadataStore,
+            model_store::ModelStore,
+        },
+        types::{errors::SqlgenError, structs::engine::TableFilterType},
+        utils::{globals::get_runtime, sql::get_current_schema},
     };
+    use pgrx::pg_extern;
 
-    let table_filter_type = match table_filter_type {
-        Some(s) => s,
-        None => TableFilterType::Smart,
-    };
+    #[pg_extern]
+    fn add_model(model_name: &str, config_str: &str) -> Result<(), SqlgenError> {
+        ModelStore::create_model_profile(model_name, config_str)?;
 
-    let ddl_prompt_limit = match ddl_prompt_limit {
-        Some(i) => i,
-        None => 128,
-    };
+        Ok(())
+    }
 
-    ModelStore::get_model_profile(instruct_model)?;
-    let encoder = ModelStore::get_text_encoder_model(encoder_model)?;
+    #[pg_extern]
+    fn remove_model(model_name: &str) -> Result<(), SqlgenError> {
+        ModelStore::delete_model_profile(model_name)
+    }
 
-    EngineStore::create_engine(
-        name,
-        &schema_name,
-        encoder_model,
-        instruct_model,
-        table_filter_type.to_str(),
-        ddl_prompt_limit,
-        system_prompt_template,
-        user_prompt_template,
-        relevant_ddls_template,
-        similar_queries_template,
-        filter_ddls_template,
-        syntax_correction_template,
-        explain_query_template,
-    )?;
+    #[pg_extern(name = "generate")]
+    fn generate_1(user_query: &str) -> Result<String, SqlgenError> {
+        generate_2(user_query, None)
+    }
 
-    let rt = get_runtime();
+    #[pg_extern(name = "generate")]
+    fn generate_2(user_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
+        let engine = get_engine(engine);
+        let mut ddl_filter_runner = DDLFilterRunner::new(&engine)?;
+        let mut text_to_sql_runner = SQLGenerationRunner::new(&engine)?;
+        let mut syntax_correction_runner = SyntaxCorrectionRunner::new(&engine)?;
+        let rt = get_runtime();
 
-    rt.block_on(async { MetadataStore::initialize_metadata(name, &schema_name, encoder).await })
-}
+        rt.block_on(async {
+            let ddls = ddl_filter_runner.generate(user_query).await?;
 
-#[pg_extern]
-fn remove_engine(name: &str) -> Result<(), SqlgenError> {
-    let engine = EngineStore::get_engine(name)?;
+            let query = text_to_sql_runner
+                .generate_query(
+                    user_query,
+                    ddls.iter().map(|s| s.as_str()).collect(),
+                    vec![],
+                )
+                .await?;
 
-    MetadataStore::remove_metadata(name, &engine.encoder_model)?;
-    EngineStore::remove_engine(name)
+            syntax_correction_runner.correct(query).await
+        })
+    }
+
+    #[pg_extern(name = "explain_query")]
+    fn explain_query_1(sql_query: &str) -> Result<String, SqlgenError> {
+        explain_query_2(sql_query, None)
+    }
+
+    #[pg_extern(name = "explain_query")]
+    fn explain_query_2(sql_query: &str, engine: Option<&str>) -> Result<String, SqlgenError> {
+        let engine = get_engine(engine);
+        let mut explain_runner = ExplainQueryRunner::new(engine)?;
+        let rt = get_runtime();
+
+        rt.block_on(async { explain_runner.explain(sql_query).await })
+    }
+
+    #[pg_extern]
+    fn set_default_engine(engine: &str) -> Result<(), SqlgenError> {
+        ConfigStore::set_config_value(DEFAULT_ENGINE_CONFIG_KEY, engine)
+    }
+
+    #[pg_extern]
+    fn remove_default_engine() -> Result<(), SqlgenError> {
+        ConfigStore::remove_config_value(DEFAULT_ENGINE_CONFIG_KEY)
+    }
+
+    #[pg_extern(name = "create_engine")]
+    fn create_engine_3(
+        name: &str,
+        instruct_model: &str,
+        encoder_model: &str,
+    ) -> Result<(), SqlgenError> {
+        create_engine(
+            name,
+            instruct_model,
+            encoder_model,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    }
+
+    #[pg_extern(name = "create_engine")]
+    fn create_engine(
+        name: &str,
+        instruct_model: &str,
+        encoder_model: &str,
+        schema_name: Option<&str>,
+        table_filter_type: Option<TableFilterType>,
+        ddl_prompt_limit: Option<i32>,
+        system_prompt_template: Option<&str>,
+        user_prompt_template: Option<&str>,
+        relevant_ddls_template: Option<&str>,
+        similar_queries_template: Option<&str>,
+        filter_ddls_template: Option<&str>,
+        syntax_correction_template: Option<&str>,
+        explain_query_template: Option<&str>,
+    ) -> Result<(), SqlgenError> {
+        let schema_name = match schema_name {
+            Some(s) => s.to_string(),
+            None => get_current_schema()?,
+        };
+
+        let table_filter_type = match table_filter_type {
+            Some(s) => s,
+            None => TableFilterType::Smart,
+        };
+
+        let ddl_prompt_limit = match ddl_prompt_limit {
+            Some(i) => i,
+            None => 128,
+        };
+
+        ModelStore::get_model_profile(instruct_model)?;
+        let encoder = ModelStore::get_text_encoder_model(encoder_model)?;
+
+        EngineStore::create_engine(
+            name,
+            &schema_name,
+            encoder_model,
+            instruct_model,
+            table_filter_type.to_str(),
+            ddl_prompt_limit,
+            system_prompt_template,
+            user_prompt_template,
+            relevant_ddls_template,
+            similar_queries_template,
+            filter_ddls_template,
+            syntax_correction_template,
+            explain_query_template,
+        )?;
+
+        let rt = get_runtime();
+
+        rt.block_on(async { MetadataStore::initialize_metadata(name, &schema_name, encoder).await })
+    }
+
+    #[pg_extern]
+    fn remove_engine(name: &str) -> Result<(), SqlgenError> {
+        let engine = EngineStore::get_engine(name)?;
+
+        MetadataStore::remove_metadata(name, &engine.encoder_model)?;
+        EngineStore::remove_engine(name)
+    }
 }
 
 // TODO test each function
@@ -192,9 +202,9 @@ mod tests {
 
     #[pg_test]
     fn test_add_list_and_remove_models() {
-        let add_query = "SELECT add_model($1, sqlgen.stub_config('test'))";
+        let add_query = "SELECT sqlgen.add_model($1, sqlgen.stub_config('test'))";
         let get_query = "SELECT * FROM sqlgen.models WHERE model_name = $1";
-        let remove_query = "SELECT remove_model($1)";
+        let remove_query = "SELECT sqlgen.remove_model($1)";
         let model_name = "test_model_name";
 
         Spi::connect(|client| {
@@ -240,9 +250,9 @@ mod tests {
         };
         let model_response_json = to_string(&model_response);
         let create_model_query =
-            "SELECT add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
-        let create_engine_query = "SELECT create_engine($1, $2, $2)";
-        let generate_query = "SELECT generate($1, $2);";
+            "SELECT sqlgen.add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT sqlgen.create_engine($1, $2, $2)";
+        let generate_query = "SELECT sqlgen.generate($1, $2);";
 
         Spi::connect(|client| {
             client
@@ -292,10 +302,10 @@ mod tests {
         };
         let model_response_json = to_string(&model_response);
         let create_model_query =
-            "SELECT add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
-        let create_engine_query = "SELECT create_engine($1, $2, $2)";
-        let set_default_engine_query = "SELECT set_default_engine($1)";
-        let generate_query = "SELECT generate('example query');";
+            "SELECT sqlgen.add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT sqlgen.create_engine($1, $2, $2)";
+        let set_default_engine_query = "SELECT sqlgen.set_default_engine($1)";
+        let generate_query = "SELECT sqlgen.generate('example query');";
 
         Spi::connect(|client| {
             client
@@ -347,10 +357,10 @@ mod tests {
         };
         let model_response_json = to_string(&model_response);
         let create_model_query =
-            "SELECT add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
-        let create_engine_query = "SELECT create_engine($1, $2, $2)";
+            "SELECT sqlgen.add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT sqlgen.create_engine($1, $2, $2)";
         let get_engine_query = "SELECT * FROM sqlgen.engines WHERE engine_name = $1";
-        let remove_engine_query = "SELECT remove_engine($1);";
+        let remove_engine_query = "SELECT sqlgen.remove_engine($1);";
 
         Spi::connect(|client| {
             client
