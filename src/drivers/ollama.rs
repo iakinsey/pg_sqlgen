@@ -17,9 +17,9 @@ struct ChatBody {
 }
 
 #[derive(Serialize)]
-struct EmbeddingsBody {
-    model: String,
-    prompt: String,
+struct EmbeddingsBody<'a> {
+    model: &'a str,
+    prompt: &'a str,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -55,8 +55,8 @@ impl OllamaDriver {
 
     fn get_encode_body(&self, input: &str) -> Result<String, SqlgenError> {
         let message = EmbeddingsBody {
-            model: self.config.model_name.clone(),
-            prompt: input.to_string(),
+            model: &self.config.model_name,
+            prompt: &input,
         };
 
         let json = to_string(&message)?;
