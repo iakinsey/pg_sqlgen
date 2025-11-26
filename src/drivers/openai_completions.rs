@@ -12,12 +12,6 @@ use crate::{
     utils::rpc::get_auth_header,
 };
 
-pub struct OpenAICompletionsDriver {
-    config: OpenAICompletionsConfig,
-    messages: Vec<CompletionsMessage>,
-    client: Client,
-}
-
 #[derive(Deserialize, Serialize)]
 pub struct OpenAICompletionsRequest {
     model: String,
@@ -43,6 +37,16 @@ pub struct Choice {
 #[derive(Deserialize)]
 pub struct Message {
     content: String,
+}
+
+// Enables interaction with models that implement OpenAI's chat completions API.
+// While the API was initially designed for use with OpenAI's models, the format
+// is commonly used by other models.
+// https://platform.openai.com/docs/api-reference/chat
+pub struct OpenAICompletionsDriver {
+    config: OpenAICompletionsConfig,
+    messages: Vec<CompletionsMessage>,
+    client: Client,
 }
 
 impl ModelDriver for OpenAICompletionsDriver {

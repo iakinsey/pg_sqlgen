@@ -1,9 +1,8 @@
-// TODO
-
 use pgrx::Spi;
 
 use crate::types::{errors::SqlgenError, structs::engine::TextToSqlEngine};
 
+// Handles state management for engines.
 pub struct EngineStore {}
 
 impl EngineStore {

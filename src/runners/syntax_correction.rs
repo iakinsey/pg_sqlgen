@@ -22,6 +22,12 @@ pub static SYNTAX_CORRECTION_PROMPT_TEMPLATE_KEY: &str = "error_correction";
 pub static ERROR_MESSAGE_VAR_KEY: &str = "error_message";
 pub static QUERY_VAR_KEY: &str = "query";
 
+// Validates whether or not a given SQL query is both syntactically correct and
+// semantically resolvable. If not, it pipes the query and associated error into
+// the model for correction. Returns corrected query.
+//
+// TODO allow it to pass through rounds of validation in the event that the
+// first pass fails.
 pub struct SyntaxCorrectionRunner {
     tera: Tera,
     model: Box<dyn TextInstructDriver>,
@@ -46,6 +52,7 @@ impl SyntaxCorrectionRunner {
         })
     }
 
+    // Main entrypoint for runner.
     pub async fn correct(&mut self, query: String) -> Result<String, SqlgenError> {
         let id = get_unique_prepared_statement_id();
         let prepare_query = format!("PREPARE {} AS {}", id, query);

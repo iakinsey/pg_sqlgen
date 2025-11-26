@@ -13,6 +13,8 @@ use crate::{
     utils::sql::get_column,
 };
 
+// ModelProfile contains information necesasry for engines to create drivers.
+// State management for this struct is handled by `ModelStore`.
 pub struct ModelProfile {
     pub name: String,
     pub config: ModelConfig,

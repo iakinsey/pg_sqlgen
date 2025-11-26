@@ -2,6 +2,7 @@ use async_trait::async_trait;
 
 use crate::types::errors::SqlgenError;
 
+// Interface for converting text into vectors.
 #[async_trait]
 pub trait TextEncoderDriver: Send + Sync {
     async fn dimensions(&self) -> Result<usize, SqlgenError>;

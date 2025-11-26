@@ -7,6 +7,7 @@ use crate::types::{
     traits::driver::{TextEncoderDriver, TextInstructDriver},
 };
 
+// Handles state management of model profiles.
 pub struct ModelStore {}
 
 // TODO add get_model_capabilities, provide a way to check if a model could be instruct/encoder/etc

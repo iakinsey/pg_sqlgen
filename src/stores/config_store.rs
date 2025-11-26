@@ -6,6 +6,7 @@ pub struct ConfigStore {}
 
 pub static DEFAULT_ENGINE_CONFIG_KEY: &str = "default_engine";
 
+// Handles state management for extension-level config.
 impl ConfigStore {
     pub fn get_config_value(key: &str) -> Result<String, SqlgenError> {
         let query = r#"

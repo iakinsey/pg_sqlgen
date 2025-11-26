@@ -7,6 +7,7 @@ use pgrx::{
 
 use crate::types::errors::SqlgenError;
 
+// Get column value from a query.
 pub fn get_column<T: IntoDatum + FromDatum>(
     row: &SpiTupleTable,
     name: &str,
@@ -15,6 +16,7 @@ pub fn get_column<T: IntoDatum + FromDatum>(
         .ok_or_else(|| SqlgenError::ColumnParseFailed(name.to_string()))
 }
 
+// Get an optional column value from a query.
 pub fn get_column_optional<T: IntoDatum + FromDatum>(
     row: &SpiTupleTable,
     name: &str,
@@ -22,6 +24,7 @@ pub fn get_column_optional<T: IntoDatum + FromDatum>(
     Ok(row.get_by_name::<T, _>(name)?)
 }
 
+// Get column value from a query.
 pub fn get_column_heap<T: IntoDatum + FromDatum>(
     row: &SpiHeapTupleData,
     name: &str,
@@ -30,6 +33,7 @@ pub fn get_column_heap<T: IntoDatum + FromDatum>(
         .ok_or_else(|| SqlgenError::ColumnParseFailed(name.to_string()))
 }
 
+// Get an optional column value from a query.
 pub fn get_column_heap_optional<T: IntoDatum + FromDatum>(
     row: &SpiHeapTupleData,
     name: &str,
@@ -37,6 +41,7 @@ pub fn get_column_heap_optional<T: IntoDatum + FromDatum>(
     Ok(row.get_by_name::<T, _>(name)?)
 }
 
+// Get the current Postgres schema in use.
 pub fn get_current_schema() -> Result<String, SqlgenError> {
     match Spi::get_one::<String>("SELECT current_schema()::TEXT")? {
         Some(v) => Ok(v),
@@ -44,6 +49,7 @@ pub fn get_current_schema() -> Result<String, SqlgenError> {
     }
 }
 
+// Generates a guaranteed unique string to be used as a `PREPARE` identifier.
 pub fn get_unique_prepared_statement_id() -> String {
     format!("stmt{}", Uuid::new_v4().simple().to_string())
 }

@@ -5,6 +5,9 @@ use crate::{
     utils::sql::{get_column_heap, get_column_heap_optional},
 };
 
+// Metadata contains extension-readable information about a Postgres schema.
+// This information is used in tandem with engines to provide runners with
+// data necessary for execution.
 pub struct TableMetadata {
     pub schema_name: String,
     pub table_name: String,
@@ -15,6 +18,8 @@ pub struct TableMetadata {
     pub comment_vector: Option<Vec<f32>>,
 }
 
+// The return type from the `sqlgen_internal.crawl_schema` SQL function. Used to
+// populate TableMetadata.
 pub struct CrawlSchema {
     pub table_name: String,
     pub column_name: String,

@@ -28,12 +28,6 @@ struct ChatMessage {
     content: String,
 }
 
-pub struct OllamaDriver {
-    config: OllamaConfig,
-    messages: Vec<InstructMessage>,
-    client: Client,
-}
-
 #[derive(Deserialize)]
 pub struct OllamaChatResponse {
     message: ChatMessage,
@@ -42,6 +36,22 @@ pub struct OllamaChatResponse {
 #[derive(Deserialize, Debug)]
 pub struct OllamaEmbeddingsResponse {
     pub embedding: Vec<f32>,
+}
+
+// Enables interaction with Ollama servers. Supports both chat and text
+// encoding.
+// https://ollama.com/
+pub struct OllamaDriver {
+    config: OllamaConfig,
+    messages: Vec<InstructMessage>,
+    client: Client,
+}
+
+impl ModelDriver for OllamaDriver {
+    const ID: &'static str = "ollama";
+    const NAME: &'static str = "Ollama";
+    const DESCRIPTION: &'static str =
+        "A flexible runtime for running and managing language models.";
 }
 
 impl OllamaDriver {
@@ -98,13 +108,6 @@ impl OllamaDriver {
             method = method
         )
     }
-}
-
-impl ModelDriver for OllamaDriver {
-    const ID: &'static str = "ollama";
-    const NAME: &'static str = "Ollama";
-    const DESCRIPTION: &'static str =
-        "A flexible runtime for running and managing language models.";
 }
 
 #[async_trait]

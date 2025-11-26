@@ -11,6 +11,13 @@ use crate::{
 };
 use tera::{Context, Tera};
 
+pub static USER_QUERY_VAR_KEY: &str = "user_query";
+pub static RELEVANT_DDLS_VAR_KEY: &str = "relevant_ddls";
+pub static FILTER_DDL_TEMPLATE_KEY: &str = "filter_ddls";
+
+// Filters DDLs relevant to the user's query. DDLs can be filtered by one of two
+// ways, either through a language model (smart) or cosine similarity (quick).
+// Filtering is determined by the  `TableFilterType` value provided.
 pub struct DDLFilterRunner<'a> {
     tera: Tera,
     engine: &'a TextToSqlEngine,
@@ -18,23 +25,6 @@ pub struct DDLFilterRunner<'a> {
     instruct_model: Option<Box<dyn TextInstructDriver>>,
 }
 
-/*
-    Example filter template:
-
-    The user has the following query:
-
-    {user_query}
-
-    Filter this list, only select elements that you believe are relevant to the users query.
-    Respond by only returning the following list and nothing else:
-
-    {relevant_ddls}
-*/
-pub static USER_QUERY_VAR_KEY: &str = "user_query";
-pub static RELEVANT_DDLS_VAR_KEY: &str = "relevant_ddls";
-pub static FILTER_DDL_TEMPLATE_KEY: &str = "filter_ddls";
-
-// TODO allow for segmenting multiple queries
 impl<'a> DDLFilterRunner<'a> {
     pub fn new(engine: &'a TextToSqlEngine) -> Result<Self, SqlgenError> {
         let mut tera = Tera::default();
@@ -60,6 +50,7 @@ impl<'a> DDLFilterRunner<'a> {
         })
     }
 
+    // Main entrypoint for runner.
     pub async fn generate(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
         match self.engine.filter_type {
             TableFilterType::Quick => self.generate_quick(user_query).await,
@@ -67,6 +58,7 @@ impl<'a> DDLFilterRunner<'a> {
         }
     }
 
+    // Filter DDLs with a language model.
     async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
         let relevant_ddls = MetadataStore::get_ddls(&self.engine.name)?;
         let model = self.instruct_model.as_deref_mut().ok_or(SqlgenError::Any(
@@ -108,6 +100,7 @@ impl<'a> DDLFilterRunner<'a> {
         Ok(results)
     }
 
+    // Filter DDLs with cosine similarity.
     async fn generate_quick(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
         let model = self.encoder_model.as_deref_mut().ok_or(SqlgenError::Any(
             "generate_quick called without model reference".to_string(),

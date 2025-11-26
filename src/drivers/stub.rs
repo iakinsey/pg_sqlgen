@@ -9,6 +9,8 @@ pub struct StubDriver {
     config: StubConfig,
 }
 
+// A stub model that eturns whatever the user specifies. Primarily used for
+// testing purposes.
 impl StubDriver {
     pub fn new(config: &StubConfig) -> Result<Self, SqlgenError> {
         Ok(Self {

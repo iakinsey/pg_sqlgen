@@ -12,11 +12,6 @@ use crate::{
     utils::rpc::get_auth_header,
 };
 
-pub struct OpenAIEmbeddingsDriver {
-    config: OpenAIEmbeddingsConfig,
-    client: Client,
-}
-
 #[derive(Serialize)]
 pub struct EmbeddingsRequest<'a> {
     input: &'a str,
@@ -39,6 +34,15 @@ pub struct EmbeddingsResponse {
 #[derive(Deserialize, Serialize)]
 pub struct EmbeddingsData {
     embedding: Vec<f32>,
+}
+
+// Enables interaction with models that implement OpenAI's embeddings API. While
+// the API was initially designed for use with OpenAI's models, the format is
+// commonly used by other models.
+// https://platform.openai.com/docs/api-reference/embeddings
+pub struct OpenAIEmbeddingsDriver {
+    config: OpenAIEmbeddingsConfig,
+    client: Client,
 }
 
 impl OpenAIEmbeddingsDriver {

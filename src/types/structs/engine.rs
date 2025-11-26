@@ -70,6 +70,7 @@ Explain:
 {explain}
 "#;
 
+// Type of filtering used by `DDLFilterRunner`.
 #[derive(PostgresEnum, Eq, PartialEq, Clone)]
 pub enum TableFilterType {
     Quick,
@@ -96,6 +97,9 @@ impl TableFilterType {
     }
 }
 
+// Contains all of the relevant prompt templates and metadata required to
+// construct entities in the `runners` module. State management for this struct
+// is handled via `EngineStore`.
 #[derive(Clone)]
 pub struct TextToSqlEngine {
     pub name: String,
@@ -175,6 +179,7 @@ impl TextToSqlEngine {
             ddl_prompt_limit,
         })
     }
+
     pub fn get_generate_system_prompt(&self) -> Result<String, SqlgenError> {
         let mut tera = Tera::default();
         let mut sys_ctx = Context::new();

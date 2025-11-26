@@ -19,6 +19,8 @@ pub static SQL_QUERY_VAR_KEY: &str = "sql_query";
 pub static EXPLAIN_VAR_KEY: &str = "explain";
 pub static OUTPUT_FORMAT_DESCRIPTION: &str = "output_format_description";
 
+// Outputs an explanation in natural language of how a given SQL query works.
+// Both the query and associated EXPLAIN statement are provided to the model.
 pub struct ExplainQueryRunner {
     tera: Tera,
     model: Box<dyn TextInstructDriver>,
@@ -34,6 +36,7 @@ impl ExplainQueryRunner {
         Ok(Self { tera, model })
     }
 
+    // Main entrypoint for runner.
     pub async fn explain(&mut self, sql_query: &str) -> Result<String, SqlgenError> {
         let explain_query = self.get_explain_query(sql_query)?;
         let mut ctx = Context::new();

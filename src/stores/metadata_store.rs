@@ -9,9 +9,13 @@ use crate::{
     utils::sql::get_column_heap,
 };
 
+// Handles state management for table metadata. For every engine, an associated
+// metadata table is created. Triggers are also created to automatically update
+// the metadata table when entities in the schema are altered.
 pub struct MetadataStore {}
 
 impl MetadataStore {
+    // Initializes a metadata table for a given schema and populates it.
     pub async fn initialize_metadata(
         engine: &str,
         schema: &str,
@@ -27,6 +31,8 @@ impl MetadataStore {
         Ok(())
     }
 
+    // Retrieves every entity for a given schema and creates an associated
+    // record in the metadata table.
     pub async fn populate_metadata_table(
         engine: &str,
         schema: &str,
@@ -79,6 +85,7 @@ impl MetadataStore {
         Self::add_to_metadata_table(engine, metadatas)
     }
 
+    // Add new record to the metadata table.
     pub fn add_to_metadata_table(
         engine: &str,
         metadatas: Vec<TableMetadata>,
@@ -126,6 +133,7 @@ impl MetadataStore {
         })
     }
 
+    // Remove a record from the metadata table.
     pub fn remove_metadata(engine: &str, model_name: &str) -> Result<(), SqlgenError> {
         let query = "SELECT sqlgen_internal.remove_metadata($1, $2);";
 
@@ -134,6 +142,8 @@ impl MetadataStore {
         Ok(())
     }
 
+    // Get DDLs for a given engine similar to the user query provided via cosine
+    // similarity. Return value is a string of DDLs separated by newlines.
     pub fn get_similar_ddls(
         engine: &str,
         user_query: Vec<f32>,
@@ -160,6 +170,8 @@ impl MetadataStore {
         })
     }
 
+    // Get all DDLs for a given engine. Return value is a string of DDLs
+    // separated by newlines.
     pub fn get_ddls(engine: &str) -> Result<Vec<String>, SqlgenError> {
         let query = "SELECT ddl FROM sqlgen_internal.get_ddls($1) AS t(ddl)";
 

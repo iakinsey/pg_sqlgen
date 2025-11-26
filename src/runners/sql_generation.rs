@@ -13,12 +13,6 @@ use crate::{
 use serde_json::from_str;
 use tera::{Context, Tera};
 
-pub struct SQLGenerationRunner {
-    tera: Tera,
-    model: Box<dyn TextInstructDriver>,
-    system_prompt: String,
-}
-
 // Template keys
 pub static USER_PROMPT_TEMPLATE_KEY: &str = "user";
 pub static RELEVANT_DDLS_TEMPLATE_KEY: &str = "relevant_ddls";
@@ -32,6 +26,16 @@ pub static USER_QUERY_VAR_KEY: &str = "user_query";
 // Template block keys
 pub static RELEVANT_DDLS_BLOCK_KEY: &str = "relevant_ddls_block";
 pub static SIMILAR_QUERIES_BLOCK_KEY: &str = "similar_queries_block";
+
+// Generates an SQL query based on a natural language statement from the user.
+// Requires a list of relevant DDLs, which can be retrieved from
+// `DDLFilterRunner`.  While parameters ask for similar queries, it is not
+// currently implemented.
+pub struct SQLGenerationRunner {
+    tera: Tera,
+    model: Box<dyn TextInstructDriver>,
+    system_prompt: String,
+}
 
 impl SQLGenerationRunner {
     pub fn new(engine: &TextToSqlEngine) -> Result<Self, SqlgenError> {
@@ -54,6 +58,7 @@ impl SQLGenerationRunner {
         })
     }
 
+    // Main entrypoint for runner.
     pub async fn generate_query(
         &mut self,
         user_query: &str,
