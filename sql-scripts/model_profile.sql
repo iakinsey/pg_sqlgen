@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 -- Model profile
 --------------------------------------------------------------------------------
+
 CREATE TABLE sqlgen_internal.model_profile (
     model_name TEXT PRIMARY KEY,
     config JSONB NOT NULL
@@ -10,6 +11,7 @@ REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM public;
 --------------------------------------------------------------------------------
 -- Public model profile view
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE VIEW sqlgen.models AS
 SELECT
     model_name AS model_name,
@@ -19,6 +21,7 @@ FROM sqlgen_internal.model_profile;
 --------------------------------------------------------------------------------
 -- Get model profile
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_model(n TEXT)
 RETURNS sqlgen_internal.model_profile
 LANGUAGE plpgsql 
@@ -64,6 +67,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_model FROM public;
 --------------------------------------------------------------------------------
 -- Delete model profile
 --------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.delete_model(name TEXT)
 RETURNS VOID
 LANGUAGE plpgsql

@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- Table
+-- Config table
 --------------------------------------------------------------------------------
 
 CREATE TABLE sqlgen_internal.config (
@@ -9,7 +9,7 @@ CREATE TABLE sqlgen_internal.config (
 REVOKE ALL ON TABLE sqlgen_internal.config FROM public;
 
 --------------------------------------------------------------------------------
--- View
+-- Config view
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE VIEW sqlgen.config AS

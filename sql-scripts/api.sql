@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
--- Generates an SQL query from text and execute it
 /*
-    Example call
+    Generates an SQL query from text and execute it
+
+    Example call:
 
     BEGIN;
         SELECT sqlgen.query('Get highest paying customer');

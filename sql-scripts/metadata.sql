@@ -117,7 +117,8 @@ $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_ddls FROM public;
 
 --------------------------------------------------------------------------------
--- Install schema triggers
+-- Install schema triggers. These are used to update metadata tables when 
+-- entities in a schema changes.
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(
@@ -258,7 +259,8 @@ $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table FROM public;
 
 --------------------------------------------------------------------------------
--- Crawl schema
+-- Crawl schema. Generates data for entities in a given schema to help
+-- populate metadata tables.
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.crawl_schema(schema_name TEXT)
