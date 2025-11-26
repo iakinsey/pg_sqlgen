@@ -81,5 +81,12 @@ SELECT sqlgen.explain_query('SELECT * from customers', 'ExampleEngine');
 ### Executing queries
 
 ```sql
+-- Simple execution.
+SELECT EXECUTE sqlgen.generate('Ten cat names.');
 
+-- Execution using a cursor, ideal for programatic interfaces.
+BEGIN;
+    SELECT sqlgen.query('Get highest paying customer');
+    FETCH ALL FROM sqlgen_query;
+COMMIT;
 ```
