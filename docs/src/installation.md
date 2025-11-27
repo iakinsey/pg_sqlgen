@@ -1,7 +1,8 @@
 # Installation
 
-## Distribution packages
+## From packages
 
 TODO
 
 ## Installing from codebase
+

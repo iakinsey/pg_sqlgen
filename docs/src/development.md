@@ -2,14 +2,14 @@
 
 ## Setup
 
-`pg_sqlgen` operates as a regular Rust codebase. It can be managed via normal
+__pg_sqlgen__ operates as a regular Rust codebase. It can be managed via
 `cargo` and `cargo pgrx` commands.
 
 ### Initialize pgrx
 
 #### Option 1 [Recommended] - Downloaded PostgreSQL instance with pgrx
 
-Install `cargo-pgrx` and set up a PostgreSQL instance.
+Install __cargo-pgrx__ and set up a PostgreSQL instance.
 
 ```bash
 $ cargo install cargo-pgrx
@@ -29,10 +29,10 @@ $ export PG_CONFIG=/path/to/pg_config
 
 ### Setup pgvector
 
-The `pgvector` extension is a required dependency for `pg_sqlgen`. It must be
+The __pgvector__ extension is a required dependency for __pg_sqlgen__. It must be
 installed manually.
 
-Note: This step is not necessary if `pgvector` is already installed on an
+Note: This step is not necessary if __pgvector__ is already installed on an
 existing PostgreSQL instance.
 
 ```bash

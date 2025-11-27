@@ -1,6 +1,6 @@
 # Summary
 
-- [Index](./index.md)
+- [Introduction](./introduction.md)
 - [Installation](./installation.md)
 - [API](./api.md)
 - [Examples](./examples.md)
