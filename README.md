@@ -23,8 +23,8 @@ First, initialize pgrx.
 
 ```bash
 $ cargo install cargo-pgrx
-$ cargo pgrx init --pg17 download
-$ export PG_CONFIG=$(cargo pgrx info pg-config 17)
+$ cargo pgrx init --pg18 download
+$ export PG_CONFIG=$(cargo pgrx info pg-config 18)
 ```
 
 Clone pgvector and set it up
@@ -32,7 +32,9 @@ Clone pgvector and set it up
 ```bash
 $ git clone https://github.com/pgvector/pgvector.git
 $ cd pgvector
-$ make && make install
+$ make clean
+$ make
+$ make install
 ```
 
 Clone pg_sqlgen and run it
@@ -42,6 +44,18 @@ $ git clone https://github.com/iakinsey/pg_sqlgen.git
 $ cd pg_sqlgen
 $ cargo pgrx run
 ```
+
+### Running tests
+
+```bash
+$ cargo pgrx test
+```
+
+TODO regression tests
+
+### Building
+
+TODO
 
 ## Basic usage
 
