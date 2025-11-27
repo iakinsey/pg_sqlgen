@@ -126,6 +126,11 @@ Create an engine.
 - __Optional__: `true`
 - __Default__: `NULL`
 
+### Example
+
+```sql
+SELECT create_engine('my_engine', 'my_llm', 'my_encoder');
+```
 
 ## remove_engine
 
