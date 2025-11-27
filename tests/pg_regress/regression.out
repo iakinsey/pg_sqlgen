@@ -1,7 +1,0 @@
-# using postmaster on localhost, port 28818
-not ok 1     - setup                                      14 ms
-not ok 2     - api                                        30 ms
-1..2
-# 2 of 2 tests failed.
-# The differences that caused some tests to fail can be viewed in the file "/home/agent/repo/pg_sqlgen/tests/pg_regress/regression.diffs".
-# A copy of the test summary that you see above is saved in the file "/home/agent/repo/pg_sqlgen/tests/pg_regress/regression.out".
