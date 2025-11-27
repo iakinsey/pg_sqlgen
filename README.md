@@ -47,11 +47,17 @@ $ cargo pgrx run
 
 ### Running tests
 
+#### Run tests
+
 ```bash
 $ cargo pgrx test
 ```
 
-TODO regression tests
+#### Regression tests
+
+```bash
+$ cargo pgrx regress
+```
 
 ### Building
 

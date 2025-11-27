@@ -1,0 +1,73 @@
+-- Create model
+SELECT sqlgen.add_model('StubModel', sqlgen.stub_config('SELECT 1', ARRAY[1.1, 1.2, 2.3, 3.4]::real[]));
+ERROR:  duplicate key value violates unique constraint "model_profile_pkey"
+-- Verify model exists
+SELECT * FROM sqlgen.models;
+ model_name |                config                 
+------------+---------------------------------------
+ StubModel  | {                                    +
+            |     "type": "Stub",                  +
+            |     "config": {                      +
+            |         "encode_output": [           +
+            |             1.1,                     +
+            |             1.2,                     +
+            |             2.3,                     +
+            |             3.4                      +
+            |         ],                           +
+            |         "instruct_output": "SELECT 1"+
+            |     }                                +
+            | }
+(1 row)
+
+-- Create engine
+SELECT sqlgen.create_engine('StubEngine', 'StubModel', 'StubModel');
+ERROR:  syntax error at or near ""StubEngine"" at character 47
+-- Verify engine exists
+SELECT * FROM sqlgen.engines;
+ engine_name | schema_name | encoder_model | instruct_model | ddl_prompt_limit | system_prompt_template | user_prompt_template | relevant_ddls_template | similar_queries_template | filter_ddls_template | syntax_correction_template | explain_query_template | table_filter_type 
+-------------+-------------+---------------+----------------+------------------+------------------------+----------------------+------------------------+--------------------------+----------------------+----------------------------+------------------------+-------------------
+(0 rows)
+
+-- Set default engine
+SELECT sqlgen.set_default_engine('StubEngine');
+ set_default_engine 
+--------------------
+ 
+(1 row)
+
+-- Execute query via cursor with default engine
+SELECT sqlgen.generate('A default stub query');
+ERROR:  engine doesn't exist: StubEngine
+-- Execute query via cursor with engine parameter
+SELECT sqlgen.generate('Another stub query', 'StubEngine');
+ERROR:  engine doesn't exist: StubEngine
+-- Delete engine
+SELECT sqlgen.remove_engine('StubEngine');
+ERROR:  engine doesn't exist: StubEngine
+-- Verify engine no longer exists
+SELECT * FROM sqlgen.engines;
+ engine_name | schema_name | encoder_model | instruct_model | ddl_prompt_limit | system_prompt_template | user_prompt_template | relevant_ddls_template | similar_queries_template | filter_ddls_template | syntax_correction_template | explain_query_template | table_filter_type 
+-------------+-------------+---------------+----------------+------------------+------------------------+----------------------+------------------------+--------------------------+----------------------+----------------------------+------------------------+-------------------
+(0 rows)
+
+-- Delete model
+SELECT sqlgen.delete_model('StubModel');
+ERROR:  function sqlgen.delete_model(unknown) does not exist at character 8
+-- Verify model no longer exists
+SELECT * FROM sqlgen.models;
+ model_name |                config                 
+------------+---------------------------------------
+ StubModel  | {                                    +
+            |     "type": "Stub",                  +
+            |     "config": {                      +
+            |         "encode_output": [           +
+            |             1.1,                     +
+            |             1.2,                     +
+            |             2.3,                     +
+            |             3.4                      +
+            |         ],                           +
+            |         "instruct_output": "SELECT 1"+
+            |     }                                +
+            | }
+(1 row)
+

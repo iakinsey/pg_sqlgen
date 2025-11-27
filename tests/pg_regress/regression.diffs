@@ -1,0 +1,23 @@
+diff -U3 /home/agent/repo/pg_sqlgen/tests/pg_regress/expected/setup.out /home/agent/repo/pg_sqlgen/tests/pg_regress/results/setup.out
+--- /home/agent/repo/pg_sqlgen/tests/pg_regress/expected/setup.out	2025-11-27 00:22:58.152876669 -0500
++++ /home/agent/repo/pg_sqlgen/tests/pg_regress/results/setup.out	2025-11-27 00:23:00.919510586 -0500
+@@ -1,3 +1,4 @@
+ -- this setup file is run immediately after the regression database is (re)created
+ -- the file is optional but you likely want to create the extension
+ CREATE EXTENSION sqlgen cascade;
++ERROR:  extension "sqlgen" already exists
+diff -U3 /home/agent/repo/pg_sqlgen/tests/pg_regress/expected/api.out /home/agent/repo/pg_sqlgen/tests/pg_regress/results/api.out
+--- /home/agent/repo/pg_sqlgen/tests/pg_regress/expected/api.out	2025-11-27 00:23:00.902930052 -0500
++++ /home/agent/repo/pg_sqlgen/tests/pg_regress/results/api.out	2025-11-27 00:23:00.953119150 -0500
+@@ -1,10 +1,6 @@
+ -- Create model
+ SELECT sqlgen.add_model('StubModel', sqlgen.stub_config('SELECT 1', ARRAY[1.1, 1.2, 2.3, 3.4]::real[]));
+- add_model 
+------------
+- 
+-(1 row)
+-
++ERROR:  duplicate key value violates unique constraint "model_profile_pkey"
+ -- Verify model exists
+ SELECT * FROM sqlgen.models;
+  model_name |                config                 
