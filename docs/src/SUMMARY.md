@@ -1,3 +1,8 @@
 # Summary
 
-- [Chapter 1](./chapter_1.md)
+- [Index](./index.md)
+- [Installation](./installation.md)
+- [API](./api.md)
+- [Examples](./examples.md)
+- [Development](./development.md)
+- [Internals](./internals.md)

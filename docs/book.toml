@@ -2,3 +2,7 @@
 title = "pg_sqlgen"
 authors = ["Ian Kinsey"]
 language = "en"
+
+[output.html]
+preferred-dark-theme = "ayu"
+default-theme = "ayu"
