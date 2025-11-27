@@ -16,6 +16,7 @@ Generates an SQL statement from a natural language query.
 
 - __Description__: Natural language query
 - __Type__: `TEXT`
+- __Optional__: `false`
 
 <div style="font-size: 110%">
 <code>engine</code>
@@ -24,6 +25,7 @@ Generates an SQL statement from a natural language query.
 - __Description__: Engine to generate query with. If `NULL`, defaults to value
 set via `set_default_engine`.
 - __Type__: `TEXT`
+- __Optional__: `true`
 - __Default__: `NULL`
 
 ### Example
@@ -50,6 +52,7 @@ Explains what a query does and how it works in natural language.
 
 - __Description__: SQL query
 - __Type__: `TEXT`
+- __Optional__: `false`
 
 <div style="font-size: 110%">
 <code>engine</code>
@@ -58,6 +61,7 @@ Explains what a query does and how it works in natural language.
 - __Description__: Engine to generate query with. If `NULL`, defaults to value
 set via `set_default_engine`.
 - __Type__: `TEXT`
+- __Optional__: `true`
 - __Default__: `NULL`
 
 ### Example
