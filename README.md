@@ -23,13 +23,13 @@ First, initialize pgrx.
 
 ```bash
 $ cargo install cargo-pgrx
-$ cargo pgrx init --pg17
+$ cargo pgrx init --pg17 download
+$ export PG_CONFIG=$(cargo pgrx info pg-config 17)
 ```
 
 Clone pgvector and set it up
 
 ```bash
-$ export PG_CONFIG=$(cargo pgrx info pg-config 17)
 $ git clone https://github.com/pgvector/pgvector.git
 $ cd pgvector
 $ make && make install
