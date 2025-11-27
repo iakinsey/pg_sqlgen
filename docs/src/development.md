@@ -5,7 +5,7 @@
 __pg_sqlgen__ operates as a regular Rust codebase. It can be managed via
 `cargo` and `cargo pgrx` commands.
 
-### Initialize pgrx
+### Initialize pgrx {#initialize-pgrx}
 
 #### Option 1 [Recommended] - Downloaded PostgreSQL instance with pgrx
 
