@@ -33,7 +33,7 @@ SELECT EXECUTE sqlgen.generate('Top 10 highest grossing films.');
 ## Setup with Ollama
 
 Set up [nomic-embed-text](ollama.com/library/nomic-embed-text) and
-[llama3.1](https://ollama.com/library/llama3.1) with Ollama
+[llama3.1](https://ollama.com/library/llama3.1) with Ollama.
 
 Start Ollama in a separate console.
 
