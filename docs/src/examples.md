@@ -1,6 +1,6 @@
 <h1>Examples</h1>
 
-## Setting up a text-to-sql engine using OpenAI
+## Setup with OpenAI
 
 OpenAI keys can be generated [here](https://platform.openai.com/api-keys).
 
@@ -30,7 +30,7 @@ SELECT sqlgen.set_default_engine('example_engine');
 SELECT EXECUTE sqlgen.generate('Top 10 highest grossing films.');
 ```
 
-## Setting up a text-to-sql engine using Ollama
+## Setup with Ollama
 
 Set up [nomic-embed-text](ollama.com/library/nomic-embed-text) and
 [llama3.1](https://ollama.com/library/llama3.1) with Ollama
