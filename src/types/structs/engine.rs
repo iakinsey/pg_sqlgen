@@ -26,12 +26,17 @@ Output in the following format:
 "#;
 pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = r#"
 Generate SQL from the following query:
+
+{user_query}
+
 {relevant_ddls_block}
 
 {similar_queries_block}
 "#;
 pub static DEFAULT_RELEVANT_DDLS_TEMPLATE: &str = r#"
 Here are some DDLs that are possibly relevant to the query.
+
+{relevant_ddls}
 "#;
 // TODO, leave empty for now until similar queries are implemented
 pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = "";
