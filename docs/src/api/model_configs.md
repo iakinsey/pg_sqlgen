@@ -180,5 +180,44 @@ omitted if this value is not set.
         )
     );
 ```
+---
 
 ## stub_config
+
+Outputs exactly what is provided in parameters. Used for testing purposes.
+
+### Capabilities
+- Instruct
+- Encoding
+
+### Parameters
+
+<div style="font-size: 110%">
+<code>instruct_output</code>
+</div>
+
+- __Description__: Output when used as an instruct model.
+- __Type__: `TEXT`
+- __Optional__: `true`
+- __Default__: `stub`
+
+<div style="font-size: 110%">
+<code>encode_output</code>
+</div>
+
+- __Description__: Output when used as an encoder model.
+- __Type__: `REAL[]`
+- __Optional__: `true`
+- __Default__: `ARRAY[0.0, 0.0, 0.0]::REAL[]`
+
+### Example
+
+```sql
+    SELECT sqlgen.add_model(
+        'test_stub',
+        sqlgen.stub_config(
+            instruct_output => "Hello world!",
+            encode_output => ARRAY[1.0, 2.5, 4.1]::REAL[]
+        );
+    );
+```
