@@ -9,6 +9,30 @@ For more information about what each model interface supports, See
 
 ---
 
+## models
+
+List model profiles currently active.
+
+### Usage
+
+```sql
+SELECT * FROM sqlgen.models;
+```
+
+---
+
+## model_descriptions
+
+List available models usable by `add_model`.
+
+### Usage
+
+```sql
+SELECT * FROM sqlgen.model_descriptions;
+```
+
+---
+
 ## add_model
 
 Creates a new model profile.
