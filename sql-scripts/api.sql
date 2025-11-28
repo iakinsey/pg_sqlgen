@@ -13,9 +13,9 @@
 
 CREATE OR REPLACE FUNCTION sqlgen.query(
     user_query TEXT,
-    engine     TEXT DEFAULT NULL
+    engine TEXT DEFAULT NULL
 )
-RETURNS refcursor
+RETURNS REFCURSOR
 LANGUAGE plpgsql
 AS $$
 DECLARE

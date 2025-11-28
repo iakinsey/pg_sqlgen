@@ -14,7 +14,7 @@ REVOKE ALL ON TABLE sqlgen_internal.model_profile FROM public;
 
 CREATE OR REPLACE VIEW sqlgen.models AS
 SELECT
-    model_name AS model_name,
+    model_name,
     jsonb_pretty(config) AS config
 FROM sqlgen_internal.model_profile;
 
@@ -23,8 +23,8 @@ FROM sqlgen_internal.model_profile;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_model(n TEXT)
-RETURNS sqlgen_internal.model_profile
-LANGUAGE plpgsql 
+RETURNS sqlgen_internal.MODEL_PROFILE
+LANGUAGE plpgsql
 STRICT
 AS $$
 DECLARE
@@ -47,7 +47,7 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_model(
     model_name TEXT,
     config JSONB
 )
-RETURNS sqlgen_internal.model_profile
+RETURNS sqlgen_internal.MODEL_PROFILE
 LANGUAGE plpgsql
 STRICT
 AS $$

@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 
 CREATE TABLE sqlgen_internal.config (
-    "key" TEXT NOT NULL PRIMARY KEY,
-    "value" TEXT NOT NULL
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
 );
 REVOKE ALL ON TABLE sqlgen_internal.config FROM public;
 
@@ -13,7 +13,10 @@ REVOKE ALL ON TABLE sqlgen_internal.config FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE VIEW sqlgen.config AS
-    SELECT "key", "value" FROM sqlgen_internal.config;
+SELECT
+    key,
+    value
+FROM sqlgen_internal.config;
 
 --------------------------------------------------------------------------------
 -- Get config

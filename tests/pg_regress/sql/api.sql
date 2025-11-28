@@ -1,5 +1,5 @@
 -- Create model.
-SELECT sqlgen.add_model('stub_model', sqlgen.stub_config('{"query": "SELECT 1;"}', ARRAY[1.1, 1.2, 2.3, 3.4]::real[]));
+SELECT sqlgen.add_model('stub_model', sqlgen.stub_config('{"query": "SELECT 1;"}', ARRAY[1.1, 1.2, 2.3, 3.4]::REAL []));
 
 -- Verify model exists.
 SELECT * FROM sqlgen.models;
@@ -14,10 +14,10 @@ SELECT * FROM sqlgen.engines;
 SELECT sqlgen.set_default_engine('stub_engine');
 
 -- Create a new table to verify triggers don't fail.
-CREATE TABLE t(x int);
+CREATE TABLE t (x INT);
 
 -- Alter the table to verify triggers don't fail.
-ALTER TABLE t ADD COLUMN y int;
+ALTER TABLE t ADD COLUMN y INT;
 
 -- Add a new comment to verify triggers don't fail.
 COMMENT ON TABLE t IS 'test';

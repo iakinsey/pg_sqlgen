@@ -16,7 +16,9 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(TEXT, TEXT, INT) FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(
+    TEXT, TEXT, INT
+) FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove metadata
@@ -75,9 +77,9 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_similar_ddls(
-  engine TEXT,
-  user_query VECTOR,
-  similarity_limit INT
+    engine TEXT,
+    user_query VECTOR,
+    similarity_limit INT
 )
 RETURNS SETOF TEXT
 LANGUAGE plpgsql
@@ -102,7 +104,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_similar_ddls FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_ddls(
-  engine TEXT
+    engine TEXT
 )
 RETURNS SETOF TEXT
 LANGUAGE plpgsql
@@ -265,10 +267,10 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.crawl_schema(schema_name TEXT)
 RETURNS TABLE (
-  table_name   TEXT,
-  column_name  TEXT,
-  ddl          TEXT,
-  comment      TEXT
+    table_name TEXT,
+    column_name TEXT,
+    ddl TEXT,
+    comment TEXT
 )
 LANGUAGE sql
 AS $$
@@ -376,7 +378,9 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers FROM public;
 -- Update comments
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.update_comment(engine TEXT, expected_schema TEXT)
+CREATE OR REPLACE FUNCTION sqlgen_internal.update_comment(
+    engine TEXT, expected_schema TEXT
+)
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
@@ -426,11 +430,11 @@ $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_comment FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.do_update_comment(
-  engine TEXT,
-  schema_name TEXT,
-  table_name TEXT,
-  column_name TEXT,
-  comment TEXT
+    engine TEXT,
+    schema_name TEXT,
+    table_name TEXT,
+    column_name TEXT,
+    comment TEXT
 )
 RETURNS VOID
 LANGUAGE plpgsql

@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen.stub_config(
-    instruct_output TEXT  DEFAULT NULL,
-    encode_output   REAL[] DEFAULT NULL
+    instruct_output TEXT DEFAULT NULL,
+    encode_output REAL [] DEFAULT NULL
 )
 RETURNS TEXT
 LANGUAGE SQL
@@ -25,10 +25,10 @@ SELECT jsonb_strip_nulls(
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen.openai_completions_config(
-    url                TEXT DEFAULT NULL,
-    model              TEXT DEFAULT NULL,
+    url TEXT DEFAULT NULL,
+    model TEXT DEFAULT NULL,
     authorization_type TEXT DEFAULT NULL,
-    api_key            TEXT DEFAULT NULL
+    api_key TEXT DEFAULT NULL
 )
 RETURNS TEXT
 LANGUAGE SQL
@@ -51,10 +51,10 @@ $$;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen.openai_embeddings_config(
-    url                TEXT DEFAULT NULL,
-    model              TEXT DEFAULT NULL,
+    url TEXT DEFAULT NULL,
+    model TEXT DEFAULT NULL,
     authorization_type TEXT DEFAULT NULL,
-    api_key            TEXT DEFAULT NULL
+    api_key TEXT DEFAULT NULL
 )
 RETURNS TEXT
 LANGUAGE SQL
@@ -77,10 +77,10 @@ $$;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen.ollama_config(
-    host                TEXT DEFAULT NULL,
-    model_name          TEXT DEFAULT NULL,
-    use_https           BOOLEAN DEFAULT NULL,
-    request_batch_size  INTEGER DEFAULT NULL
+    host TEXT DEFAULT NULL,
+    model_name TEXT DEFAULT NULL,
+    use_https BOOLEAN DEFAULT NULL,
+    request_batch_size INTEGER DEFAULT NULL
 )
 RETURNS TEXT
 LANGUAGE SQL

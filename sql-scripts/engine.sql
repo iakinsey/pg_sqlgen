@@ -17,15 +17,15 @@ CREATE TABLE sqlgen_internal.engine (
     explain_query_template TEXT,
     table_filter_type TEXT,
     CONSTRAINT fk_encoder_model
-        FOREIGN KEY (encoder_model)
-        REFERENCES sqlgen_internal.model_profile(model_name)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+    FOREIGN KEY (encoder_model)
+    REFERENCES sqlgen_internal.model_profile (model_name)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
     CONSTRAINT fk_instruct_model
-        FOREIGN KEY (instruct_model)
-        REFERENCES sqlgen_internal.model_profile(model_name)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+    FOREIGN KEY (instruct_model)
+    REFERENCES sqlgen_internal.model_profile (model_name)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
 );
 
 REVOKE ALL ON TABLE sqlgen_internal.engine FROM public;
@@ -35,7 +35,7 @@ REVOKE ALL ON TABLE sqlgen_internal.engine FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE VIEW sqlgen.engines AS
-    SELECT * FROM sqlgen_internal.engine;
+SELECT * FROM sqlgen_internal.engine; -- noqa: AM04
 
 --------------------------------------------------------------------------------
 -- Create engine
@@ -113,7 +113,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_engine FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_engine(n TEXT)
-RETURNS SETOF sqlgen_internal.engine
+RETURNS SETOF sqlgen_internal.ENGINE
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -132,7 +132,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_engine FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.list_engines()
-RETURNS SETOF sqlgen_internal.engine
+RETURNS SETOF sqlgen_internal.ENGINE
 LANGUAGE plpgsql
 AS $$
 BEGIN
