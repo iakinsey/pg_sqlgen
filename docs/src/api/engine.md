@@ -4,6 +4,8 @@ Engines contain all of the relevant prompt templates and metadata required to
 generate results from [generation](./generation.md) functions. An engine must
 be created in order to generate SQL.
 
+All engine names must be in [snake case](https://en.wikipedia.org/wiki/Snake_case).
+
 ---
 
 ## engines

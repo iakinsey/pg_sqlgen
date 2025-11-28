@@ -7,6 +7,8 @@ Models must support at least one of two capabilities, text encoding or chat.
 For more information about what each model interface supports, See
 [Model Configs](./model_configs.md) for supported interfaces.
 
+All model names must be in [snake case](https://en.wikipedia.org/wiki/Snake_case).
+
 ---
 
 ## models

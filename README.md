@@ -72,16 +72,16 @@ TODO
 CREATE EXTENSION sqlgen CASCADE;
 
 -- First add a language model, for this example OpenAI models are used
-SELECT sqlgen.add_model('OpenAIChat', sqlgen.openai_completions_config(api_key => 'sk-proj-12345'));
+SELECT sqlgen.add_model('openai_chat', sqlgen.openai_completions_config(api_key => 'sk-proj-12345'));
 
 -- Then add an encoding model
-SELECT sqlgen.add_model('OpenAIEncode', sqlgen.openai_embeddings_config(api_key => 'sk-proj-12345'));
+SELECT sqlgen.add_model('openai_encode', sqlgen.openai_embeddings_config(api_key => 'sk-proj-12345'));
 
 -- Then create an engine
-SELECT sqlgen.create_engine('ExampleEngine', 'OpenAIChat', 'OpenAIEncode');
+SELECT sqlgen.create_engine('example_engine', 'openai_chat', 'openai_encode');
 
 -- Optionally set the engine as a default engine
-SELECT sqlgen.set_default_engine('ExampleEngine');
+SELECT sqlgen.set_default_engine('example_engine');
 ```
 
 ### Usage
@@ -94,8 +94,8 @@ SELECT sqlgen.generate('Top 10 customers by annual spend in 2024');
 SELECT sqlgen.explain_query('SELECT * from customers');
 
 -- Generate/explain if no default engine is set.
-SELECT sqlgen.generate('Top 10 customers by annual spend in 2024', 'ExampleEngine');
-SELECT sqlgen.explain_query('SELECT * from customers', 'ExampleEngine');
+SELECT sqlgen.generate('Top 10 customers by annual spend in 2024', 'example_engine');
+SELECT sqlgen.explain_query('SELECT * from customers', 'example_engine');
 ```
 
 ### Executing queries

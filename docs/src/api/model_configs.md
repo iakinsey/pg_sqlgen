@@ -216,7 +216,7 @@ Outputs exactly what is provided in parameters. Used for testing purposes.
     SELECT sqlgen.add_model(
         'test_stub',
         sqlgen.stub_config(
-            instruct_output => "Hello world!",
+            instruct_output => 'Hello world!',
             encode_output => ARRAY[1.0, 2.5, 4.1]::REAL[]
         );
     );
