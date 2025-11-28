@@ -154,6 +154,7 @@ Remove an engine.
 SELECT sqlgen.remove_engine('my_engine');
 ```
 
+---
 
 ## set_default_engine
 
@@ -175,6 +176,8 @@ without an engine specified, the value set here is used.
 ```sql
 SELECT sqlgen.set_default_engine('my_engine');
 ```
+
+---
 
 ## remove_default_engine
 
