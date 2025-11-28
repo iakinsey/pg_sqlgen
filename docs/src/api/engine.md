@@ -132,9 +132,56 @@ Create an engine.
 SELECT create_engine('my_engine', 'my_llm', 'my_encoder');
 ```
 
+---
+
 ## remove_engine
+
+Remove an engine.
+
+### Parameters
+
+<div style="font-size: 110%">
+<code>name</code>
+</div>
+
+- __Description__: Name of engine.
+- __Type__: `TEXT`
+- __Optional__: `false`
+
+### Example
+
+```sql
+SELECT sqlgen.remove_engine('my_engine');
+```
+
 
 ## set_default_engine
 
+Sets the default engine. When [generation](./generation.md) functions are called
+without an engine specified, the value set here is used.
+
+### Parameters
+
+<div style="font-size: 110%">
+<code>engine</code>
+</div>
+
+- __Description__: Name of engine.
+- __Type__: `TEXT`
+- __Optional__: `false`
+
+### Example
+
+```sql
+SELECT sqlgen.set_default_engine('my_engine');
+```
+
 ## remove_default_engine
 
+Removes the default engine.
+
+### Example
+
+```sql
+SELECT sqlgen.remove_default_engine('my_engine');
+```
