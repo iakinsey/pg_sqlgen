@@ -1,8 +1,20 @@
-# Engine
+<h1>Engine</h1>
 
 Engines contain all of the relevant prompt templates and metadata required to
 generate results from [generation](./generation.md) functions. An engine must
 be created in order to generate SQL.
+
+---
+
+## engines
+
+List of engines currently available.
+
+### Usage
+
+```sql
+SELECT * FROM sqlgen.engines;
+```
 
 ---
 

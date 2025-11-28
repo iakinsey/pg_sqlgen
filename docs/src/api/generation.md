@@ -1,4 +1,4 @@
-# Generation
+<h1>Generation</h1>
 
 Functions related to text generation.
 

@@ -1,4 +1,4 @@
-## Model
+<h1>Model</h1>
 
 Functions related to model management. Models are necessary for
 [engines](./engine.md) to make inference calls.

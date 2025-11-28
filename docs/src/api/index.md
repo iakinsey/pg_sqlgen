@@ -1,4 +1,4 @@
-# API
+<h1>API</h1>
 
 All functions and views live under the `sqlgen` prefix.
 
