@@ -1,8 +1,8 @@
 # Engine
 
-Models related to engine management.
-
-Engines are TODO
+Engines contain all of the relevant prompt templates and metadata required to
+generate results from [generation](./generation.md) functions. An engine must
+be created in order to generate SQL.
 
 ---
 
