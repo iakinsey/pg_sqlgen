@@ -59,5 +59,5 @@ Deletes a model profile.
 ### Example
 
 ```sql
-SELECT sqlgen.add_model('openai_chat');
+SELECT sqlgen.remove_model('openai_chat');
 ```
