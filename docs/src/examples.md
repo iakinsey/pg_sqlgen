@@ -64,7 +64,7 @@ SELECT sqlgen.add_model(
 -- Create an encoding model.
 SELECT sqlgen.add_model(
     'ollama_embed',
-    sqlgen.openai_embed_config(model => 'nomic-embed-text')
+    sqlgen.openai_embeddings_config(model => 'nomic-embed-text')
 );
 
 -- Create an engine

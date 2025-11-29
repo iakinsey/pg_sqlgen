@@ -119,22 +119,22 @@ impl TextEncoderDriver for OllamaDriver {
     async fn encode(&self, input: &str) -> Result<Vec<f32>, SqlgenError> {
         let url = self.get_request_url("embeddings");
         let body = self.get_encode_body(input)?;
-        let resp = self.client.post(url).body(body).send().await?;
+        let resp = self.client.post(url).body(body.clone()).send().await?;
         let status = resp.status();
         let text = resp.text().await?;
 
         if !status.is_success() {
             return Err(SqlgenError::ResponseError(format!(
-                "HTTP {}: {}",
-                status, text
+                "HTTP {}: {}\nRequest:\n{}",
+                status, text, body
             )));
         }
 
         match from_str::<OllamaEmbeddingsResponse>(&text) {
             Ok(response) => Ok(response.embedding),
             Err(_) => Err(SqlgenError::ResponseError(format!(
-                "HTTP {}, failed to parse: {}",
-                status, text
+                "HTTP {}, failed to parse: {}\nRequest:\n{}",
+                status, text, body
             ))),
         }
     }
@@ -260,7 +260,7 @@ mod tests {
         mock.assert();
 
         let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
-        assert_eq!(response.unwrap_err().to_string(), expected_err);
+        assert!(response.unwrap_err().to_string().contains(&expected_err));
     }
 
     #[tokio::test]
@@ -294,7 +294,7 @@ mod tests {
         mock.assert();
 
         let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
-        assert_eq!(response.unwrap_err().to_string(), expected_err);
+        assert!(response.unwrap_err().to_string().contains(&expected_err));
     }
 
     #[tokio::test]
@@ -368,7 +368,7 @@ mod tests {
         let response = driver.encode_many(&inputs).await;
 
         let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
-        assert_eq!(response.unwrap_err().to_string(), expected_err);
+        assert!(response.unwrap_err().to_string().contains(&expected_err));
     }
 
     #[tokio::test]
@@ -402,7 +402,7 @@ mod tests {
         let response = driver.encode_many(&inputs).await;
 
         let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
-        assert_eq!(response.unwrap_err().to_string(), expected_err);
+        assert!(response.unwrap_err().to_string().contains(&expected_err));
     }
 
     #[tokio::test]
@@ -463,7 +463,7 @@ mod tests {
         mock.assert();
 
         let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
-        assert_eq!(response.unwrap_err().to_string(), expected_err);
+        assert!(response.unwrap_err().to_string().contains(&expected_err));
     }
 
     #[tokio::test]
@@ -491,7 +491,7 @@ mod tests {
         mock.assert();
 
         let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
-        assert_eq!(response.unwrap_err().to_string(), expected_err);
+        assert!(response.unwrap_err().to_string().contains(&expected_err));
     }
 
     #[tokio::test]

@@ -97,7 +97,7 @@ impl TextInstructDriver for OpenAICompletionsDriver {
         let req = self
             .client
             .post(url)
-            .body(body)
+            .body(body.clone())
             .header("Content-Type", "application/json");
 
         let req = match auth_header {
@@ -111,8 +111,8 @@ impl TextInstructDriver for OpenAICompletionsDriver {
 
         if !status.is_success() {
             return Err(SqlgenError::ResponseError(format!(
-                "HTTP {}: {}",
-                status, text
+                "HTTP {}: {}\nRequest:\n{}",
+                status, text, body
             )));
         }
 
@@ -125,8 +125,8 @@ impl TextInstructDriver for OpenAICompletionsDriver {
                 Ok(first.message.content.clone())
             }
             Err(_) => Err(SqlgenError::ResponseError(format!(
-                "HTTP {}, failed to parse: {}",
-                status, text
+                "HTTP {}, failed to parse: {} \nRequest:\n{}",
+                status, text, body
             ))),
         }
     }
@@ -228,7 +228,7 @@ mod tests {
         mock.assert();
 
         let expected_err = format!("HTTP 500 Internal Server Error: {}", error_response);
-        assert_eq!(response.unwrap_err().to_string(), expected_err);
+        assert!(response.unwrap_err().to_string().contains(&expected_err));
     }
 
     #[tokio::test]
@@ -272,6 +272,6 @@ mod tests {
         mock.assert();
 
         let expected_err = format!("HTTP 200 OK, failed to parse: {}", bad_response);
-        assert_eq!(response.unwrap_err().to_string(), expected_err);
+        assert!(response.unwrap_err().to_string().contains(&expected_err));
     }
 }
