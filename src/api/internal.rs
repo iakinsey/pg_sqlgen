@@ -47,6 +47,7 @@ mod sqlgen_internal {
     use crate::types::errors::SqlgenError;
     use crate::types::structs::table_metadata::TableMetadata;
     use crate::utils::globals::get_runtime;
+    use crate::utils::rpc::wrap_encode;
     use crate::utils::sql::get_column_heap;
     use crate::utils::sql::get_column_heap_optional;
 
@@ -120,18 +121,18 @@ mod sqlgen_internal {
         let model_name = EngineStore::get_engine(engine_name)?.encoder_model;
         let model = ModelStore::get_model_profile(&model_name)?.get_text_encoder_model()?;
         let rt = get_runtime();
-        let (ddl_encodings, comment_encodings): (Vec<Vec<f32>>, HashMap<usize, Vec<f32>>) = rt
-            .block_on(async {
+        let (ddl_encodings, comment_encodings): (Vec<Vec<f32>>, HashMap<usize, Option<Vec<f32>>>) =
+            rt.block_on(async {
                 let d = model.encode_many(&ddls).await?;
                 let comment_strings: Vec<&str> = comments.iter().map(|(_, s)| *s).collect();
-                let vectors = model.encode_many(&comment_strings).await?;
+                let vectors = wrap_encode(model, comment_strings).await?;
 
-                let mut map: HashMap<usize, Vec<f32>> = HashMap::new();
+                let mut map: HashMap<usize, Option<Vec<f32>>> = HashMap::new();
                 for ((i, _), v) in comments.iter().zip(vectors) {
                     map.insert(*i, v);
                 }
 
-                Ok::<(Vec<Vec<f32>>, HashMap<usize, Vec<f32>>), SqlgenError>((d, map))
+                Ok::<(Vec<Vec<f32>>, HashMap<usize, Option<Vec<f32>>>), SqlgenError>((d, map))
             })?;
 
         let mut table_metadata: Vec<TableMetadata> = Vec::new();
@@ -152,7 +153,7 @@ mod sqlgen_internal {
                 ddl: ddl.clone(),
                 comment: comment.clone(),
                 ddl_vector: ddl_vector,
-                comment_vector: comment_encodings.get(&i).cloned(),
+                comment_vector: comment_encodings.get(&i).cloned().flatten(),
             })
         }
 

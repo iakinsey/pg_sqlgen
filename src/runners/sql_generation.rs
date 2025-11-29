@@ -101,6 +101,7 @@ impl SQLGenerationRunner {
         user_ctx.insert(SIMILAR_QUERIES_BLOCK_KEY, &similar_queries_block);
 
         let user_prompt = self.tera.render(USER_PROMPT_TEMPLATE_KEY, &user_ctx)?;
+
         Ok(vec![
             InstructMessage {
                 role: InstructRole::System,

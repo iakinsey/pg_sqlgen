@@ -278,7 +278,13 @@ SELECT
   c.relname AS table_name,
   a.attname AS column_name,
   (
-    format('%I %s', a.attname, format_type(a.atttypid, a.atttypmod))
+    format('%I.%I.%I %I %s',
+      n.nspname,
+      c.relname,
+      a.attname,
+      a.attname,
+      format_type(a.atttypid, a.atttypmod)
+    )
     || CASE WHEN a.attidentity IN ('a','d') AND coalesce(a.attgenerated,'') = '' THEN
          ' GENERATED ' || CASE a.attidentity WHEN 'a' THEN 'ALWAYS' ELSE 'BY DEFAULT' END || ' AS IDENTITY'
        ELSE '' END
@@ -301,6 +307,7 @@ WHERE n.nspname = $1
   AND NOT a.attisdropped
 ORDER BY n.nspname, c.relname, a.attnum;
 $$;
+
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.crawl_schema FROM public;
 
 --------------------------------------------------------------------------------
