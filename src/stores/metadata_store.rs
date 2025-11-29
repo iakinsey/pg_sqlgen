@@ -55,6 +55,11 @@ impl MetadataStore {
         });
 
         let schemas = schemas?;
+
+        if schemas.is_empty() {
+            return Ok(());
+        }
+
         let ddls: Vec<&str> = schemas.iter().map(|c| c.ddl.as_str()).collect();
         let comments: Vec<String> = schemas
             .iter()

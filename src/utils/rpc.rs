@@ -24,7 +24,10 @@ pub async fn wrap_encode(
         }
     }
 
-    let encoded_non_empty = encoder.encode_many(&non_empty_values).await?;
+    let encoded_non_empty = match non_empty_values.is_empty() {
+        true => vec![],
+        false => encoder.encode_many(&non_empty_values).await?,
+    };
 
     let mut out = vec![None; values.len()];
 
