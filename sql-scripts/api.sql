@@ -22,7 +22,7 @@ DECLARE
     dyn_sql TEXT;
     c       refcursor;
 BEGIN
-    SELECT generate(user_query, engine) INTO dyn_sql;
+    SELECT sqlgen.generate(user_query, engine) INTO dyn_sql;
 
     c := 'sqlgen_query';
     OPEN c FOR EXECUTE dyn_sql;

@@ -28,8 +28,7 @@ pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = r#"
 Generate SQL for the given request. If the input does not contain enough
 information to construct a valid query, return an error indicating that
 the information is insufficient. Do not invent tables, columns, or values;
-use only what is explicitly provided. If multiple interpretations are possible,
-return an error for ambiguity.
+use only what is explicitly provided.
 
 Query:
 {{user_query}}

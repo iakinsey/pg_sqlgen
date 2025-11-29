@@ -27,7 +27,10 @@ SELECT sqlgen.create_engine('example_engine', 'openai_chat', 'openai_embed');
 SELECT sqlgen.set_default_engine('example_engine');
 
 -- Execute a generated query
-SELECT EXECUTE sqlgen.generate('Top 10 highest grossing films.');
+BEGIN;
+    SELECT sqlgen.query('Get highest paying customer');
+    FETCH ALL FROM sqlgen_query;
+COMMIT;
 ```
 
 ## Setup with Ollama
@@ -74,6 +77,8 @@ SELECT sqlgen.create_engine('example_engine', 'ollama_instruct', 'ollama_embed')
 SELECT sqlgen.set_default_engine('example_engine');
 
 -- Execute a generated query
-SELECT EXECUTE sqlgen.generate('Top 10 highest grossing films.');
-
+BEGIN;
+    SELECT sqlgen.query('Get highest paying customer');
+    FETCH ALL FROM sqlgen_query;
+COMMIT;
 ```
