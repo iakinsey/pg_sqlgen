@@ -22,57 +22,57 @@ pub static DEFAULT_SYSTEM_PROMPT_TEMPLATE: &str = r#"
 You are a helpful SQL generation system. You output valid SQL in the PostgresSQL dialect.
 
 Output in the following format:
-{output_format_description}
+{{output_format_description}}
 "#;
 pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = r#"
 Generate SQL from the following query:
 
-{user_query}
+{{user_query}}
 
-{relevant_ddls_block}
+{{relevant_ddls_block}}
 
-{similar_queries_block}
+{{similar_queries_block}}
 "#;
 pub static DEFAULT_RELEVANT_DDLS_TEMPLATE: &str = r#"
 Here are some DDLs that are possibly relevant to the query.
 
-{relevant_ddls}
+{{relevant_ddls}}
 "#;
 // TODO, leave empty for now until similar queries are implemented
 pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = "";
 pub static DEFAULT_FILTER_DDLS_TEMPLATE: &str = r#"
 Given the following query:
 
-{user_query}
+{{user_query}}
 
 Filter this list of DDLs. Select elements relevant to the query.
 Respond only by returning a filtered list of elements from this
 list and nothing else:
 
-{relevant_ddls}
+{{relevant_ddls}}
 "#;
 pub static DEFAULT_SYNTAX_CORRECTION_TEMPLATE: &str = r#"
 A query has run into an error when running against PREPARE.
 Given the query and error, generate a corrected query so that neither the error nor new errors occur.
 
 Query:
-{query}
+{{query}}
 
 Error:
-{error_message}
+{{error_message}}
 
 "#;
 pub static DEFAULT_EXPLAIN_QUERY_TEMPLATE: &str = r#"
 Given the following query and explain plan, describe what this query does and how it works.
 Explain it in simply and succinctly in a a 1-2 paragraph summary. Suggest any optimizations.
 
-{output_format_description}
+{{output_format_description}}
 
 Query: 
-{sql_query}
+{{sql_query}}
 
 Explain:
-{explain}
+{{explain}}
 "#;
 
 // Type of filtering used by `DDLFilterRunner`.

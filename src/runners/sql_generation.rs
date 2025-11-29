@@ -58,13 +58,12 @@ impl SQLGenerationRunner {
         })
     }
 
-    // Main entrypoint for runner.
-    pub async fn generate_query(
-        &mut self,
+    fn get_messages(
+        &self,
         user_query: &str,
         relevant_ddls: Vec<&str>,
         similar_queries: Vec<&str>,
-    ) -> Result<String, SqlgenError> {
+    ) -> Result<Vec<InstructMessage>, SqlgenError> {
         // Render relevant tables block
         let relevant_ddls_block = match relevant_ddls.is_empty() {
             true => "".to_string(),
@@ -102,7 +101,7 @@ impl SQLGenerationRunner {
         user_ctx.insert(SIMILAR_QUERIES_BLOCK_KEY, &similar_queries_block);
 
         let user_prompt = self.tera.render(USER_PROMPT_TEMPLATE_KEY, &user_ctx)?;
-        let messages = vec![
+        Ok(vec![
             InstructMessage {
                 role: InstructRole::System,
                 message: self.system_prompt.clone(),
@@ -111,8 +110,17 @@ impl SQLGenerationRunner {
                 role: InstructRole::User,
                 message: user_prompt,
             },
-        ];
+        ])
+    }
 
+    // Main entrypoint for runner.
+    pub async fn generate_query(
+        &mut self,
+        user_query: &str,
+        relevant_ddls: Vec<&str>,
+        similar_queries: Vec<&str>,
+    ) -> Result<String, SqlgenError> {
+        let messages = self.get_messages(user_query, relevant_ddls, similar_queries)?;
         let payload = self.model.get_assistant_response(messages).await?;
         let response = match from_str::<GenerateResponse>(&payload) {
             Ok(v) => Ok(v),
@@ -138,12 +146,44 @@ mod tests {
         pg_test,
         runners::sql_generation::SQLGenerationRunner,
         stores::{metadata_store::MetadataStore, model_store::ModelStore},
-        types::structs::generate_response::GenerateResponse,
+        types::structs::{engine::OUTPUT_FORMAT_DESCRIPTION, generate_response::GenerateResponse},
         utils::{
             globals::get_runtime,
             test_utils::{create_engine, create_schema},
         },
     };
+
+    #[pg_test]
+    fn test_prompt_output() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let expected_query = "SELECT * from test;";
+        let response = GenerateResponse {
+            query: Some(expected_query.to_string()),
+            error: None,
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let user_query = "Top 10 Maxwell the cat memes.";
+        let relevant_ddls = vec!["ddl1", "ddl2", "ddl3"];
+        let similar_queries = vec!["query1", "query2", "query3"];
+        let ddls_part = relevant_ddls.join("\n");
+        let similars_part = similar_queries.join("\n");
+
+        create_schema(schema_name);
+
+        let engine = SQLGenerationRunner::new(&engine).unwrap();
+        let messages = engine
+            .get_messages(user_query, relevant_ddls, similar_queries)
+            .unwrap();
+        let system_prompt = messages[0].message.clone();
+        let user_prompt = messages[1].message.clone();
+
+        assert!(system_prompt.contains(OUTPUT_FORMAT_DESCRIPTION));
+        assert!(user_prompt.contains(user_query));
+        assert!(user_prompt.contains(&ddls_part));
+        assert!(!user_prompt.contains(&similars_part));
+    }
 
     #[pg_test]
     fn test_generate_query_success() {
