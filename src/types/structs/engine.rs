@@ -25,8 +25,13 @@ Output in the following format:
 {{output_format_description}}
 "#;
 pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = r#"
-Generate SQL from the following query:
+Generate SQL for the given request. If the input does not contain enough
+information to construct a valid query, return an error indicating that
+the information is insufficient. Do not invent tables, columns, or values;
+use only what is explicitly provided. If multiple interpretations are possible,
+return an error for ambiguity.
 
+Query:
 {{user_query}}
 
 {{relevant_ddls_block}}
