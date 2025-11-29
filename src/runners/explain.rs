@@ -58,7 +58,7 @@ impl ExplainQueryRunner {
             Err(e) => Err(SqlgenError::GenerateParseError(e.to_string())),
         }?;
 
-        match response.error {
+        match response.error.filter(|s| !s.is_empty()) {
             Some(s) => Err(SqlgenError::GenerateError(s)),
             None => match response.text {
                 Some(s) => Ok(s),

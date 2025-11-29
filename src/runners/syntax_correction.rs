@@ -100,7 +100,7 @@ impl SyntaxCorrectionRunner {
             Err(e) => Err(SqlgenError::GenerateParseError(e.to_string())),
         }?;
 
-        match response.error {
+        match response.error.filter(|s| !s.is_empty()) {
             Some(s) => Err(SqlgenError::GenerateError(s)),
             None => match response.query {
                 Some(s) => Ok(s),
