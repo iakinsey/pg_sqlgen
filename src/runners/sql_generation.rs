@@ -154,7 +154,7 @@ mod tests {
     };
 
     #[pg_test]
-    fn test_prompt_output() {
+    fn test_generation_prompt_output() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
         let expected_query = "SELECT * from test;";

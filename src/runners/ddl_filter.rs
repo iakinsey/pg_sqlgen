@@ -136,7 +136,7 @@ mod tests {
     };
 
     #[pg_test]
-    fn get_prompt_output() {
+    fn get_ddl_prompt_output() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
         let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";

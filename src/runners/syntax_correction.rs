@@ -52,6 +52,28 @@ impl SyntaxCorrectionRunner {
         })
     }
 
+    fn get_messages(&self, query: &str, error: &str) -> Result<Vec<InstructMessage>, SqlgenError> {
+        let mut prompt_ctx = Context::new();
+
+        prompt_ctx.insert(ERROR_MESSAGE_VAR_KEY, error);
+        prompt_ctx.insert(QUERY_VAR_KEY, query);
+
+        let prompt = self
+            .tera
+            .render(SYNTAX_CORRECTION_PROMPT_TEMPLATE_KEY, &prompt_ctx)?;
+
+        Ok(vec![
+            InstructMessage {
+                role: InstructRole::System,
+                message: self.system_prompt.clone(),
+            },
+            InstructMessage {
+                role: InstructRole::User,
+                message: prompt,
+            },
+        ])
+    }
+
     // Main entrypoint for runner.
     pub async fn correct(&mut self, query: String) -> Result<String, SqlgenError> {
         let id = get_unique_prepared_statement_id();
@@ -71,26 +93,7 @@ impl SyntaxCorrectionRunner {
             Err(e) => e.to_string(),
         };
 
-        let mut prompt_ctx = Context::new();
-
-        prompt_ctx.insert(ERROR_MESSAGE_VAR_KEY, &error);
-        prompt_ctx.insert(QUERY_VAR_KEY, &query);
-
-        let prompt = self
-            .tera
-            .render(SYNTAX_CORRECTION_PROMPT_TEMPLATE_KEY, &prompt_ctx)?;
-
-        let messages = vec![
-            InstructMessage {
-                role: InstructRole::System,
-                message: self.system_prompt.clone(),
-            },
-            InstructMessage {
-                role: InstructRole::User,
-                message: prompt,
-            },
-        ];
-
+        let messages = self.get_messages(&query, &error)?;
         let payload = self.model.get_assistant_response(messages).await?;
         let response = match from_str::<GenerateResponse>(&payload) {
             Ok(v) => Ok(v),
@@ -104,5 +107,40 @@ impl SyntaxCorrectionRunner {
                 None => Err(SqlgenError::EmptyResponse),
             },
         }
+    }
+}
+
+#[cfg(any(test, feature = "pg_test"))]
+#[pgrx::pg_schema]
+mod tests {
+    use serde_json::to_string;
+
+    use crate::{
+        pg_test, runners::syntax_correction::SyntaxCorrectionRunner,
+        types::structs::engine::OUTPUT_FORMAT_DESCRIPTION,
+        types::structs::generate_response::GenerateResponse, utils::test_utils::create_engine,
+    };
+
+    #[pg_test]
+    fn test_syntax_prompt_output() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let query = "SELECT 12s;";
+        let error = r#"trailing junk after numeric literal at or near "12s""#;
+        let response = GenerateResponse {
+            query: Some(query.to_string()),
+            error: None,
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let runner = SyntaxCorrectionRunner::new(&engine).unwrap();
+
+        let messages = runner.get_messages(query, error).unwrap();
+        let system_prompt = messages[0].message.clone();
+        let user_prompt = messages[1].message.clone();
+
+        assert!(system_prompt.contains(OUTPUT_FORMAT_DESCRIPTION));
+        assert!(user_prompt.contains(query));
+        assert!(user_prompt.contains(error));
     }
 }
