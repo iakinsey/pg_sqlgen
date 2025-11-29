@@ -20,3 +20,7 @@ following command.
 ```sql
 CREATE EXTENSION sqlgen CASCADE;
 ```
+
+## Removing the extension in PostgreSQL
+
+Removing the extension requires the `CASCADE` parameter.
