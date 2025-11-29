@@ -138,6 +138,57 @@ mod sqlgen {
         )
     }
 
+    // Overloads create_engine() without providing prompt arguments.
+    #[pg_extern(name = "create_engine")]
+    fn create_engine_4(
+        name: &str,
+        instruct_model: &str,
+        encoder_model: &str,
+        schema_name: Option<&str>,
+    ) -> Result<(), SqlgenError> {
+        create_engine(
+            name,
+            instruct_model,
+            encoder_model,
+            schema_name,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    }
+
+    // Overloads create_engine() without providing prompt arguments.
+    #[pg_extern(name = "create_engine")]
+    fn create_engine_5(
+        name: &str,
+        instruct_model: &str,
+        encoder_model: &str,
+        schema_name: Option<&str>,
+        table_filter_type: Option<TableFilterType>,
+    ) -> Result<(), SqlgenError> {
+        create_engine(
+            name,
+            instruct_model,
+            encoder_model,
+            schema_name,
+            table_filter_type,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    }
+
     // Creates a new text to sql engine.
     #[pg_extern(name = "create_engine")]
     fn create_engine(
