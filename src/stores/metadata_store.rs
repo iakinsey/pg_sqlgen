@@ -6,7 +6,7 @@ use crate::{
         structs::table_metadata::{CrawlSchema, TableMetadata},
         traits::driver::TextEncoderDriver,
     },
-    utils::sql::get_column_heap,
+    utils::{rpc::wrap_encode, sql::get_column_heap},
 };
 
 // Handles state management for table metadata. For every engine, an associated
@@ -62,7 +62,7 @@ impl MetadataStore {
             .collect();
         let comments: Vec<&str> = comments.iter().map(|s| s.as_str()).collect();
         let ddl_vecs = encoder.encode_many(&ddls).await?;
-        let comment_vecs = encoder.encode_many(&comments).await?;
+        let comment_vecs = wrap_encode(encoder, comments).await?;
         let metadatas: Vec<TableMetadata> = schemas
             .into_iter()
             .zip(ddl_vecs)
@@ -74,11 +74,7 @@ impl MetadataStore {
                 ddl: crawl_schema.ddl,
                 comment: crawl_schema.comment.clone(),
                 ddl_vector: ddl_vec,
-                comment_vector: if crawl_schema.comment.is_none() {
-                    None
-                } else {
-                    Some(comment_vec)
-                },
+                comment_vector: comment_vec,
             })
             .collect();
 
