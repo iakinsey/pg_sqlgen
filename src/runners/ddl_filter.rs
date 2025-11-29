@@ -57,6 +57,22 @@ impl<'a> DDLFilterRunner<'a> {
             TableFilterType::Smart => self.generate_smart(user_query).await,
         }
     }
+    fn get_messages(
+        tera: &Tera,
+        user_query: &str,
+        chunk: &[String],
+    ) -> Result<Vec<InstructMessage>, SqlgenError> {
+        let mut prompt_ctx = Context::new();
+        prompt_ctx.insert(USER_QUERY_VAR_KEY, user_query);
+        prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &chunk.join("\n"));
+
+        let prompt = tera.render(FILTER_DDL_TEMPLATE_KEY, &prompt_ctx)?;
+
+        Ok(vec![InstructMessage {
+            role: InstructRole::User,
+            message: prompt,
+        }])
+    }
 
     // Filter DDLs with a language model.
     async fn generate_smart(&mut self, user_query: &str) -> Result<Vec<String>, SqlgenError> {
@@ -75,17 +91,7 @@ impl<'a> DDLFilterRunner<'a> {
         let mut results = Vec::new();
 
         for chunk in chunks {
-            let mut prompt_ctx = Context::new();
-            prompt_ctx.insert(USER_QUERY_VAR_KEY, user_query);
-            prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &chunk);
-
-            let prompt = self.tera.render(FILTER_DDL_TEMPLATE_KEY, &prompt_ctx)?;
-
-            let messages = vec![InstructMessage {
-                role: InstructRole::User,
-                message: prompt,
-            }];
-
+            let messages = Self::get_messages(&self.tera, user_query, chunk)?;
             let response = model.get_assistant_response(messages).await?;
 
             results.extend(
@@ -128,6 +134,25 @@ mod tests {
             test_utils::{create_engine, create_schema},
         },
     };
+
+    #[pg_test]
+    fn get_prompt_output() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
+        let engine = create_engine(engine_name, schema_name, "quick", expected_instruct_output);
+        let user_query = "Test user query.";
+        let runner = DDLFilterRunner::new(&engine).unwrap();
+        let ddls = vec!["ddl1", "ddl2", "ddl3"];
+        let ddls: Vec<String> = ddls.into_iter().map(|s| s.to_string()).collect();
+        let ddls: &[String] = &ddls;
+        let messages = DDLFilterRunner::get_messages(&runner.tera, user_query, ddls).unwrap();
+        let prompt = messages[0].message.clone();
+        let ddl_string = ddls.join("\n");
+
+        assert!(prompt.contains(user_query));
+        assert!(prompt.contains(&ddl_string));
+    }
 
     #[pg_test]
     fn test_filter_smart() {
