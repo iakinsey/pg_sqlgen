@@ -59,6 +59,17 @@ $ cargo pgrx test
 $ cargo pgrx regress
 ```
 
+### Linting SQL
+
+__pg_sqlgen__ uses [sqlfluff](https://www.sqlfluff.com/) for linting and formatting. Make sure it's installed first.
+
+To validate SQL syntax, run:
+
+```bash
+cd sql-scripts
+sqlfluff fix .
+```
+
 ### Building
 
 TODO
