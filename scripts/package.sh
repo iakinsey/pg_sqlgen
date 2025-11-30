@@ -16,11 +16,6 @@ for v in "${VERSIONS[@]}"; do
 
     PG_CONFIG_PATH=$(cargo pgrx info pg-config "$v")
 
-    #echo "cargo pgrx package \
-    #--pg-config \"$PG_CONFIG_PATH\" \
-    #--features \"pg$v\" \
-    #--no-default-features"
-
     cargo pgrx package \
         --pg-config $PG_CONFIG_PATH \
         --features pg$v \
