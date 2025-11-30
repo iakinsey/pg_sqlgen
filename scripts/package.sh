@@ -3,7 +3,13 @@ set -euo pipefail
 
 BUILD_VERSION=$(grep -m1 '^version' Cargo.toml | sed 's/version *= *"\(.*\)"/\1/')
 VERSIONS=(14 15 16 17 18)
-PKG_PLATFORMS=(deb rpm pacman)
+
+# If first arg is --osx, only build osxpkg, otherwise deb/rpm/pacman
+if [[ "${1-}" == "--osx" ]]; then
+    PKG_PLATFORMS=(osxpkg)
+else
+    PKG_PLATFORMS=(deb rpm pacman tar)
+fi
 
 for v in "${VERSIONS[@]}"; do
     name="pg${v}"
@@ -74,6 +80,8 @@ for t in "${PKG_PLATFORMS[@]}"; do
             --maintainer "Ian Kinsey <ian@aikbix.com>" \
             . 2>&1
     )"
+
+    echo $out
 
     pkg_path=$(sed -n 's/.*path: "\(.*\)".*/\1/p' <<< "$out")
     mv ${pkg_path} ${PACKAGE_TARGET}
