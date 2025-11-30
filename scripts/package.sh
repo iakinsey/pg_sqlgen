@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
+VERSION=$(grep -m1 '^version' Cargo.toml | sed 's/version *= *"\(.*\)"/\1/')
 v="$1"
 if [ -z "$v" ]; then
     echo "usage: $0 <pg_version>"
@@ -17,10 +18,10 @@ fi
 
 PG_CONFIG_PATH=$(cargo pgrx info pg-config "$v")
 
-cargo pgrx package \
+echo "cargo pgrx package \
     --pg-config "$PG_CONFIG_PATH" \
     --features "pg$v" \
-    --no-default-features
+    --no-default-features"
 
 base="$(pwd)/target/release/sqlgen-pg${v}"
 
@@ -40,6 +41,26 @@ if [ -n "$SQLGEN_SQL_PATH" ]; then
     SQLGEN_SQL_PATH="$(readlink -f "$SQLGEN_SQL_PATH")"
 fi
 
-echo "$SQLGEN_SO_PATH"
-echo "$SQLGEN_CONTROL_PATH"
-echo "$SQLGEN_SQL_PATH"
+EXTENSION_DIR=./target/package-${v}/usr/share/postgresql/${v}/extension/
+LIB_DIR=./target/package-${v}/usr/lib/postgresql/${v}/lib/
+
+rm -rf ${EXTENSION_DIR}
+rm -rf ${LIB_DIR}
+
+mkdir -p ${EXTENSION_DIR}
+mkdir -p ${LIB_DIR}
+
+cp ${SQLGEN_CONTROL_PATH} ${EXTENSION_DIR}
+cp ${SQLGEN_SQL_PATH} ${EXTENSION_DIR}
+cp ${SQLGEN_SO_PATH} ${LIB_DIR}
+
+
+fpm \
+    -s dir \
+    -t deb \
+    -n pg_sqlgen\
+    -v ${VERSION} \
+    -C target/package-18 \
+    .
+
+# TODO have it run for every major version
