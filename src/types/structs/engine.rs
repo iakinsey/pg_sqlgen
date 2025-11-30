@@ -1,4 +1,4 @@
-use pgrx::{spi::SpiTupleTable, PostgresEnum};
+use pgrx::spi::SpiTupleTable;
 use tera::{Context, Tera};
 
 use crate::{
@@ -80,7 +80,7 @@ Explain:
 "#;
 
 // Type of filtering used by `DDLFilterRunner`.
-#[derive(PostgresEnum, Eq, PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone)]
 pub enum TableFilterType {
     Quick,
     Smart,

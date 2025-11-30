@@ -43,13 +43,16 @@ mod sqlgen_internal {
 
     use crate::drivers::get_model_descriptions;
     use crate::stores::engine_store::EngineStore;
+    use crate::stores::metadata_store::MetadataStore;
     use crate::stores::model_store::ModelStore;
     use crate::types::errors::SqlgenError;
+    use crate::types::structs::engine::TableFilterType;
     use crate::types::structs::table_metadata::TableMetadata;
     use crate::utils::globals::get_runtime;
     use crate::utils::rpc::wrap_encode;
     use crate::utils::sql::get_column_heap;
     use crate::utils::sql::get_column_heap_optional;
+    use crate::utils::sql::get_current_schema;
 
     // Create associated metadata rows for a table so that it can be tracked for
     // text-to-sql generation.
@@ -218,6 +221,62 @@ mod sqlgen_internal {
         ),
     > {
         TableIterator::new(get_model_descriptions().into_iter())
+    }
+
+    // Creates a new text to sql engine.
+    #[pg_extern]
+    fn create_engine_external(
+        name: &str,
+        instruct_model: &str,
+        encoder_model: &str,
+        schema_name: Option<&str>,
+        table_filter_type: Option<&str>,
+        ddl_prompt_limit: Option<i32>,
+        system_prompt_template: Option<&str>,
+        user_prompt_template: Option<&str>,
+        relevant_ddls_template: Option<&str>,
+        similar_queries_template: Option<&str>,
+        filter_ddls_template: Option<&str>,
+        syntax_correction_template: Option<&str>,
+        explain_query_template: Option<&str>,
+    ) -> Result<(), SqlgenError> {
+        let schema_name = match schema_name {
+            Some(s) => s.to_string(),
+            None => get_current_schema()?,
+        };
+
+        let table_filter_type = match table_filter_type {
+            Some(s) => TableFilterType::from_str(s)?,
+            None => TableFilterType::Smart,
+        };
+
+        let ddl_prompt_limit = match ddl_prompt_limit {
+            Some(i) => i,
+            None => 128,
+        };
+
+        ModelStore::get_model_profile(instruct_model)?;
+        let encoder = ModelStore::get_text_encoder_model(encoder_model)?;
+
+        EngineStore::create_engine(
+            name,
+            &schema_name,
+            encoder_model,
+            instruct_model,
+            table_filter_type.to_str(),
+            ddl_prompt_limit,
+            system_prompt_template,
+            user_prompt_template,
+            relevant_ddls_template,
+            similar_queries_template,
+            filter_ddls_template,
+            syntax_correction_template,
+            explain_query_template,
+        )?;
+
+        let rt = get_runtime();
+
+        rt.block_on(async { MetadataStore::initialize_metadata(name, &schema_name, encoder).await })
     }
 }
 

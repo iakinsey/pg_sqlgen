@@ -36,8 +36,8 @@ mod sqlgen {
             metadata_store::MetadataStore,
             model_store::ModelStore,
         },
-        types::{errors::SqlgenError, structs::engine::TableFilterType},
-        utils::{globals::get_runtime, sql::get_current_schema},
+        types::errors::SqlgenError,
+        utils::globals::get_runtime,
     };
     use pgrx::pg_extern;
 
@@ -112,137 +112,6 @@ mod sqlgen {
     #[pg_extern]
     fn remove_default_engine() -> Result<(), SqlgenError> {
         ConfigStore::remove_config_value(DEFAULT_ENGINE_CONFIG_KEY)
-    }
-
-    // Overloads create_engine() without providing prompt arguments.
-    #[pg_extern(name = "create_engine")]
-    fn create_engine_3(
-        name: &str,
-        instruct_model: &str,
-        encoder_model: &str,
-    ) -> Result<(), SqlgenError> {
-        create_engine(
-            name,
-            instruct_model,
-            encoder_model,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
-    }
-
-    // Overloads create_engine() without providing prompt arguments.
-    #[pg_extern(name = "create_engine")]
-    fn create_engine_4(
-        name: &str,
-        instruct_model: &str,
-        encoder_model: &str,
-        schema_name: Option<&str>,
-    ) -> Result<(), SqlgenError> {
-        create_engine(
-            name,
-            instruct_model,
-            encoder_model,
-            schema_name,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
-    }
-
-    // Overloads create_engine() without providing prompt arguments.
-    #[pg_extern(name = "create_engine")]
-    fn create_engine_5(
-        name: &str,
-        instruct_model: &str,
-        encoder_model: &str,
-        schema_name: Option<&str>,
-        table_filter_type: Option<TableFilterType>,
-    ) -> Result<(), SqlgenError> {
-        create_engine(
-            name,
-            instruct_model,
-            encoder_model,
-            schema_name,
-            table_filter_type,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
-    }
-
-    // Creates a new text to sql engine.
-    #[pg_extern(name = "create_engine")]
-    fn create_engine(
-        name: &str,
-        instruct_model: &str,
-        encoder_model: &str,
-        schema_name: Option<&str>,
-        table_filter_type: Option<TableFilterType>,
-        ddl_prompt_limit: Option<i32>,
-        system_prompt_template: Option<&str>,
-        user_prompt_template: Option<&str>,
-        relevant_ddls_template: Option<&str>,
-        similar_queries_template: Option<&str>,
-        filter_ddls_template: Option<&str>,
-        syntax_correction_template: Option<&str>,
-        explain_query_template: Option<&str>,
-    ) -> Result<(), SqlgenError> {
-        let schema_name = match schema_name {
-            Some(s) => s.to_string(),
-            None => get_current_schema()?,
-        };
-
-        let table_filter_type = match table_filter_type {
-            Some(s) => s,
-            None => TableFilterType::Smart,
-        };
-
-        let ddl_prompt_limit = match ddl_prompt_limit {
-            Some(i) => i,
-            None => 128,
-        };
-
-        ModelStore::get_model_profile(instruct_model)?;
-        let encoder = ModelStore::get_text_encoder_model(encoder_model)?;
-
-        EngineStore::create_engine(
-            name,
-            &schema_name,
-            encoder_model,
-            instruct_model,
-            table_filter_type.to_str(),
-            ddl_prompt_limit,
-            system_prompt_template,
-            user_prompt_template,
-            relevant_ddls_template,
-            similar_queries_template,
-            filter_ddls_template,
-            syntax_correction_template,
-            explain_query_template,
-        )?;
-
-        let rt = get_runtime();
-
-        rt.block_on(async { MetadataStore::initialize_metadata(name, &schema_name, encoder).await })
     }
 
     #[pg_extern]
