@@ -12,7 +12,7 @@ pub enum SqlgenError {
     ResponseError(String),
     #[error("{0}")]
     GenerateError(String),
-    #[error("failed to parse model output when generating sql: {0}")]
+    #[error("failed to parse model output when generating output: {0}")]
     GenerateParseError(String),
     #[error("SQL generation model returned no response")]
     EmptyResponse,

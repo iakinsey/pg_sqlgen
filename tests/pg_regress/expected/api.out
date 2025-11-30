@@ -2,8 +2,7 @@
 DROP EXTENSION IF EXISTS sqlgen CASCADE;
 CREATE EXTENSION sqlgen CASCADE;
 -- Create model.
-SELECT
-    sqlgen.add_model('stub_model', sqlgen.stub_config('{"query": "SELECT 1;"}', ARRAY[1.1, 1.2, 2.3, 3.4]::REAL []));
+SELECT sqlgen.add_model('stub_model', sqlgen.stub_config('{"query": "SELECT 1;"}', ARRAY[1.1, 1.2, 2.3, 3.4]::REAL []));
  add_model 
 -----------
  
@@ -28,7 +27,7 @@ SELECT * FROM sqlgen.models;
 (1 row)
 
 -- Create engine.
-SELECT sqlgen.create_engine('stub_engine', 'stub_model', 'stub_model');
+SELECT sqlgen.create_engine('stub_engine', 'stub_model', 'stub_model', 'quick');
  create_engine 
 ---------------
  
@@ -38,7 +37,7 @@ SELECT sqlgen.create_engine('stub_engine', 'stub_model', 'stub_model');
 SELECT * FROM sqlgen.engines;
  engine_name | schema_name | encoder_model | instruct_model | ddl_prompt_limit | system_prompt_template | user_prompt_template | relevant_ddls_template | similar_queries_template | filter_ddls_template | syntax_correction_template | explain_query_template | table_filter_type 
 -------------+-------------+---------------+----------------+------------------+------------------------+----------------------+------------------------+--------------------------+----------------------+----------------------------+------------------------+-------------------
- stub_engine | public      | stub_model    | stub_model     |              128 |                        |                      |                        |                          |                      |                            |                        | smart
+ stub_engine | quick       | stub_model    | stub_model     |              128 |                        |                      |                        |                          |                      |                            |                        | smart
 (1 row)
 
 -- Set default engine.

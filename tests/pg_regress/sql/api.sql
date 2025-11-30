@@ -3,14 +3,13 @@ DROP EXTENSION IF EXISTS sqlgen CASCADE;
 CREATE EXTENSION sqlgen CASCADE;
 
 -- Create model.
-SELECT
-    sqlgen.add_model('stub_model', sqlgen.stub_config('{"query": "SELECT 1;"}', ARRAY[1.1, 1.2, 2.3, 3.4]::REAL []));
+SELECT sqlgen.add_model('stub_model', sqlgen.stub_config('{"query": "SELECT 1;"}', ARRAY[1.1, 1.2, 2.3, 3.4]::REAL []));
 
 -- Verify model exists.
 SELECT * FROM sqlgen.models;
 
 -- Create engine.
-SELECT sqlgen.create_engine('stub_engine', 'stub_model', 'stub_model');
+SELECT sqlgen.create_engine('stub_engine', 'stub_model', 'stub_model', 'quick');
 
 -- Verify engine exists.
 SELECT * FROM sqlgen.engines;

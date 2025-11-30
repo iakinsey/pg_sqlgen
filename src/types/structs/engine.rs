@@ -16,8 +16,14 @@ You only respond as a json dictionary with the following keys:
 pub static EXPLAIN_OUTPUT_FORMAT_DESCRIPTION: &str = r#"
 Only respond as a json dictionary with the following keys:
  - text (string) : Query description format.
- - error (string) : Optional, in the event you run into a problem generating a query, explain the failure here. 
+ - error (string) : Optional, in the event you run into a problem generating a response, explain the failure here. 
 "#;
+pub static DDL_OUTPUT_FORMAT_DESCRIPTION: &str = r#"
+Only respond as a json dictionary with the following keys:
+ - ddls (list of strings) : A list of relevant DDLs 
+ - error (string) : Optional, in the event you run into a problem generating a list, explain the failure here. 
+"#;
+
 pub static DEFAULT_SYSTEM_PROMPT_TEMPLATE: &str = r#"
 You are a helpful SQL generation system. You output valid SQL in the PostgresSQL dialect.
 
@@ -49,10 +55,11 @@ Given the following query:
 
 {{user_query}}
 
-Filter this list of DDLs. Select elements relevant to the query.
-Respond only by returning a filtered list of elements from this
-list and nothing else:
+Filter a list of DDLs. Select elements relevant to the query.
 
+{{output_format_description}}
+
+DDLs:
 {{relevant_ddls}}
 "#;
 pub static DEFAULT_SYNTAX_CORRECTION_TEMPLATE: &str = r#"

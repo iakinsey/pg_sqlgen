@@ -269,7 +269,7 @@ mod tests {
 
         assert!(generate_error
             .to_string()
-            .starts_with("failed to parse model output when generating sql: "));
+            .starts_with("failed to parse model output when generating output: "));
     }
 
     #[pg_test]

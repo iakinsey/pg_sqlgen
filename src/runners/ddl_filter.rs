@@ -3,16 +3,19 @@ use crate::{
     types::{
         errors::SqlgenError,
         structs::{
-            engine::{TableFilterType, TextToSqlEngine},
+            ddl_response::DDLResponse,
+            engine::{TableFilterType, TextToSqlEngine, DDL_OUTPUT_FORMAT_DESCRIPTION},
             instruct_message::{InstructMessage, InstructRole},
         },
         traits::driver::{TextEncoderDriver, TextInstructDriver},
     },
 };
+use serde_json::from_str;
 use tera::{Context, Tera};
 
 pub static USER_QUERY_VAR_KEY: &str = "user_query";
 pub static RELEVANT_DDLS_VAR_KEY: &str = "relevant_ddls";
+pub static OUTPUT_FORMAT_VAR_KEY: &str = "output_format_description";
 pub static FILTER_DDL_TEMPLATE_KEY: &str = "filter_ddls";
 
 // Filters DDLs relevant to the user's query. DDLs can be filtered by one of two
@@ -64,6 +67,7 @@ impl<'a> DDLFilterRunner<'a> {
     ) -> Result<Vec<InstructMessage>, SqlgenError> {
         let mut prompt_ctx = Context::new();
         prompt_ctx.insert(USER_QUERY_VAR_KEY, user_query);
+        prompt_ctx.insert(OUTPUT_FORMAT_VAR_KEY, DDL_OUTPUT_FORMAT_DESCRIPTION);
         prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &chunk.join("\n"));
 
         let prompt = tera.render(FILTER_DDL_TEMPLATE_KEY, &prompt_ctx)?;
@@ -92,15 +96,22 @@ impl<'a> DDLFilterRunner<'a> {
 
         for chunk in chunks {
             let messages = Self::get_messages(&self.tera, user_query, chunk)?;
-            let response = model.get_assistant_response(messages).await?;
+            let payload = model.get_assistant_response(messages).await?;
 
-            results.extend(
-                response
-                    .lines()
-                    .map(|line| line.trim())
-                    .filter(|line| !line.is_empty())
-                    .map(|line| line.to_string()),
-            );
+            let response = match from_str::<DDLResponse>(&payload) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(SqlgenError::GenerateParseError(e.to_string())),
+            }?;
+
+            let ddls = match response.error.filter(|s| !s.is_empty()) {
+                Some(s) => Err(SqlgenError::GenerateError(s)),
+                None => match response.ddls {
+                    Some(l) => Ok(l),
+                    None => Err(SqlgenError::EmptyResponse),
+                },
+            }?;
+
+            results.extend(ddls);
         }
 
         Ok(results)
@@ -129,6 +140,7 @@ mod tests {
         pg_test,
         runners::ddl_filter::DDLFilterRunner,
         stores::{metadata_store::MetadataStore, model_store::ModelStore},
+        types::structs::ddl_response::DDLResponse,
         utils::{
             globals::get_runtime,
             test_utils::{create_engine, create_schema},
@@ -139,7 +151,7 @@ mod tests {
     fn get_ddl_prompt_output() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
-        let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
+        let expected_instruct_output = r#"{"ddls": ["ddl1", "ddl2", "ddl3", "ddl4"]}"#;
         let engine = create_engine(engine_name, schema_name, "quick", expected_instruct_output);
         let user_query = "Test user query.";
         let runner = DDLFilterRunner::new(&engine).unwrap();
@@ -158,7 +170,7 @@ mod tests {
     fn test_filter_smart() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
-        let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
+        let expected_instruct_output = r#"{"ddls": ["ddl1", "ddl2", "ddl3", "ddl4"]}"#;
         let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
         let rt = get_runtime();
@@ -178,10 +190,34 @@ mod tests {
     }
 
     #[pg_test]
+    fn test_filter_smart_error() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let expected_instruct_output = r#"{"error": "test error"}"#;
+        let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
+        let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
+        let rt = get_runtime();
+        let user_query = "Test user query.";
+
+        create_schema(schema_name);
+
+        rt.block_on(async {
+            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+                .await
+                .unwrap();
+            let mut runner = DDLFilterRunner::new(&engine).unwrap();
+            assert_eq!(
+                runner.generate(user_query).await.unwrap_err().to_string(),
+                "test error"
+            );
+        });
+    }
+
+    #[pg_test]
     fn test_filter_fast() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
-        let expected_instruct_output = "ddl1\nddl2\nddl3\nddl4";
+        let expected_instruct_output = r#"{"ddls": ["ddl1", "ddl2", "ddl3", "ddl4"]}"#;
         let engine = create_engine(engine_name, schema_name, "quick", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
         let rt = get_runtime();

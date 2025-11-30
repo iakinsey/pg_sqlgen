@@ -1,3 +1,4 @@
+pub mod ddl_response;
 pub mod engine;
 pub mod explain_response;
 pub mod generate_response;
