@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 BUILD_VERSION=$(grep -m1 '^version' Cargo.toml | sed 's/version *= *"\(.*\)"/\1/')
 VERSIONS=(14 15 16 17 18)
+PKG_PLATFORMS=(deb rpm pacman)
 
 for v in "${VERSIONS[@]}"; do
     name="pg${v}"
@@ -15,10 +16,10 @@ for v in "${VERSIONS[@]}"; do
 
     PG_CONFIG_PATH=$(cargo pgrx info pg-config "$v")
 
-    echo "cargo pgrx package \
-    --pg-config \"$PG_CONFIG_PATH\" \
-    --features \"pg$v\" \
-    --no-default-features"
+    #echo "cargo pgrx package \
+    #--pg-config \"$PG_CONFIG_PATH\" \
+    #--features \"pg$v\" \
+    #--no-default-features"
 
     cargo pgrx package \
         --pg-config $PG_CONFIG_PATH \
@@ -59,10 +60,26 @@ for v in "${VERSIONS[@]}"; do
 done
 
 rm -rf pg-sqlgen_${BUILD_VERSION}_amd64.deb
-fpm \
-    -s dir \
-    -t deb \
-    -n pg_sqlgen\
-    -v ${BUILD_VERSION} \
-    -C target/package \
-    .
+rm -rf pg_sqlgen-${BUILD_VERSION}-1.x86_64.rpm
+
+PACKAGE_TARGET=./target/packages
+mkdir -p ${PACKAGE_TARGET}
+
+for t in "${PKG_PLATFORMS[@]}"; do
+    out="$(
+        fpm \
+            -s dir \
+            -t "$t" \
+            -n pg_sqlgen \
+            -v "${BUILD_VERSION}" \
+            -C target/package \
+            --license MIT \
+            --description "Text-to-SQL extension for Postgres" \
+            --url "https://github.com/iakinsey/pg_sqlgen" \
+            --maintainer "Ian Kinsey <ian@aikbix.com>" \
+            . 2>&1
+    )"
+
+    pkg_path=$(sed -n 's/.*path: "\(.*\)".*/\1/p' <<< "$out")
+    mv ${pkg_path} ${PACKAGE_TARGET}
+done
