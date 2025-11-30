@@ -140,7 +140,6 @@ mod tests {
         pg_test,
         runners::ddl_filter::DDLFilterRunner,
         stores::{metadata_store::MetadataStore, model_store::ModelStore},
-        types::structs::ddl_response::DDLResponse,
         utils::{
             globals::get_runtime,
             test_utils::{create_engine, create_schema},
