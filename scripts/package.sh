@@ -3,13 +3,7 @@ set -euo pipefail
 
 BUILD_VERSION=$(grep -m1 '^version' Cargo.toml | sed 's/version *= *"\(.*\)"/\1/')
 VERSIONS=(14 15 16 17 18)
-
-# If first arg is --osx, only build osxpkg, otherwise deb/rpm/pacman
-if [[ "${1-}" == "--osx" ]]; then
-    PKG_PLATFORMS=(osxpkg)
-else
-    PKG_PLATFORMS=(deb rpm pacman tar)
-fi
+PKG_PLATFORMS=(deb rpm)
 
 for v in "${VERSIONS[@]}"; do
     name="pg${v}"
