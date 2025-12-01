@@ -24,3 +24,9 @@ test:
 
 clean:
 	cargo clean
+
+serve-docs:
+	mdbook serve docs
+
+docs:
+	cd docs && mdbook build
