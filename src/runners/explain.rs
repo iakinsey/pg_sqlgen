@@ -18,7 +18,6 @@ use tera::{Context, Tera};
 pub static USER_PROMPT_TEMPLATE_KEY: &str = "explain";
 pub static SQL_QUERY_VAR_KEY: &str = "sql_query";
 pub static EXPLAIN_VAR_KEY: &str = "explain";
-pub static OUTPUT_FORMAT_DESCRIPTION: &str = "output_format_description";
 
 // Outputs an explanation in natural language of how a given SQL query works.
 // Both the query and associated EXPLAIN statement are provided to the model.

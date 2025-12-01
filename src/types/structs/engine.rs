@@ -5,7 +5,6 @@ use crate::{
     utils::sql::{get_column, get_column_optional},
 };
 
-pub static SYSTEM_PROMPT_TEMPLATE_KEY: &str = "system";
 pub static DEFAULT_SYSTEM_PROMPT_TEMPLATE: &str = r#"
 You are a helpful SQL generation system. You output valid SQL in the PostgresSQL dialect.
 "#;
