@@ -77,31 +77,30 @@ $$;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen.ollama_config(
-    host TEXT DEFAULT NULL,
-    model_name TEXT DEFAULT NULL,
-    use_https BOOLEAN DEFAULT NULL,
-    request_batch_size INTEGER DEFAULT NULL
-)
-RETURNS TEXT
-LANGUAGE PLPGSQL
+    model_name         text,
+    host               text DEFAULT NULL,
+    use_https          boolean DEFAULT NULL,
+    request_batch_size integer DEFAULT NULL
+) RETURNS text
+LANGUAGE plpgsql
 AS $$
 BEGIN
-SELECT
-    CASE
-        WHEN model_name IS NULL THEN
-            RAISE EXCEPTION 'model_name is required';
-        ELSE
-            jsonb_strip_nulls(
-                jsonb_build_object(
-                    'type',   'Ollama',
-                    'config', jsonb_build_object(
-                        'host',               host,
-                        'model_name',         model_name,
-                        'use_https',          use_https,
-                        'request_batch_size', request_batch_size
-                    )
-                )
-            )::TEXT
-    END;
+    IF model_name IS NULL THEN
+        RAISE EXCEPTION 'model_name is required';
+    END IF;
+
+    RETURN (
+        SELECT jsonb_strip_nulls(
+                   jsonb_build_object(
+                       'type',   'Ollama',
+                       'config', jsonb_build_object(
+                           'host',               host,
+                           'model_name',         model_name,
+                           'use_https',          use_https,
+                           'request_batch_size', request_batch_size
+                       )
+                   )
+               )::text
+    );
 END;
 $$;
