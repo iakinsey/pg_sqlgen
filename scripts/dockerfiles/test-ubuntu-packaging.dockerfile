@@ -15,7 +15,7 @@ RUN mkdir -p /debs
 COPY target/packages/*.deb /debs
 RUN dpkg -i /debs/*.deb
 
-COPY scripts/package-test.sh /package-test.sh
+COPY scripts/package-test-debian.sh /package-test.sh
 RUN chmod +x /package-test.sh
 RUN /package-test.sh
 
