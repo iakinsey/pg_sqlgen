@@ -46,18 +46,36 @@ for v in "${VERSIONS[@]}"; do
         SQLGEN_SQL_PATH="$(readlink -f "$SQLGEN_SQL_PATH")"
     fi
 
-    EXTENSION_DIR=./target/package/usr/share/postgresql/${v}/extension/
-    LIB_DIR=./target/package/usr/lib/postgresql/${v}/lib/
+    # Debian root structure
+    EXTENSION_DEBIAN_DIR=./target/package-deb/usr/share/postgresql/${v}/extension/
+    LIB_DEBIAN_DIR=./target/package-deb/usr/lib/postgresql/${v}/lib/
 
-    rm -rf "${EXTENSION_DIR}"
-    rm -rf "${LIB_DIR}"
+    rm -rf "${EXTENSION_DEBIAN_DIR}"
+    rm -rf "${LIB_DEBIAN_DIR}"
 
-    mkdir -p "${EXTENSION_DIR}"
-    mkdir -p "${LIB_DIR}"
+    mkdir -p "${EXTENSION_DEBIAN_DIR}"
+    mkdir -p "${LIB_DEBIAN_DIR}"
 
-    cp "${SQLGEN_CONTROL_PATH}" "${EXTENSION_DIR}"
-    cp "${SQLGEN_SQL_PATH}" "${EXTENSION_DIR}"
-    cp "${SQLGEN_SO_PATH}" "${LIB_DIR}"
+    cp "${SQLGEN_CONTROL_PATH}" "${EXTENSION_DEBIAN_DIR}"
+    cp "${SQLGEN_SQL_PATH}" "${EXTENSION_DEBIAN_DIR}"
+    cp "${SQLGEN_SO_PATH}" "${LIB_DEBIAN_DIR}"
+
+    # Redhat root structure
+    REDHAT_CONTROL_DIR=./target/package-rpm/usr/pgsql-${v}/share/extension
+    REDHAT_SQL_DIR=./target/package-rpm/usr/pgsql-${v}/share/extension
+    REDHAT_SO_DIR=./target/package-rpm/usr/pgsql-${v}/lib
+
+    rm -rf "${REDHAT_CONTROL_DIR}"
+    rm -rf "${REDHAT_SQL_DIR}"
+    rm -rf "${REDHAT_SO_DIR}"
+
+    mkdir -p "${REDHAT_CONTROL_DIR}"
+    mkdir -p "${REDHAT_SQL_DIR}"
+    mkdir -p "${REDHAT_SO_DIR}"
+
+    cp "${SQLGEN_CONTROL_PATH}" "${REDHAT_CONTROL_DIR}"
+    cp "${SQLGEN_SQL_PATH}" "${REDHAT_SQL_DIR}"
+    cp "${SQLGEN_SO_PATH}" "${REDHAT_SO_DIR}"
 done
 
 rm -rf pg-sqlgen_${BUILD_VERSION}_amd64.deb
@@ -66,14 +84,15 @@ rm -rf pg_sqlgen-${BUILD_VERSION}-1.x86_64.rpm
 PACKAGE_TARGET=./target/packages
 mkdir -p ${PACKAGE_TARGET}
 
-for t in "${PKG_PLATFORMS[@]}"; do
+
+if [[ " ${PKG_PLATFORMS[*]} " == *" deb "* ]]; then
     out="$(
         fpm \
             -s dir \
-            -t "$t" \
+            -t deb \
             -n pg_sqlgen \
             -v "${BUILD_VERSION}" \
-            -C target/package \
+            -C target/package-deb \
             --license MIT \
             --description "Text-to-SQL extension for Postgres" \
             --url "https://github.com/iakinsey/pg_sqlgen" \
@@ -85,4 +104,25 @@ for t in "${PKG_PLATFORMS[@]}"; do
 
     pkg_path=$(sed -n 's/.*path: "\(.*\)".*/\1/p' <<< "$out")
     mv ${pkg_path} ${PACKAGE_TARGET}
-done
+fi
+
+if [[ " ${PKG_PLATFORMS[*]} " == *" rpm "* ]]; then
+    out="$(
+        fpm \
+            -s dir \
+            -t rpm \
+            -n pg_sqlgen \
+            -v "${BUILD_VERSION}" \
+            -C target/package-rpm \
+            --license MIT \
+            --description "Text-to-SQL extension for Postgres" \
+            --url "https://github.com/iakinsey/pg_sqlgen" \
+            --maintainer "Ian Kinsey <ian@aikbix.com>" \
+            . 2>&1
+    )"
+
+    echo $out
+
+    pkg_path=$(sed -n 's/.*path: "\(.*\)".*/\1/p' <<< "$out")
+    mv ${pkg_path} ${PACKAGE_TARGET}
+fi
