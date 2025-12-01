@@ -88,7 +88,7 @@ AS $$
 SELECT
     CASE
         WHEN model_name IS NULL THEN
-            raise_exception('model_name is required')
+            RAISE EXCEPTION 'model_name is required';
         ELSE
             jsonb_strip_nulls(
                 jsonb_build_object(

@@ -38,7 +38,7 @@ COMMIT;
 Set up [nomic-embed-text](ollama.com/library/nomic-embed-text) and
 [llama3.1](https://ollama.com/library/llama3.1) with Ollama.
 
-Start Ollama in a separate console.
+Start Ollama in a separate console, or via the app.
 
 ```bash
 $ ollama serve
@@ -61,13 +61,13 @@ CREATE EXTENSION sqlgen CASCADE;
 -- Create an instruct model.
 SELECT sqlgen.add_model(
     'ollama_instruct',
-    sqlgen.ollama_config(model => 'llama3.1')
+    sqlgen.ollama_config(model_name => 'llama3.1')
 );
 
 -- Create an encoding model.
 SELECT sqlgen.add_model(
     'ollama_embed',
-    sqlgen.openai_embeddings_config(model => 'nomic-embed-text')
+    sqlgen.openai_embeddings_config(model_name => 'nomic-embed-text')
 );
 
 -- Create an engine
