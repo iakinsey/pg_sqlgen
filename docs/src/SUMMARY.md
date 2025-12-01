@@ -1,7 +1,7 @@
 # Summary
 
 - [Introduction](./introduction.md)
-- [Installation](./installation.md)
+- [Getting Started](./getting-started.md)
 - [API](./api/index.md)
     - [Generation](./api/generation.md)
     - [Engine](./api/engine.md)

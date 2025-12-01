@@ -4,7 +4,6 @@ __pg_sqlgen__ is a database extension for PostgreSQL that enables text-to-sql
 functionality. It is based on the [Dubo-SQL](https://arxiv.org/abs/2404.12560)
 method for fine-tuned Text-to-SQL generation.
 
-
 As an extension, __pg_sqlgen__ provides a number of advantages over other
 text-to-sql solutions, including:
 - Performance, direct access to [SPI](https://www.postgresql.org/docs/current/spi.html) eliminates latency concerns.

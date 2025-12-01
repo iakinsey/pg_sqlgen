@@ -27,7 +27,7 @@ $ cargo pgrx init --pg18 /path/to/pg_config
 $ export PG_CONFIG=/path/to/pg_config
 ```
 
-### Setup pgvector
+### Setup pgvector {#setup-pgvector}
 
 The __pgvector__ extension is a required dependency for __pg_sqlgen__. It must be
 installed manually.
