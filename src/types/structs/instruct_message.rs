@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum InstructRole {
@@ -22,4 +23,5 @@ impl InstructRole {
 pub struct InstructMessage {
     pub role: InstructRole,
     pub message: String,
+    //pub output_format: Option<Value>,
 }
