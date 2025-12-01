@@ -1,5 +1,7 @@
 use serde_json::Value;
 
+use crate::types::structs::instruct_message::InstructMessage;
+
 // Converts a JSON schema into a prompt segment with output format instructions
 pub fn schema_to_prompt_segment(schema: &Value) -> String {
     let mut out = String::new();
@@ -8,6 +10,16 @@ pub fn schema_to_prompt_segment(schema: &Value) -> String {
     out.push('\n');
     render_fields(schema, 1, &mut out);
     out
+}
+
+pub fn get_prompt_with_schema(message: &InstructMessage) -> String {
+    match message.output_format.clone() {
+        Some(f) => {
+            let segment = schema_to_prompt_segment(&f);
+            format!("{}\n\n{}", message.message, segment)
+        }
+        None => message.message.clone(),
+    }
 }
 
 fn type_label(schema: &Value) -> String {

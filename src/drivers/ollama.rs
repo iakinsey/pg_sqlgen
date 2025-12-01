@@ -7,13 +7,14 @@ use async_trait::async_trait;
 use futures::{stream, StreamExt, TryStreamExt};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::{from_str, to_string};
+use serde_json::{from_str, to_string, Value};
 
 #[derive(Serialize)]
 struct ChatBody {
     model: String,
     messages: Vec<ChatMessage>,
     stream: bool,
+    format: Option<Value>,
 }
 
 #[derive(Serialize)]
@@ -84,10 +85,17 @@ impl OllamaDriver {
             })
             .collect();
 
+        let output_format = self
+            .messages
+            .iter()
+            .rev()
+            .find_map(|m| m.output_format.clone());
+
         let body = ChatBody {
             model: self.config.model_name.clone(),
             messages,
             stream: false,
+            format: output_format,
         };
 
         let json = to_string(&body)?;

@@ -9,7 +9,7 @@ use crate::{
         structs::{instruct_message::InstructMessage, profiles::OpenAICompletionsConfig},
         traits::driver::{ModelDriver, TextInstructDriver},
     },
-    utils::rpc::get_auth_header,
+    utils::{rpc::get_auth_header, schema::get_prompt_with_schema},
 };
 
 #[derive(Deserialize, Serialize)]
@@ -77,7 +77,7 @@ impl OpenAICompletionsDriver {
         self.messages
             .extend(messages.iter().map(|m| CompletionsMessage {
                 role: m.role.to_string().to_lowercase(),
-                content: m.message.clone(),
+                content: get_prompt_with_schema(m),
             }));
     }
 }
