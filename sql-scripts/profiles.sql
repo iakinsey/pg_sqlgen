@@ -83,8 +83,9 @@ CREATE OR REPLACE FUNCTION sqlgen.ollama_config(
     request_batch_size INTEGER DEFAULT NULL
 )
 RETURNS TEXT
-LANGUAGE SQL
+LANGUAGE PLPGSQL
 AS $$
+BEGIN
 SELECT
     CASE
         WHEN model_name IS NULL THEN
@@ -102,4 +103,5 @@ SELECT
                 )
             )::TEXT
     END;
+END;
 $$;
