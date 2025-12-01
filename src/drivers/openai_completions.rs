@@ -134,7 +134,9 @@ impl TextInstructDriver for OpenAICompletionsDriver {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::structs::instruct_message::InstructRole;
+    use crate::types::{
+        formats::generate_output_format_schema, structs::instruct_message::InstructRole,
+    };
 
     use super::*;
     use httpmock::{Method::POST, MockServer};
@@ -179,6 +181,7 @@ mod tests {
         let messages = vec![InstructMessage {
             role: InstructRole::User,
             message: message.to_string(),
+            output_format: Some(generate_output_format_schema()),
         }];
 
         let mut driver = OpenAICompletionsDriver::new(&config).unwrap();
@@ -220,6 +223,7 @@ mod tests {
         let messages = vec![InstructMessage {
             role: InstructRole::User,
             message: message.to_string(),
+            output_format: Some(generate_output_format_schema()),
         }];
 
         let mut driver = OpenAICompletionsDriver::new(&config).unwrap();
@@ -264,6 +268,7 @@ mod tests {
         let messages = vec![InstructMessage {
             role: InstructRole::User,
             message: message.to_string(),
+            output_format: Some(generate_output_format_schema()),
         }];
 
         let mut driver = OpenAICompletionsDriver::new(&config).unwrap();

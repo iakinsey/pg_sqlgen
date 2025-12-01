@@ -2,8 +2,9 @@ use crate::{
     stores::model_store::ModelStore,
     types::{
         errors::SqlgenError,
+        formats::explain_output_format_schema,
         structs::{
-            engine::{TextToSqlEngine, EXPLAIN_OUTPUT_FORMAT_DESCRIPTION},
+            engine::TextToSqlEngine,
             explain_response::ExplainResponse,
             instruct_message::{InstructMessage, InstructRole},
         },
@@ -43,13 +44,13 @@ impl ExplainQueryRunner {
 
         ctx.insert(SQL_QUERY_VAR_KEY, &sql_query);
         ctx.insert(EXPLAIN_VAR_KEY, &explain_query);
-        ctx.insert(OUTPUT_FORMAT_DESCRIPTION, EXPLAIN_OUTPUT_FORMAT_DESCRIPTION);
 
         let prompt = self.tera.render(USER_PROMPT_TEMPLATE_KEY, &ctx)?;
 
         let messages = vec![InstructMessage {
             role: InstructRole::User,
             message: prompt,
+            output_format: Some(explain_output_format_schema()),
         }];
 
         let payload = self.model.get_assistant_response(messages).await?;

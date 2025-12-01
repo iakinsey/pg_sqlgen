@@ -2,6 +2,7 @@ use crate::{
     stores::model_store::ModelStore,
     types::{
         errors::SqlgenError,
+        formats::generate_output_format_schema,
         structs::{
             engine::TextToSqlEngine,
             generate_response::GenerateResponse,
@@ -66,10 +67,12 @@ impl SyntaxCorrectionRunner {
             InstructMessage {
                 role: InstructRole::System,
                 message: self.system_prompt.clone(),
+                output_format: Some(generate_output_format_schema()),
             },
             InstructMessage {
                 role: InstructRole::User,
                 message: prompt,
+                output_format: None,
             },
         ])
     }
@@ -117,7 +120,6 @@ mod tests {
 
     use crate::{
         pg_test, runners::syntax_correction::SyntaxCorrectionRunner,
-        types::structs::engine::OUTPUT_FORMAT_DESCRIPTION,
         types::structs::generate_response::GenerateResponse, utils::test_utils::create_engine,
     };
 
@@ -136,10 +138,8 @@ mod tests {
         let runner = SyntaxCorrectionRunner::new(&engine).unwrap();
 
         let messages = runner.get_messages(query, error).unwrap();
-        let system_prompt = messages[0].message.clone();
         let user_prompt = messages[1].message.clone();
 
-        assert!(system_prompt.contains(OUTPUT_FORMAT_DESCRIPTION));
         assert!(user_prompt.contains(query));
         assert!(user_prompt.contains(error));
     }

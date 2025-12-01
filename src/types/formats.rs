@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-pub fn output_format_schema() -> Value {
+pub fn generate_output_format_schema() -> Value {
     json!({
         "type": "object",
         "properties": {

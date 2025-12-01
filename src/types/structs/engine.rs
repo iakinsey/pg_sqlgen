@@ -1,5 +1,4 @@
 use pgrx::spi::SpiTupleTable;
-use tera::{Context, Tera};
 
 use crate::{
     types::errors::SqlgenError,
@@ -7,28 +6,8 @@ use crate::{
 };
 
 pub static SYSTEM_PROMPT_TEMPLATE_KEY: &str = "system";
-pub static OUTPUT_FORMAT_VAR_KEY: &str = "output_format_description";
-pub static OUTPUT_FORMAT_DESCRIPTION: &str = r#"
-You only respond as a json dictionary with the following keys:
- - query (string) : The generated SQL query.
- - error (string) : Optional, in the event you run into a problem generating a query, explain the failure here. 
-"#;
-pub static EXPLAIN_OUTPUT_FORMAT_DESCRIPTION: &str = r#"
-Only respond as a json dictionary with the following keys:
- - text (string) : Query description format.
- - error (string) : Optional, in the event you run into a problem generating a response, explain the failure here. 
-"#;
-pub static DDL_OUTPUT_FORMAT_DESCRIPTION: &str = r#"
-Only respond as a json dictionary with the following keys:
- - ddls (list of strings) : A list of relevant DDLs 
- - error (string) : Optional, in the event you run into a problem generating a list, explain the failure here. 
-"#;
-
 pub static DEFAULT_SYSTEM_PROMPT_TEMPLATE: &str = r#"
 You are a helpful SQL generation system. You output valid SQL in the PostgresSQL dialect.
-
-Output in the following format:
-{{output_format_description}}
 "#;
 pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = r#"
 Generate SQL for the given request. If the input does not contain enough
@@ -57,8 +36,6 @@ Given the following query:
 
 Filter a list of DDLs. Select elements relevant to the query.
 
-{{output_format_description}}
-
 DDLs:
 {{relevant_ddls}}
 "#;
@@ -71,13 +48,10 @@ Query:
 
 Error:
 {{error_message}}
-
 "#;
 pub static DEFAULT_EXPLAIN_QUERY_TEMPLATE: &str = r#"
 Given the following query and explain plan, describe what this query does and how it works.
 Explain it in simply and succinctly in a a 1-2 paragraph summary. Suggest any optimizations.
-
-{{output_format_description}}
 
 Query: 
 {{sql_query}}
@@ -197,12 +171,7 @@ impl TextToSqlEngine {
     }
 
     pub fn get_generate_system_prompt(&self) -> Result<String, SqlgenError> {
-        let mut tera = Tera::default();
-        let mut sys_ctx = Context::new();
-
-        tera.add_raw_template(SYSTEM_PROMPT_TEMPLATE_KEY, &self.system_prompt_template)?;
-        sys_ctx.insert(OUTPUT_FORMAT_VAR_KEY, OUTPUT_FORMAT_DESCRIPTION);
-
-        Ok(tera.render(SYSTEM_PROMPT_TEMPLATE_KEY, &sys_ctx)?)
+        // TODO remove
+        Ok(self.system_prompt_template.clone())
     }
 }

@@ -188,7 +188,9 @@ impl TextInstructDriver for OllamaDriver {
 mod tests {
     use httpmock::{Method::POST, MockServer};
 
-    use crate::types::structs::instruct_message::InstructRole;
+    use crate::types::{
+        formats::generate_output_format_schema, structs::instruct_message::InstructRole,
+    };
 
     use super::*;
 
@@ -221,6 +223,7 @@ mod tests {
         let messages = vec![InstructMessage {
             role: InstructRole::User,
             message: "test".to_string(),
+            output_format: Some(generate_output_format_schema()),
         }];
 
         let mut driver = OllamaDriver::new(&config).unwrap();
@@ -252,6 +255,7 @@ mod tests {
         let messages = vec![InstructMessage {
             role: InstructRole::User,
             message: "test".to_string(),
+            output_format: Some(generate_output_format_schema()),
         }];
 
         let mut driver = OllamaDriver::new(&config).unwrap();
@@ -286,6 +290,7 @@ mod tests {
         let messages = vec![InstructMessage {
             role: InstructRole::User,
             message: "test".to_string(),
+            output_format: Some(generate_output_format_schema()),
         }];
 
         let mut driver = OllamaDriver::new(&config).unwrap();

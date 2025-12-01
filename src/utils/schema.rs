@@ -69,11 +69,13 @@ fn render_fields(schema: &Value, indent: usize, out: &mut String) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{types::formats::output_format_schema, utils::schema::schema_to_prompt_segment};
+    use crate::{
+        types::formats::generate_output_format_schema, utils::schema::schema_to_prompt_segment,
+    };
 
     #[test]
     fn test_parse_json_schema() {
-        let prompt = schema_to_prompt_segment(&output_format_schema());
+        let prompt = schema_to_prompt_segment(&generate_output_format_schema());
         let expected_output = r#"You only respond as a json dictionary with the following keys:
  - error (string) : Optional error message if query generation fails.
  - query (string) : The generated SQL query.

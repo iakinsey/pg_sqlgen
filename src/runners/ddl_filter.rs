@@ -2,9 +2,10 @@ use crate::{
     stores::{metadata_store::MetadataStore, model_store::ModelStore},
     types::{
         errors::SqlgenError,
+        formats::ddl_output_format_schema,
         structs::{
             ddl_response::DDLResponse,
-            engine::{TableFilterType, TextToSqlEngine, DDL_OUTPUT_FORMAT_DESCRIPTION},
+            engine::{TableFilterType, TextToSqlEngine},
             instruct_message::{InstructMessage, InstructRole},
         },
         traits::driver::{TextEncoderDriver, TextInstructDriver},
@@ -15,7 +16,6 @@ use tera::{Context, Tera};
 
 pub static USER_QUERY_VAR_KEY: &str = "user_query";
 pub static RELEVANT_DDLS_VAR_KEY: &str = "relevant_ddls";
-pub static OUTPUT_FORMAT_VAR_KEY: &str = "output_format_description";
 pub static FILTER_DDL_TEMPLATE_KEY: &str = "filter_ddls";
 
 // Filters DDLs relevant to the user's query. DDLs can be filtered by one of two
@@ -67,7 +67,6 @@ impl<'a> DDLFilterRunner<'a> {
     ) -> Result<Vec<InstructMessage>, SqlgenError> {
         let mut prompt_ctx = Context::new();
         prompt_ctx.insert(USER_QUERY_VAR_KEY, user_query);
-        prompt_ctx.insert(OUTPUT_FORMAT_VAR_KEY, DDL_OUTPUT_FORMAT_DESCRIPTION);
         prompt_ctx.insert(RELEVANT_DDLS_VAR_KEY, &chunk.join("\n"));
 
         let prompt = tera.render(FILTER_DDL_TEMPLATE_KEY, &prompt_ctx)?;
@@ -75,6 +74,7 @@ impl<'a> DDLFilterRunner<'a> {
         Ok(vec![InstructMessage {
             role: InstructRole::User,
             message: prompt,
+            output_format: Some(ddl_output_format_schema()),
         }])
     }
 

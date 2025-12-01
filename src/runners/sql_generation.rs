@@ -2,6 +2,7 @@ use crate::{
     stores::model_store::ModelStore,
     types::{
         errors::SqlgenError,
+        formats::generate_output_format_schema,
         structs::{
             engine::TextToSqlEngine,
             generate_response::GenerateResponse,
@@ -106,10 +107,12 @@ impl SQLGenerationRunner {
             InstructMessage {
                 role: InstructRole::System,
                 message: self.system_prompt.clone(),
+                output_format: Some(generate_output_format_schema()),
             },
             InstructMessage {
                 role: InstructRole::User,
                 message: user_prompt,
+                output_format: None,
             },
         ])
     }
@@ -147,7 +150,7 @@ mod tests {
         pg_test,
         runners::sql_generation::SQLGenerationRunner,
         stores::{metadata_store::MetadataStore, model_store::ModelStore},
-        types::structs::{engine::OUTPUT_FORMAT_DESCRIPTION, generate_response::GenerateResponse},
+        types::structs::generate_response::GenerateResponse,
         utils::{
             globals::get_runtime,
             test_utils::{create_engine, create_schema},
@@ -177,10 +180,8 @@ mod tests {
         let messages = engine
             .get_messages(user_query, relevant_ddls, similar_queries)
             .unwrap();
-        let system_prompt = messages[0].message.clone();
         let user_prompt = messages[1].message.clone();
 
-        assert!(system_prompt.contains(OUTPUT_FORMAT_DESCRIPTION));
         assert!(user_prompt.contains(user_query));
         assert!(user_prompt.contains(&ddls_part));
         assert!(!user_prompt.contains(&similars_part));
