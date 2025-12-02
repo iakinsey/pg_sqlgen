@@ -12,7 +12,8 @@ pub static DEFAULT_USER_PROMPT_TEMPLATE: &str = r#"
 Generate SQL for the given request. If the input does not contain enough
 information to construct a valid query, return an error indicating that
 the information is insufficient. Do not invent tables, columns, or values;
-use only what is explicitly provided.
+use only what is explicitly provided. Think step-by-step and provide your
+reasoning.
 
 Query:
 {{user_query}}
@@ -33,7 +34,8 @@ Given the following query:
 
 {{user_query}}
 
-Filter a list of columns. Select elements relevant to the query.
+Filter a list of columns. Select elements relevant to the query. Think
+step-by-step and provide your reasoning.
 
 Columns:
 {{relevant_ddls}}
@@ -41,6 +43,7 @@ Columns:
 pub static DEFAULT_SYNTAX_CORRECTION_TEMPLATE: &str = r#"
 A query has run into an error when running against PREPARE.
 Given the query and error, generate a corrected query so that neither the error nor new errors occur.
+Think step-by-step and provide your reasoning.
 
 Query:
 {{query}}
@@ -51,6 +54,7 @@ Error:
 pub static DEFAULT_EXPLAIN_QUERY_TEMPLATE: &str = r#"
 Given the following query and explain plan, describe what this query does and how it works.
 Explain it in simply and succinctly in a a 1-2 paragraph summary. Suggest any optimizations.
+Think step-by-step and provide your reasoning.
 
 Query: 
 {{sql_query}}

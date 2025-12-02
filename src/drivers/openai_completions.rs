@@ -94,6 +94,7 @@ impl TextInstructDriver for OpenAICompletionsDriver {
         let url = self.config.url.clone();
         let auth_header =
             get_auth_header(self.config.api_key.clone(), &self.config.authorization_type);
+
         let req = self
             .client
             .post(url)

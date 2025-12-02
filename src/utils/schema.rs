@@ -5,7 +5,7 @@ use crate::types::structs::instruct_message::InstructMessage;
 // Converts a JSON schema into a prompt segment with output format instructions
 pub fn schema_to_prompt_segment(schema: &Value) -> String {
     let mut out = String::new();
-    let header = "You only respond as a json dictionary with the following keys:";
+    let header = "You only respond as a json dictionary with the following keys, maintain the key order as presented when responding:";
     out.push_str(header);
     out.push('\n');
     render_fields(schema, 1, &mut out);
@@ -50,7 +50,8 @@ fn render_fields(schema: &Value, indent: usize, out: &mut String) {
         return;
     };
 
-    for (name, field_schema) in props {
+    // List must be reversed to maintain order as presented in the list
+    for (name, field_schema) in props.iter().rev() {
         let tlabel = type_label(field_schema);
         let desc = field_schema
             .get("description")
@@ -88,9 +89,10 @@ mod tests {
     #[test]
     fn test_parse_json_schema() {
         let prompt = schema_to_prompt_segment(&generate_output_format_schema());
-        let expected_output = r#"You only respond as a json dictionary with the following keys:
- - error (string) : Optional error message if query generation fails.
+        let expected_output = r#"You only respond as a json dictionary with the following keys, maintain the key order as presented when responding:
+ - reasoning (string) : Reasoning about what query to generate.
  - query (string) : The generated SQL query.
+ - error (string) : Optional error message if query generation fails.
 "#;
 
         assert_eq!(prompt, expected_output);
