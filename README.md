@@ -1,5 +1,6 @@
 pg_sqlgen
 =========
+[Documentation](http://www.iankinsey.com/pg_sqlgen/latest/index.html)
 
 Text-to-SQL extension for Postgres.
 
@@ -15,7 +16,7 @@ text-to-sql solutions, including:
 
 ## Installation
 
-TODO
+See [Documentation - Getting Started](http://www.iankinsey.com/pg_sqlgen/latest/getting-started.html)
 
 ## Setup Development Environment
 
@@ -69,11 +70,6 @@ To validate SQL syntax, run:
 cd sql-scripts
 sqlfluff fix .
 ```
-
-### Building
-
-TODO
-
 ## Basic usage
 
 ### Setup

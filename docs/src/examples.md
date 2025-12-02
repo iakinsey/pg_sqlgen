@@ -1,5 +1,7 @@
 <h1>Examples</h1>
 
+**pg_sqlgen** works best with OpenAI models. For Ollama, it's been tested with [Llama 3.1](https://ollama.com/library/llama3.1) and [nomic-embed-text](https://ollama.com/library/nomic-embed-text), though other models may provide better output.
+
 ## Setup with OpenAI
 
 OpenAI keys can be generated [here](https://platform.openai.com/api-keys).

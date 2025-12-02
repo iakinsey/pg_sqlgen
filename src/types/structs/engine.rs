@@ -33,9 +33,9 @@ Given the following query:
 
 {{user_query}}
 
-Filter a list of DDLs. Select elements relevant to the query.
+Filter a list of columns. Select elements relevant to the query.
 
-DDLs:
+Columns:
 {{relevant_ddls}}
 "#;
 pub static DEFAULT_SYNTAX_CORRECTION_TEMPLATE: &str = r#"

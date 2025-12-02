@@ -41,11 +41,11 @@ pub fn ddl_output_format_schema() -> Value {
             "ddls": {
                 "type": "array",
                 "items": { "type": "string" },
-                "description": "A list of relevant DDLs."
+                "description": "A list of relevant columns."
             },
             "error": {
                 "type": "string",
-                "description": "Optional error message if DDL generation fails."
+                "description": "Optional error message if column filtering fails."
             }
         },
         "required": ["ddls"]
