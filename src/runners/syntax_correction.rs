@@ -10,9 +10,9 @@ use crate::{
         },
         traits::driver::TextInstructDriver,
     },
-    utils::sql::get_unique_prepared_statement_id,
+    utils::sql::{get_caught_error_string, get_unique_prepared_statement_id},
 };
-use pgrx::Spi;
+use pgrx::{PgTryBuilder, Spi};
 use serde_json::from_str;
 use tera::{Context, Tera};
 
@@ -112,14 +112,17 @@ impl SyntaxCorrectionRunner {
             false => format!("{};", prepare_query),
         };
 
-        let error = match Spi::run(&prepare_query) {
-            Ok(_) => {
-                let dealloc_query = format!("DEALLOCATE {}", id);
-                Spi::run(&dealloc_query)?;
+        let error: Option<String> = PgTryBuilder::new(|| {
+            Spi::run(&prepare_query).unwrap();
+            None
+        })
+        .catch_others(|e| Some(get_caught_error_string(e)))
+        .catch_rust_panic(|e| Some(get_caught_error_string(e)))
+        .execute();
 
-                return Ok(query);
-            }
-            Err(e) => e.to_string(),
+        let error = match error {
+            Some(s) => s,
+            None => return Ok(query),
         };
 
         let messages = self.get_messages(&query, &error, ddls)?;
@@ -145,8 +148,10 @@ mod tests {
     use serde_json::to_string;
 
     use crate::{
-        pg_test, runners::syntax_correction::SyntaxCorrectionRunner,
-        types::structs::generate_response::GenerateResponse, utils::test_utils::create_engine,
+        pg_test,
+        runners::syntax_correction::SyntaxCorrectionRunner,
+        types::structs::generate_response::GenerateResponse,
+        utils::{globals::get_runtime, test_utils::create_engine},
     };
 
     #[pg_test]
@@ -172,5 +177,25 @@ mod tests {
         for ddl in &ddls {
             assert!(user_prompt.contains(ddl));
         }
+    }
+
+    #[pg_test]
+    fn test_syntax_prompt_output_error() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let query = "SELECT 12s;";
+        let response = GenerateResponse {
+            query: Some(query.to_string()),
+            error: None,
+        };
+        let ddls = vec!["ddl1".to_string(), "ddl2".to_string(), "ddl3".to_string()];
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let mut runner = SyntaxCorrectionRunner::new(&engine).unwrap();
+        let rt = get_runtime();
+
+        let result = rt.block_on(async { runner.correct(query.to_string(), &ddls).await.unwrap() });
+
+        assert_eq!(result, query);
     }
 }

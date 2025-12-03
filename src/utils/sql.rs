@@ -1,6 +1,7 @@
 use uuid::Uuid;
 
 use pgrx::{
+    pg_sys::panic::CaughtError,
     spi::{SpiHeapTupleData, SpiTupleTable},
     FromDatum, IntoDatum, Spi,
 };
@@ -52,6 +53,21 @@ pub fn get_current_schema() -> Result<String, SqlgenError> {
 // Generates a guaranteed unique string to be used as a `PREPARE` identifier.
 pub fn get_unique_prepared_statement_id() -> String {
     format!("stmt{}", Uuid::new_v4().simple().to_string())
+}
+
+pub fn get_caught_error_string(cause: CaughtError) -> String {
+    match cause {
+        CaughtError::PostgresError(e) | CaughtError::ErrorReport(e) => {
+            let code = e.sql_error_code();
+            let msg = e.message();
+
+            format!("{:?}: {}", code, msg)
+        }
+        CaughtError::RustPanic {
+            ereport,
+            payload: _,
+        } => ereport.message().to_string(),
+    }
 }
 
 #[cfg(test)]
