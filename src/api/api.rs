@@ -74,14 +74,10 @@ mod sqlgen {
             let ddls = ddl_filter_runner.generate(user_query).await?;
 
             let query = text_to_sql_runner
-                .generate_query(
-                    user_query,
-                    ddls.iter().map(|s| s.as_str()).collect(),
-                    vec![],
-                )
+                .generate_query(user_query, &ddls, vec![])
                 .await?;
 
-            syntax_correction_runner.correct(query).await
+            syntax_correction_runner.correct(query, &ddls).await
         })
     }
 

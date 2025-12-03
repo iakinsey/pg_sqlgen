@@ -23,7 +23,7 @@ Query:
 {{similar_queries_block}}
 "#;
 pub static DEFAULT_RELEVANT_DDLS_TEMPLATE: &str = r#"
-Here are some DDLs that are possibly relevant to the query.
+Here are some columns that are possibly relevant to the query.
 
 {{relevant_ddls}}
 "#;
@@ -37,7 +37,6 @@ Given the following query:
 Filter a list of columns. Select elements relevant to the query. Think
 step-by-step and provide your reasoning.
 
-Columns:
 {{relevant_ddls}}
 "#;
 pub static DEFAULT_SYNTAX_CORRECTION_TEMPLATE: &str = r#"
@@ -50,6 +49,8 @@ Query:
 
 Error:
 {{error_message}}
+
+{{relevant_ddls_block}}
 "#;
 pub static DEFAULT_EXPLAIN_QUERY_TEMPLATE: &str = r#"
 Given the following query and explain plan, describe what this query does and how it works.

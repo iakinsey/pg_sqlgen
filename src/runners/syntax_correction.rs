@@ -18,10 +18,15 @@ use tera::{Context, Tera};
 
 // Template key
 pub static SYNTAX_CORRECTION_PROMPT_TEMPLATE_KEY: &str = "error_correction";
+pub static RELEVANT_DDLS_TEMPLATE_KEY: &str = "relevant_ddls";
 
 // Template variable keys
 pub static ERROR_MESSAGE_VAR_KEY: &str = "error_message";
+pub static RELEVANT_DDLS_VAR_KEY: &str = "relevant_ddls";
 pub static QUERY_VAR_KEY: &str = "query";
+
+// Template block key
+pub static RELEVANT_DDLS_BLOCK_KEY: &str = "relevant_ddls_block";
 
 // Validates whether or not a given SQL query is both syntactically correct and
 // semantically resolvable. If not, it pipes the query and associated error into
@@ -44,6 +49,8 @@ impl SyntaxCorrectionRunner {
             SYNTAX_CORRECTION_PROMPT_TEMPLATE_KEY,
             &engine.syntax_correction_template,
         )?;
+        tera.add_raw_template(RELEVANT_DDLS_TEMPLATE_KEY, &engine.relevant_ddls_template)?;
+
         let system_prompt = engine.get_generate_system_prompt()?;
 
         Ok(Self {
@@ -53,9 +60,28 @@ impl SyntaxCorrectionRunner {
         })
     }
 
-    fn get_messages(&self, query: &str, error: &str) -> Result<Vec<InstructMessage>, SqlgenError> {
+    fn get_messages(
+        &self,
+        query: &str,
+        error: &str,
+        ddls: &[String],
+    ) -> Result<Vec<InstructMessage>, SqlgenError> {
         let mut prompt_ctx = Context::new();
 
+        let relevant_ddls_block = match ddls.is_empty() {
+            true => "".to_string(),
+            false => {
+                let list = ddls.join("\n");
+                let mut ctx = Context::new();
+                ctx.insert(RELEVANT_DDLS_VAR_KEY, &list);
+                format!(
+                    "\n\n{}",
+                    self.tera.render(RELEVANT_DDLS_TEMPLATE_KEY, &ctx)?
+                )
+            }
+        };
+
+        prompt_ctx.insert(RELEVANT_DDLS_BLOCK_KEY, &relevant_ddls_block);
         prompt_ctx.insert(ERROR_MESSAGE_VAR_KEY, error);
         prompt_ctx.insert(QUERY_VAR_KEY, query);
 
@@ -78,7 +104,7 @@ impl SyntaxCorrectionRunner {
     }
 
     // Main entrypoint for runner.
-    pub async fn correct(&mut self, query: String) -> Result<String, SqlgenError> {
+    pub async fn correct(&mut self, query: String, ddls: &[String]) -> Result<String, SqlgenError> {
         let id = get_unique_prepared_statement_id();
         let prepare_query = format!("PREPARE {} AS {}", id, query);
         let prepare_query = match prepare_query.ends_with(";") {
@@ -96,7 +122,7 @@ impl SyntaxCorrectionRunner {
             Err(e) => e.to_string(),
         };
 
-        let messages = self.get_messages(&query, &error)?;
+        let messages = self.get_messages(&query, &error, ddls)?;
         let payload = self.model.get_assistant_response(messages).await?;
         let response = match from_str::<GenerateResponse>(&payload) {
             Ok(v) => Ok(v),
@@ -133,14 +159,18 @@ mod tests {
             query: Some(query.to_string()),
             error: None,
         };
+        let ddls = vec!["ddl1".to_string(), "ddl2".to_string(), "ddl3".to_string()];
         let response_str = to_string(&response).unwrap();
         let engine = create_engine(engine_name, schema_name, "smart", &response_str);
         let runner = SyntaxCorrectionRunner::new(&engine).unwrap();
-
-        let messages = runner.get_messages(query, error).unwrap();
+        let messages = runner.get_messages(query, error, &ddls).unwrap();
         let user_prompt = messages[1].message.clone();
 
         assert!(user_prompt.contains(query));
         assert!(user_prompt.contains(error));
+
+        for ddl in &ddls {
+            assert!(user_prompt.contains(ddl));
+        }
     }
 }

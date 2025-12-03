@@ -62,7 +62,7 @@ impl SQLGenerationRunner {
     fn get_messages(
         &self,
         user_query: &str,
-        relevant_ddls: Vec<&str>,
+        relevant_ddls: &[String],
         similar_queries: Vec<&str>,
     ) -> Result<Vec<InstructMessage>, SqlgenError> {
         // Render relevant tables block
@@ -121,7 +121,7 @@ impl SQLGenerationRunner {
     pub async fn generate_query(
         &mut self,
         user_query: &str,
-        relevant_ddls: Vec<&str>,
+        relevant_ddls: &[String],
         similar_queries: Vec<&str>,
     ) -> Result<String, SqlgenError> {
         let messages = self.get_messages(user_query, relevant_ddls, similar_queries)?;
@@ -169,7 +169,10 @@ mod tests {
         let response_str = to_string(&response).unwrap();
         let engine = create_engine(engine_name, schema_name, "smart", &response_str);
         let user_query = "Top 10 Maxwell the cat memes.";
-        let relevant_ddls = vec!["ddl1", "ddl2", "ddl3"];
+        let relevant_ddls: Vec<String> = vec!["ddl1", "ddl2", "ddl3"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
         let similar_queries = vec!["query1", "query2", "query3"];
         let ddls_part = relevant_ddls.join("\n");
         let similars_part = similar_queries.join("\n");
@@ -178,7 +181,7 @@ mod tests {
 
         let engine = SQLGenerationRunner::new(&engine).unwrap();
         let messages = engine
-            .get_messages(user_query, relevant_ddls, similar_queries)
+            .get_messages(user_query, &relevant_ddls, similar_queries)
             .unwrap();
         let user_prompt = messages[1].message.clone();
 
@@ -209,7 +212,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", vec![""], vec![""])
+                .generate_query("test_query", &vec!["".to_string()], vec![""])
                 .await
                 .unwrap()
         });
@@ -239,7 +242,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", vec![""], vec![""])
+                .generate_query("test_query", &vec!["".to_string()], vec![""])
                 .await
                 .unwrap_err()
         });
@@ -263,7 +266,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", vec![""], vec![""])
+                .generate_query("test_query", &vec!["".to_string()], vec![""])
                 .await
                 .unwrap_err()
         });
@@ -294,7 +297,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", vec![""], vec![""])
+                .generate_query("test_query", &vec!["".to_string()], vec![""])
                 .await
                 .unwrap_err()
         });
