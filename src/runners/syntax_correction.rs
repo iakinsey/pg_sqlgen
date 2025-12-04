@@ -38,6 +38,7 @@ pub struct SyntaxCorrectionRunner {
     tera: Tera,
     model: Box<dyn TextInstructDriver>,
     system_prompt: String,
+    attempts: usize,
 }
 
 impl SyntaxCorrectionRunner {
@@ -52,11 +53,13 @@ impl SyntaxCorrectionRunner {
         tera.add_raw_template(RELEVANT_DDLS_TEMPLATE_KEY, &engine.relevant_ddls_template)?;
 
         let system_prompt = engine.get_generate_system_prompt()?;
+        let attempts = 3;
 
         Ok(Self {
             tera,
             model,
             system_prompt,
+            attempts,
         })
     }
 
@@ -103,8 +106,10 @@ impl SyntaxCorrectionRunner {
         ])
     }
 
-    // Main entrypoint for runner.
-    pub async fn correct(&mut self, query: String, ddls: &[String]) -> Result<String, SqlgenError> {
+    pub async fn get_prepare_error(
+        &mut self,
+        query: String,
+    ) -> Result<Option<String>, SqlgenError> {
         let id = get_unique_prepared_statement_id();
         let prepare_query = format!("PREPARE {} AS {}", id, query);
         let prepare_query = match prepare_query.ends_with(";") {
@@ -120,24 +125,40 @@ impl SyntaxCorrectionRunner {
         .catch_rust_panic(|e| Some(get_caught_error_string(e)))
         .execute();
 
-        let error = match error {
-            Some(s) => s,
+        Ok(error)
+    }
+
+    // Main entrypoint for runner.
+    pub async fn correct(
+        &mut self,
+        mut query: String,
+        ddls: &[String],
+    ) -> Result<String, SqlgenError> {
+        for _ in 0..self.attempts {
+            let error = match self.get_prepare_error(query.clone()).await? {
+                Some(e) => e,
+                None => return Ok(query),
+            };
+
+            let messages = self.get_messages(&query, &error, ddls)?;
+            let payload = self.model.get_assistant_response(messages).await?;
+            let response = match from_str::<GenerateResponse>(&payload) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(SqlgenError::GenerateParseError(e.to_string())),
+            }?;
+
+            match response.error.filter(|s| !s.is_empty()) {
+                Some(s) => return Err(SqlgenError::GenerateError(s)),
+                None => match response.query {
+                    Some(s) => query = s,
+                    None => return Err(SqlgenError::EmptyResponse),
+                },
+            };
+        }
+
+        match self.get_prepare_error(query.clone()).await? {
+            Some(e) => Err(SqlgenError::SyntaxCorrectionFailed(e)),
             None => return Ok(query),
-        };
-
-        let messages = self.get_messages(&query, &error, ddls)?;
-        let payload = self.model.get_assistant_response(messages).await?;
-        let response = match from_str::<GenerateResponse>(&payload) {
-            Ok(v) => Ok(v),
-            Err(e) => Err(SqlgenError::GenerateParseError(e.to_string())),
-        }?;
-
-        match response.error.filter(|s| !s.is_empty()) {
-            Some(s) => Err(SqlgenError::GenerateError(s)),
-            None => match response.query {
-                Some(s) => Ok(s),
-                None => Err(SqlgenError::EmptyResponse),
-            },
         }
     }
 }
@@ -188,14 +209,16 @@ mod tests {
             query: Some(query.to_string()),
             error: None,
         };
+        let error = r#"failed to fix query: ERRCODE_SYNTAX_ERROR: trailing junk after numeric literal at or near "12s""#;
         let ddls = vec!["ddl1".to_string(), "ddl2".to_string(), "ddl3".to_string()];
         let response_str = to_string(&response).unwrap();
         let engine = create_engine(engine_name, schema_name, "smart", &response_str);
         let mut runner = SyntaxCorrectionRunner::new(&engine).unwrap();
         let rt = get_runtime();
 
-        let result = rt.block_on(async { runner.correct(query.to_string(), &ddls).await.unwrap() });
+        let result =
+            rt.block_on(async { runner.correct(query.to_string(), &ddls).await.unwrap_err() });
 
-        assert_eq!(result, query);
+        assert_eq!(result.to_string(), error);
     }
 }

@@ -12,6 +12,8 @@ pub enum SqlgenError {
     ResponseError(String),
     #[error("{0}")]
     GenerateError(String),
+    #[error("failed to fix query: {0}")]
+    SyntaxCorrectionFailed(String),
     #[error("failed to parse model output when generating output: {0}")]
     GenerateParseError(String),
     #[error("SQL generation model returned no response")]
