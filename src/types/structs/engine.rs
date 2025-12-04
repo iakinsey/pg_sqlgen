@@ -109,7 +109,7 @@ pub struct TextToSqlEngine {
     pub syntax_correction_template: String,
     pub explain_query_template: String,
     pub filter_type: TableFilterType,
-    pub ddl_prompt_limit: i32,
+    pub column_filter_limit: i32,
     pub error_correction_rounds: i32,
 }
 
@@ -156,7 +156,7 @@ impl TextToSqlEngine {
         let instruct_model = get_column(&row, "instruct_model")?;
         let filter_type_str = get_column(&row, "table_filter_type")?;
         let filter_type = TableFilterType::from_str(filter_type_str)?;
-        let ddl_prompt_limit = get_column(&row, "ddl_prompt_limit")?;
+        let column_filter_limit = get_column(&row, "column_filter_limit")?;
         let error_correction_rounds = get_column(&row, "error_correction_rounds")?;
 
         Ok(Self {
@@ -172,7 +172,7 @@ impl TextToSqlEngine {
             syntax_correction_template,
             explain_query_template,
             filter_type,
-            ddl_prompt_limit,
+            column_filter_limit,
             error_correction_rounds,
         })
     }

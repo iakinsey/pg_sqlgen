@@ -231,7 +231,7 @@ mod sqlgen_internal {
         encoder_model: &str,
         schema_name: Option<&str>,
         table_filter_type: Option<&str>,
-        ddl_prompt_limit: Option<i32>,
+        column_filter_limit: Option<i32>,
         error_correction_rounds: Option<i32>,
         system_prompt_template: Option<&str>,
         user_prompt_template: Option<&str>,
@@ -251,7 +251,7 @@ mod sqlgen_internal {
             None => TableFilterType::Smart,
         };
 
-        let ddl_prompt_limit = match ddl_prompt_limit {
+        let column_filter_limit = match column_filter_limit {
             Some(i) => i,
             None => 128,
         };
@@ -270,7 +270,7 @@ mod sqlgen_internal {
             encoder_model,
             instruct_model,
             table_filter_type.to_str(),
-            ddl_prompt_limit,
+            column_filter_limit,
             error_correction_rounds,
             system_prompt_template,
             user_prompt_template,

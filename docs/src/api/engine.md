@@ -69,10 +69,10 @@ Create an engine.
 - __Default__: `smart`
 
 <div style="font-size: 110%">
-<code>ddl_prompt_limit</code>
+<code>column_filter_limit</code>
 </div>
 
-- __Description__: Determines how many DDLS are passed into `relevant_ddls_template` at a time. Useful if there are strong limits on a model's maximum token input.
+- __Description__: Determines how many instances of column metadata are passed into any prompt at a time. Useful if there are strong limits on a model's maximum token input.
 - __Type__: `INT`
 - __Optional__: `true`
 - __Default__: `128`

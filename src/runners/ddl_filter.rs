@@ -85,7 +85,8 @@ impl<'a> DDLFilterRunner<'a> {
             "generate_smart called without model reference".to_string(),
         ))?;
 
-        let limit = self.engine.ddl_prompt_limit as usize;
+        let limit = self.engine.column_filter_limit as usize;
+
         let chunks: Vec<&[String]> = if limit <= 0 {
             vec![relevant_ddls.as_slice()]
         } else {
@@ -150,11 +151,22 @@ mod tests {
     fn get_ddl_prompt_output() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
-        let expected_instruct_output = r#"{"ddls": ["ddl1", "ddl2", "ddl3", "ddl4"]}"#;
+        let expected_instruct_output = r#"{"ddls": [
+            "ddl1", "ddl2", "ddl3", "ddl4", "ddl5",
+            "ddl6", "ddl7", "ddl8", "ddl9", "ddl10",
+            "ddl11", "ddl12", "ddl13", "ddl14", "ddl15",
+            "ddl16", "ddl17", "ddl18", "ddl19", "ddl20"
+        ]}"#;
+
         let engine = create_engine(engine_name, schema_name, "quick", expected_instruct_output);
         let user_query = "Test user query.";
         let runner = DDLFilterRunner::new(&engine).unwrap();
-        let ddls = vec!["ddl1", "ddl2", "ddl3"];
+        let ddls = vec![
+            "ddl1", "ddl2", "ddl3", "ddl4", "ddl5", "ddl6", "ddl7", "ddl8", "ddl9", "ddl10",
+            "ddl11", "ddl12", "ddl13", "ddl14", "ddl15", "ddl16", "ddl17", "ddl18", "ddl19",
+            "ddl20",
+        ];
+
         let ddls: Vec<String> = ddls.into_iter().map(|s| s.to_string()).collect();
         let ddls: &[String] = &ddls;
         let messages = DDLFilterRunner::get_messages(&runner.tera, user_query, ddls).unwrap();
@@ -169,7 +181,12 @@ mod tests {
     fn test_filter_smart() {
         let schema_name = "test_example";
         let engine_name = "test_engine";
-        let expected_instruct_output = r#"{"ddls": ["ddl1", "ddl2", "ddl3", "ddl4"]}"#;
+        let expected_instruct_output = r#"{"ddls": [
+            "ddl1", "ddl2", "ddl3", "ddl4", "ddl5",
+            "ddl6", "ddl7", "ddl8", "ddl9", "ddl10",
+            "ddl11", "ddl12", "ddl13", "ddl14", "ddl15",
+            "ddl16", "ddl17", "ddl18", "ddl19", "ddl20"
+        ]}"#;
         let engine = create_engine(engine_name, schema_name, "smart", expected_instruct_output);
         let encoder = ModelStore::get_text_encoder_model(&engine.encoder_model).unwrap();
         let rt = get_runtime();
@@ -184,7 +201,7 @@ mod tests {
             let mut runner = DDLFilterRunner::new(&engine).unwrap();
             let ddls = runner.generate(user_query).await.unwrap();
 
-            assert_eq!(ddls.len(), 4);
+            assert_eq!(ddls.len(), 20);
         });
     }
 
