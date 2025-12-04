@@ -71,6 +71,6 @@ set via `set_default_engine`.
 SELECT sqlgen.explain_query('SELECT name, price FROM inventory');
 
 -- Without default engine
-SELECT sqlgen.explain_query('SELECT name, price FROM inventory' 'my_engine');
+SELECT sqlgen.explain_query('SELECT name, price FROM inventory', 'my_engine');
 ```
 
