@@ -1,7 +1,10 @@
-use crate::types::{
-    errors::SqlgenError,
-    structs::{instruct_message::InstructMessage, profiles::OllamaConfig},
-    traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
+use crate::{
+    debug1,
+    types::{
+        errors::SqlgenError,
+        structs::{instruct_message::InstructMessage, profiles::OllamaConfig},
+        traits::driver::{ModelDriver, TextEncoderDriver, TextInstructDriver},
+    },
 };
 use async_trait::async_trait;
 use futures::{stream, StreamExt, TryStreamExt};
@@ -127,6 +130,9 @@ impl TextEncoderDriver for OllamaDriver {
     async fn encode(&self, input: &str) -> Result<Vec<f32>, SqlgenError> {
         let url = self.get_request_url("embeddings");
         let body = self.get_encode_body(input)?;
+
+        debug1!("OllamaDriver (encoder) request: {}", body);
+
         let resp = self.client.post(url).body(body.clone()).send().await?;
         let status = resp.status();
         let text = resp.text().await?;
@@ -171,9 +177,14 @@ impl TextInstructDriver for OllamaDriver {
 
         let url = self.get_request_url("chat");
         let body = self.get_chat_body()?;
+
+        debug1!("OllamaDriver (instruct) request: {}", body);
+
         let resp = self.client.post(url).body(body).send().await?;
         let status = resp.status();
         let text = resp.text().await?;
+
+        debug1!("OllamaDriver (instruct) response: {}", text);
 
         if !status.is_success() {
             return Err(SqlgenError::ResponseError(format!(

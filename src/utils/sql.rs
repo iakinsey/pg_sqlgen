@@ -82,3 +82,16 @@ mod tests {
         assert!(id.starts_with("stmt"));
     }
 }
+
+// These statements allow debug1 to be used in a testing enviornment
+#[cfg(test)]
+#[macro_export]
+macro_rules! debug1 {
+    ($($arg:tt)*) => {
+        eprintln!($($arg)*);
+    };
+}
+
+#[cfg(not(test))]
+#[allow(unused_imports)]
+pub use pgrx::debug1;

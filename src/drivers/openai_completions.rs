@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string};
 
 use crate::{
+    debug1,
     types::{
         errors::SqlgenError,
         structs::{instruct_message::InstructMessage, profiles::OpenAICompletionsConfig},
@@ -95,6 +96,8 @@ impl TextInstructDriver for OpenAICompletionsDriver {
         let auth_header =
             get_auth_header(self.config.api_key.clone(), &self.config.authorization_type);
 
+        debug1!("OpenAICompletionsDriver request: {}", body);
+
         let req = self
             .client
             .post(url)
@@ -109,6 +112,8 @@ impl TextInstructDriver for OpenAICompletionsDriver {
         let resp = req.send().await?;
         let status = resp.status();
         let text = resp.text().await?;
+
+        debug1!("OpenAICompletionsDriver response: {}", text);
 
         if !status.is_success() {
             return Err(SqlgenError::ResponseError(format!(

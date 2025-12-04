@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string};
 
 use crate::{
+    debug1,
     types::{
         errors::SqlgenError,
         structs::profiles::OpenAIEmbeddingsConfig,
@@ -75,6 +76,9 @@ impl TextEncoderDriver for OpenAIEmbeddingsDriver {
         let body = to_string(&request_json)?;
         let auth_header =
             get_auth_header(self.config.api_key.clone(), &self.config.authorization_type);
+
+        debug1!("OpenAIEmbeddingsDriver request: {}", body);
+
         let req = self
             .client
             .post(&self.config.url)
