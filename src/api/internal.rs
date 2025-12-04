@@ -232,6 +232,7 @@ mod sqlgen_internal {
         schema_name: Option<&str>,
         table_filter_type: Option<&str>,
         ddl_prompt_limit: Option<i32>,
+        error_correction_rounds: Option<i32>,
         system_prompt_template: Option<&str>,
         user_prompt_template: Option<&str>,
         relevant_ddls_template: Option<&str>,
@@ -255,6 +256,11 @@ mod sqlgen_internal {
             None => 128,
         };
 
+        let error_correction_rounds = match error_correction_rounds {
+            Some(i) => i,
+            None => 3,
+        };
+
         ModelStore::get_model_profile(instruct_model)?;
         let encoder = ModelStore::get_text_encoder_model(encoder_model)?;
 
@@ -265,6 +271,7 @@ mod sqlgen_internal {
             instruct_model,
             table_filter_type.to_str(),
             ddl_prompt_limit,
+            error_correction_rounds,
             system_prompt_template,
             user_prompt_template,
             relevant_ddls_template,

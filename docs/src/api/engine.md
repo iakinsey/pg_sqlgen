@@ -78,6 +78,15 @@ Create an engine.
 - __Default__: `128`
 
 <div style="font-size: 110%">
+<code>error_correction_rounds</code>
+</div>
+
+- __Description__: Determines how many rounds of error correction should be made before giving up.
+- __Type__: `INT`
+- __Optional__: `true`
+- __Default__: `3`
+
+<div style="font-size: 110%">
 <code>system_prompt_template</code>
 </div>
 

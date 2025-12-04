@@ -43,6 +43,7 @@ pub(crate) fn create_engine(
         instruct_model_name,
         table_filter_type,
         128,
+        3,
         None,
         None,
         None,

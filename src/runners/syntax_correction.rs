@@ -38,7 +38,7 @@ pub struct SyntaxCorrectionRunner {
     tera: Tera,
     model: Box<dyn TextInstructDriver>,
     system_prompt: String,
-    attempts: usize,
+    attempts: i32,
 }
 
 impl SyntaxCorrectionRunner {
@@ -53,7 +53,7 @@ impl SyntaxCorrectionRunner {
         tera.add_raw_template(RELEVANT_DDLS_TEMPLATE_KEY, &engine.relevant_ddls_template)?;
 
         let system_prompt = engine.get_generate_system_prompt()?;
-        let attempts = 3;
+        let attempts = engine.error_correction_rounds;
 
         Ok(Self {
             tera,
