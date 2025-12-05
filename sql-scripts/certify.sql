@@ -18,10 +18,6 @@ BEGIN
         language_vector VECTOR(%s) NOT NULL
     );
 
-    CREATE INDEX certified_queries_%I_language_vector_idx
-      ON sqlgen_internal.certified_queries_%I
-      USING ivfflat (language_vector vector_cosine_ops);
-
     REVOKE ALL ON TABLE sqlgen_internal.certified_queries_%I FROM PUBLIC;
   $fmt$, engine, vector_size, engine, engine, engine);
 END
@@ -89,7 +85,6 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.get_certified_queries(
     query_limit INT
 )
 RETURNS TABLE (
-    id UUID,
     language_query TEXT,
     sql_query TEXT
 )
@@ -98,7 +93,6 @@ AS $$
 BEGIN
     RETURN QUERY EXECUTE format($fmt$
         SELECT
-            id,
             language_query,
             sql_query
         FROM
@@ -117,7 +111,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_certified_queries FROM public;
 -- Delete certified query
 --------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION sqlgen_internal.uncertify_query(
+CREATE OR REPLACE FUNCTION sqlgen_internal.decertify_query(
     engine TEXT,
     id UUID
 )
@@ -132,4 +126,4 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.uncertify_query FROM public;
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.decertify_query FROM public;
