@@ -27,7 +27,9 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_certified_queries_table FROM public;
+REVOKE EXECUTE
+ON FUNCTION
+sqlgen_internal.create_certified_queries_table FROM public;
 
 --------------------------------------------------------------------------------
 -- Delete query certification table
@@ -46,7 +48,9 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.delete_certified_queries_table FROM public;
+REVOKE EXECUTE
+ON FUNCTION
+sqlgen_internal.delete_certified_queries_table FROM public;
 
 --------------------------------------------------------------------------------
 -- Query certification
