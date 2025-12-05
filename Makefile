@@ -30,3 +30,6 @@ serve-docs:
 
 docs:
 	cd docs && mdbook build
+
+lint-sql:
+	sqlfluff fix sql-scripts

@@ -77,12 +77,12 @@ $$;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen.ollama_config(
-    model_name         text,
-    host               text DEFAULT NULL,
-    use_https          boolean DEFAULT NULL,
-    request_batch_size integer DEFAULT NULL
-) RETURNS text
-LANGUAGE plpgsql
+    model_name TEXT,
+    host TEXT DEFAULT NULL,
+    use_https BOOLEAN DEFAULT NULL,
+    request_batch_size INTEGER DEFAULT NULL
+) RETURNS TEXT
+LANGUAGE PLPGSQL
 AS $$
 BEGIN
     IF model_name IS NULL THEN
