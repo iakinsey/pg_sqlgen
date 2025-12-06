@@ -20,6 +20,7 @@ test-packaging: package
 test:
 	cargo pgrx test
 	cargo pgrx regress
+	cargo clippy
 
 clean:
 	cargo clean

@@ -126,6 +126,7 @@ mod sqlgen {
         CertifyStore::delete_certified_queries_table(&engine.name)
     }
 
+    // Certifies a functional query so that it can be provided to prompts to boost accuracy.
     #[pg_extern(name = "certify_query")]
     fn certify_query(
         language_query: &str,
@@ -145,6 +146,7 @@ mod sqlgen {
         certify_query(language_query, sql_query, None)
     }
 
+    // Removes certified query by id
     #[pg_extern(name = "decertify_query")]
     fn decertify_query(id: &str, engine: Option<&str>) -> Result<(), SqlgenError> {
         let engine = get_engine(engine);
@@ -371,5 +373,72 @@ mod tests {
         });
 
         assert_eq!(count, 0);
+    }
+
+    #[pg_test]
+    fn test_certify_decertify() {
+        let engine_name = "engine_name";
+        let model_name = "stub_model";
+        let expected_query = "SELECT 'Hello world!'";
+        let language_query = "hello world query";
+
+        let model_response = GenerateResponse {
+            query: Some(expected_query.to_string()),
+            error: None,
+        };
+        let model_response_json = to_string(&model_response);
+        let create_model_query =
+            "SELECT sqlgen.add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT sqlgen.create_engine($1, $2, $2)";
+        let certify_query = "SELECT sqlgen.certify_query($1, $2, $3);";
+        let decertify_query = "SELECT sqlgen.decertify_query($1, $2);";
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_model_query,
+                    None,
+                    &[model_name.into(), model_response_json.into()],
+                )
+                .unwrap();
+        });
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_engine_query,
+                    None,
+                    &[engine_name.into(), model_name.into()],
+                )
+                .unwrap();
+        });
+
+        let query_id: String = Spi::connect(|client| {
+            client
+                .select(
+                    certify_query,
+                    None,
+                    &[
+                        language_query.into(),
+                        expected_query.into(),
+                        engine_name.into(),
+                    ],
+                )
+                .unwrap()
+                .first()
+                .get_one::<String>()
+                .unwrap()
+                .expect("generate returned NULL")
+        });
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    decertify_query,
+                    None,
+                    &[query_id.clone().into(), engine_name.into()],
+                )
+                .unwrap();
+        });
     }
 }
