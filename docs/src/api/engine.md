@@ -24,6 +24,10 @@ SELECT * FROM sqlgen.engines;
 
 Create an engine.
 
+### Returns
+
+- __Type__: `VOID`
+
 ### Parameters
 
 <div style="font-size: 110%">
@@ -161,6 +165,10 @@ SELECT create_engine('my_engine', 'my_llm', 'my_encoder');
 
 Remove an engine.
 
+### Returns
+
+- __Type__: `VOID`
+
 ### Parameters
 
 <div style="font-size: 110%">
@@ -184,6 +192,10 @@ SELECT sqlgen.remove_engine('my_engine');
 Sets the default engine. When [generation](./generation.md) functions are called
 without an engine specified, the value set here is used.
 
+### Returns
+
+- __Type__: `VOID`
+
 ### Parameters
 
 <div style="font-size: 110%">
@@ -205,6 +217,10 @@ SELECT sqlgen.set_default_engine('my_engine');
 ## remove_default_engine
 
 Removes the default engine.
+
+### Returns
+
+- __Type__: `VOID`
 
 ### Example
 

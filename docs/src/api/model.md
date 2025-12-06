@@ -39,6 +39,10 @@ SELECT * FROM sqlgen.model_descriptions;
 
 Creates a new model profile.
 
+### Returns
+
+- __Type__: `VOID`
+
 ### Parameters
 
 <div style="font-size: 110%">
@@ -71,6 +75,10 @@ SELECT sqlgen.add_model(
 ## remove_model
 
 Deletes a model profile.
+
+### Returns
+
+- __Type__: `VOID`
 
 ### Parameters
 

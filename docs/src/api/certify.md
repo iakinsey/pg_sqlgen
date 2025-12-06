@@ -16,6 +16,11 @@ Certifies a functional query so that it can be provided to
 prompts to boost accuracy. Returns a unique identifier for
 the certified query.
 
+### Returns
+
+- __Type__: `TEXT`
+- __Description__: A UUID identifying the query certification instance.
+
 ### Parameters
 
 <div style="font-size: 110%">
@@ -66,6 +71,10 @@ SELECT sqlgen.certify_query(
 ## decertify_query
 
 Removes a certified query.
+
+### Returns
+
+- __Type__: `VOID`
 
 ### Parameters
 

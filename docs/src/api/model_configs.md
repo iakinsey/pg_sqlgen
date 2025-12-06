@@ -7,6 +7,11 @@ parameters for [`add_model`](./model.md#add_model).
 
 Configuration for models that run on [Ollama](https://ollama.com/).
 
+### Returns
+
+- __Type__: `JSON`
+- __Description__: Model configuration.
+
 ### Capabilities
 - Instruct
 - Encoding
@@ -69,6 +74,11 @@ SELECT sqlgen.add_model(
 
 Configuration for models that use the [OpenAI Completions API](https://platform.openai.com/docs/guides/completions).
 
+### Returns
+
+- __Type__: `JSON`
+- __Description__: Model configuration.
+
 ### Capabilities
 - Instruct
 
@@ -126,6 +136,11 @@ omitted if this value is not set.
 ## openai_embeddings_config 
 
 Configuration for models that use the [OpenAI Embeddings API](https://platform.openai.com/docs/api-reference/embeddings)
+
+### Returns
+
+- __Type__: `JSON`
+- __Description__: Model configuration.
 
 ### Capabilities
 - Encoding
@@ -185,6 +200,11 @@ omitted if this value is not set.
 ## stub_config
 
 Outputs exactly what is provided in parameters. Used for testing purposes.
+
+### Returns
+
+- __Type__: `JSON`
+- __Description__: Model configuration.
 
 ### Capabilities
 - Instruct

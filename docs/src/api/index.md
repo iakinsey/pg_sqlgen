@@ -2,7 +2,8 @@
 
 All functions and views live under the `sqlgen` prefix.
 
-- [Generation](./api/generation.md)
-- [Engine](./api/engine.md)
-- [Model](./api/model.md)
-- [Model Configs](./api/model_configs.md)
+- [Generation](./generation.md)
+- [Engine](./engine.md)
+- [Model](./model.md)
+- [Model Configs](./model_configs.md)
+- [Query Certification](./certify.md)
