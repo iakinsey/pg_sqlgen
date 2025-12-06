@@ -48,6 +48,28 @@ impl CertifyStore {
         Ok(id)
     }
 
+    pub fn get_formatted_certified_queries(
+        engine_name: &str,
+        language_query_vector: Vec<f32>,
+        query_limit: i32,
+    ) -> Result<Option<String>, SqlgenError> {
+        let queries = Self::get_certified_queries(engine_name, language_query_vector, query_limit)?;
+        let mut results = vec![];
+
+        if queries.len() == 0 {
+            return Ok(None);
+        }
+
+        for (idx, (language_query, sql_query)) in queries.iter().enumerate() {
+            results.push(format!(
+                "Language query {}:\n{}\n\nSQL query {}:\n{}",
+                idx, language_query, idx, sql_query
+            ))
+        }
+
+        Ok(Some(results.join("\n\n")))
+    }
+
     pub fn get_certified_queries(
         engine_name: &str,
         language_query_vector: Vec<f32>,

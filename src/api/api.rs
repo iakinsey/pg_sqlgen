@@ -69,13 +69,19 @@ mod sqlgen {
         let mut ddl_filter_runner = DDLFilterRunner::new(&engine)?;
         let mut text_to_sql_runner = SQLGenerationRunner::new(&engine)?;
         let mut syntax_correction_runner = SyntaxCorrectionRunner::new(&engine)?;
+        let model = ModelStore::get_text_encoder_model(&engine.instruct_model)?;
         let rt = get_runtime();
 
         rt.block_on(async {
             let ddls = ddl_filter_runner.generate(user_query).await?;
+            let query_vector = model.encode(user_query).await?;
 
+            // Diminishing returns on query accuracy when similiar queries > 3.
+            // TODO provide a config option
+            let similar_queries =
+                CertifyStore::get_formatted_certified_queries(&engine.name, query_vector, 3)?;
             let query = text_to_sql_runner
-                .generate_query(user_query, &ddls, vec![])
+                .generate_query(user_query, &ddls, similar_queries)
                 .await?;
 
             syntax_correction_runner.correct(query, &ddls).await

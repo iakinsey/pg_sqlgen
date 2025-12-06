@@ -28,7 +28,11 @@ Here are some columns that are possibly relevant to the query.
 {{relevant_ddls}}
 "#;
 // TODO, leave empty for now until similar queries are implemented
-pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = "";
+pub static DEFAULT_SIMILAR_QUERIES_TEMPLATE: &str = r#"
+Here are some example queries from the same database that may or may not be relevant:
+
+{{ similar_queries }}
+"#;
 pub static DEFAULT_FILTER_DDLS_TEMPLATE: &str = r#"
 Given the following query:
 

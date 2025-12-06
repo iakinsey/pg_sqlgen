@@ -63,7 +63,7 @@ impl SQLGenerationRunner {
         &self,
         user_query: &str,
         relevant_ddls: &[String],
-        similar_queries: Vec<&str>,
+        similar_queries: Option<String>,
     ) -> Result<Vec<InstructMessage>, SqlgenError> {
         // Render relevant tables block
         let relevant_ddls_block = match relevant_ddls.is_empty() {
@@ -80,10 +80,9 @@ impl SQLGenerationRunner {
         };
 
         // Render similar queries block
-        let similar_queries_block = match similar_queries.is_empty() {
-            true => "".to_string(),
-            false => {
-                let list = similar_queries.join("\n");
+        let similar_queries_block = match similar_queries {
+            None => "".to_string(),
+            Some(list) => {
                 let mut ctx = Context::new();
                 ctx.insert(SIMILAR_QUERIES_VAR_KEY, &list);
 
@@ -122,7 +121,7 @@ impl SQLGenerationRunner {
         &mut self,
         user_query: &str,
         relevant_ddls: &[String],
-        similar_queries: Vec<&str>,
+        similar_queries: Option<String>,
     ) -> Result<String, SqlgenError> {
         let messages = self.get_messages(user_query, relevant_ddls, similar_queries)?;
         let payload = self.model.get_assistant_response(messages).await?;
@@ -173,21 +172,24 @@ mod tests {
             .into_iter()
             .map(|s| s.to_string())
             .collect();
-        let similar_queries = vec!["query1", "query2", "query3"];
+        let similar_queries = "similar queries";
         let ddls_part = relevant_ddls.join("\n");
-        let similars_part = similar_queries.join("\n");
 
         create_schema(schema_name);
 
         let engine = SQLGenerationRunner::new(&engine).unwrap();
         let messages = engine
-            .get_messages(user_query, &relevant_ddls, similar_queries)
+            .get_messages(
+                user_query,
+                &relevant_ddls,
+                Some(similar_queries.to_string()),
+            )
             .unwrap();
         let user_prompt = messages[1].message.clone();
 
         assert!(user_prompt.contains(user_query));
         assert!(user_prompt.contains(&ddls_part));
-        assert!(!user_prompt.contains(&similars_part));
+        assert!(user_prompt.contains(similar_queries));
     }
 
     #[pg_test]
@@ -212,7 +214,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", &vec!["".to_string()], vec![""])
+                .generate_query("test_query", &vec!["".to_string()], None)
                 .await
                 .unwrap()
         });
@@ -242,7 +244,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", &vec!["".to_string()], vec![""])
+                .generate_query("test_query", &vec!["".to_string()], Some("".to_string()))
                 .await
                 .unwrap_err()
         });
@@ -266,7 +268,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", &vec!["".to_string()], vec![""])
+                .generate_query("test_query", &vec!["".to_string()], Some("".to_string()))
                 .await
                 .unwrap_err()
         });
@@ -297,7 +299,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", &vec!["".to_string()], vec![""])
+                .generate_query("test_query", &vec!["".to_string()], Some("".to_string()))
                 .await
                 .unwrap_err()
         });
