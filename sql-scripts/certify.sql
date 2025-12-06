@@ -97,8 +97,10 @@ BEGIN
             sql_query
         FROM
             sqlgen_internal.certified_queries_%I
+        WHERE
+            (language_vector <=> $1) <= 0.25
         ORDER BY
-            language_vector <=> $1 ASC
+            (language_vector <=> $1) ASC
         LIMIT $2
     $fmt$, engine_name)
     USING language_query_vector, query_limit;

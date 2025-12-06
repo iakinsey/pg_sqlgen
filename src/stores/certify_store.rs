@@ -128,9 +128,9 @@ mod tests {
         let engine = "test_engine";
         let vector_size = 4;
         let examples = vec![
-            ("language query 1", "sql query 1", vec![0.0, 0.0, 0.0, 0.0]),
-            ("language query 2", "sql query 2", vec![0.0, 0.0, 0.0, 1.1]),
-            ("language query 3", "sql query 3", vec![0.0, 0.0, 1.1, 1.1]),
+            ("language query 1", "sql query 1", vec![2.2, 2.2, 2.2, 1.9]),
+            ("language query 2", "sql query 2", vec![2.2, 2.2, 2.2, 2.0]),
+            ("language query 3", "sql query 3", vec![2.2, 2.2, 2.2, 2.1]),
             ("language query 4", "sql query 4", vec![2.2, 2.2, 2.2, 2.2]),
         ];
         let mut ids = vec![];
