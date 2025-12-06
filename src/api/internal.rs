@@ -42,6 +42,7 @@ mod sqlgen_internal {
     use pgrx::spi::Query;
 
     use crate::drivers::get_model_descriptions;
+    use crate::stores::certify_store::CertifyStore;
     use crate::stores::engine_store::EngineStore;
     use crate::stores::metadata_store::MetadataStore;
     use crate::stores::model_store::ModelStore;
@@ -283,7 +284,11 @@ mod sqlgen_internal {
 
         let rt = get_runtime();
 
-        rt.block_on(async { MetadataStore::initialize_metadata(name, &schema_name, encoder).await })
+        rt.block_on(async {
+            let dims = encoder.dimensions().await?;
+            CertifyStore::create_certified_queries_table(name, dims as i32)?;
+            MetadataStore::initialize_metadata(name, &schema_name, encoder).await
+        })
     }
 }
 

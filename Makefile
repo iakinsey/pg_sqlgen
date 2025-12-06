@@ -20,7 +20,6 @@ test-packaging: package
 test:
 	cargo pgrx test
 	cargo pgrx regress
-	./scripts/test-packaging.sh
 
 clean:
 	cargo clean

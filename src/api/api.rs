@@ -31,6 +31,7 @@ mod sqlgen {
             sql_generation::SQLGenerationRunner, syntax_correction::SyntaxCorrectionRunner,
         },
         stores::{
+            certify_store::CertifyStore,
             config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
             engine_store::EngineStore,
             metadata_store::MetadataStore,
@@ -115,7 +116,39 @@ mod sqlgen {
         let engine = EngineStore::get_engine(name)?;
 
         MetadataStore::remove_metadata(name, &engine.encoder_model)?;
-        EngineStore::remove_engine(name)
+        EngineStore::remove_engine(name)?;
+        CertifyStore::delete_certified_queries_table(&engine.name)
+    }
+
+    #[pg_extern(name = "certify_query")]
+    fn certify_query(
+        language_query: &str,
+        sql_query: &str,
+        engine: Option<&str>,
+    ) -> Result<String, SqlgenError> {
+        let engine = get_engine(engine);
+        let rt = get_runtime();
+        let model = ModelStore::get_text_encoder_model(&engine.instruct_model)?;
+        let language_vector = rt.block_on(async { model.encode(language_query).await })?;
+
+        CertifyStore::certify_query(&engine.name, language_query, sql_query, language_vector)
+    }
+
+    #[pg_extern(name = "certify_query")]
+    fn certify_query_2(language_query: &str, sql_query: &str) -> Result<String, SqlgenError> {
+        certify_query(language_query, sql_query, None)
+    }
+
+    #[pg_extern(name = "decertify_query")]
+    fn decertify_query(id: &str, engine: Option<&str>) -> Result<(), SqlgenError> {
+        let engine = get_engine(engine);
+
+        CertifyStore::decertify_query(&engine.name, id)
+    }
+
+    #[pg_extern(name = "decertify_query")]
+    fn decertify_query_1(id: &str) -> Result<(), SqlgenError> {
+        decertify_query(id, None)
     }
 }
 
