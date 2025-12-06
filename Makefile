@@ -22,6 +22,11 @@ test:
 	cargo pgrx regress
 	cargo clippy
 
+test-release: test package test-packaging
+
+release: test-release
+	git tag $(tag)
+
 clean:
 	cargo clean
 
