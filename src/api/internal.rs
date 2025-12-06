@@ -88,6 +88,7 @@ mod sqlgen_internal {
         ORDER BY a.attnum;
     "#;
 
+        #[allow(clippy::type_complexity)]
         let (metadata, ddls, comments): (
             Vec<(String, String, Option<String>)>,
             Vec<&'static str>,
@@ -125,19 +126,23 @@ mod sqlgen_internal {
         let model_name = EngineStore::get_engine(engine_name)?.encoder_model;
         let model = ModelStore::get_model_profile(&model_name)?.get_text_encoder_model()?;
         let rt = get_runtime();
-        let (ddl_encodings, comment_encodings): (Vec<Vec<f32>>, HashMap<usize, Option<Vec<f32>>>) =
-            rt.block_on(async {
-                let d = model.encode_many(&ddls).await?;
-                let comment_strings: Vec<&str> = comments.iter().map(|(_, s)| *s).collect();
-                let vectors = wrap_encode(model, comment_strings).await?;
 
-                let mut map: HashMap<usize, Option<Vec<f32>>> = HashMap::new();
-                for ((i, _), v) in comments.iter().zip(vectors) {
-                    map.insert(*i, v);
-                }
+        #[allow(clippy::type_complexity)]
+        let (ddl_encodings, comment_encodings): (
+            Vec<Vec<f32>>,
+            HashMap<usize, Option<Vec<f32>>>,
+        ) = rt.block_on(async {
+            let d = model.encode_many(&ddls).await?;
+            let comment_strings: Vec<&str> = comments.iter().map(|(_, s)| *s).collect();
+            let vectors = wrap_encode(model, comment_strings).await?;
 
-                Ok::<(Vec<Vec<f32>>, HashMap<usize, Option<Vec<f32>>>), SqlgenError>((d, map))
-            })?;
+            let mut map: HashMap<usize, Option<Vec<f32>>> = HashMap::new();
+            for ((i, _), v) in comments.iter().zip(vectors) {
+                map.insert(*i, v);
+            }
+
+            Ok::<(Vec<Vec<f32>>, HashMap<usize, Option<Vec<f32>>>), SqlgenError>((d, map))
+        })?;
 
         let mut table_metadata: Vec<TableMetadata> = Vec::new();
 
@@ -156,7 +161,7 @@ mod sqlgen_internal {
                 column_name: column_name.clone(),
                 ddl: ddl.clone(),
                 comment: comment.clone(),
-                ddl_vector: ddl_vector,
+                ddl_vector,
                 comment_vector: comment_encodings.get(&i).cloned().flatten(),
             })
         }
@@ -221,10 +226,11 @@ mod sqlgen_internal {
             name!(description, &'static str),
         ),
     > {
-        TableIterator::new(get_model_descriptions().into_iter())
+        TableIterator::new(get_model_descriptions())
     }
 
     // Creates a new text to sql engine.
+    #[allow(clippy::too_many_arguments)]
     #[pg_extern]
     fn create_engine_external(
         name: &str,
@@ -252,15 +258,9 @@ mod sqlgen_internal {
             None => TableFilterType::Smart,
         };
 
-        let column_filter_limit = match column_filter_limit {
-            Some(i) => i,
-            None => 128,
-        };
+        let column_filter_limit = column_filter_limit.unwrap_or(128);
 
-        let error_correction_rounds = match error_correction_rounds {
-            Some(i) => i,
-            None => 3,
-        };
+        let error_correction_rounds = error_correction_rounds.unwrap_or(3);
 
         ModelStore::get_model_profile(instruct_model)?;
         let encoder = ModelStore::get_text_encoder_model(encoder_model)?;

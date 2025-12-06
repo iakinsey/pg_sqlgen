@@ -25,7 +25,7 @@ fn get_engine(name: Option<&str>) -> TextToSqlEngine {
 #[pg_schema]
 mod sqlgen {
     use crate::{
-        api::api::get_engine,
+        api::public::get_engine,
         runners::{
             ddl_filter::DDLFilterRunner, explain::ExplainQueryRunner,
             sql_generation::SQLGenerationRunner, syntax_correction::SyntaxCorrectionRunner,

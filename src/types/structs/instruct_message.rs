@@ -9,7 +9,7 @@ pub enum InstructRole {
 }
 
 impl InstructRole {
-    pub fn to_string(&self) -> String {
+    pub fn as_string(&self) -> String {
         match self {
             InstructRole::System => "system",
             InstructRole::User => "user",

@@ -87,7 +87,7 @@ impl<'a> DDLFilterRunner<'a> {
 
         let limit = self.engine.column_filter_limit as usize;
 
-        let chunks: Vec<&[String]> = if limit <= 0 {
+        let chunks: Vec<&[String]> = if limit == 0 {
             vec![relevant_ddls.as_slice()]
         } else {
             relevant_ddls.chunks(limit).collect()
@@ -125,11 +125,7 @@ impl<'a> DDLFilterRunner<'a> {
         ))?;
         let encoding = model.encode(user_query).await?;
 
-        Ok(MetadataStore::get_similar_ddls(
-            &self.engine.name,
-            encoding,
-            100,
-        )?)
+        MetadataStore::get_similar_ddls(&self.engine.name, encoding, 100)
     }
 }
 

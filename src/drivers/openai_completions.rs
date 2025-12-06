@@ -77,7 +77,7 @@ impl OpenAICompletionsDriver {
     fn append_messages(&mut self, messages: Vec<InstructMessage>) {
         self.messages
             .extend(messages.iter().map(|m| CompletionsMessage {
-                role: m.role.to_string().to_lowercase(),
+                role: m.role.as_string().to_lowercase(),
                 content: get_prompt_with_schema(m),
             }));
     }

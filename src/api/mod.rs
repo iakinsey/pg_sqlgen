@@ -1,5 +1,5 @@
-pub mod api;
 pub mod internal;
+pub mod public;
 
 use pgrx::extension_sql_file;
 

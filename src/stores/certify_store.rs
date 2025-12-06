@@ -56,7 +56,7 @@ impl CertifyStore {
         let queries = Self::get_certified_queries(engine_name, language_query_vector, query_limit)?;
         let mut results = vec![];
 
-        if queries.len() == 0 {
+        if queries.is_empty() {
             return Ok(None);
         }
 

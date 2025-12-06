@@ -24,7 +24,7 @@ impl ConfigStore {
 
             let row = rows.first();
 
-            Ok(get_column(&row, "value")?)
+            get_column(&row, "value")
         })
     }
 

@@ -70,7 +70,7 @@ impl OllamaDriver {
     fn get_encode_body(&self, input: &str) -> Result<String, SqlgenError> {
         let message = EmbeddingsBody {
             model: &self.config.model_name,
-            prompt: &input,
+            prompt: input,
         };
 
         let json = to_string(&message)?;
@@ -83,7 +83,7 @@ impl OllamaDriver {
             .messages
             .iter()
             .map(|m| ChatMessage {
-                role: m.role.to_string(),
+                role: m.role.as_string(),
                 content: m.message.clone(),
             })
             .collect();

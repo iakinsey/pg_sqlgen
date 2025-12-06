@@ -5,6 +5,7 @@ use crate::types::{errors::SqlgenError, structs::engine::TextToSqlEngine};
 // Handles state management for engines.
 pub struct EngineStore {}
 
+#[allow(clippy::too_many_arguments)]
 impl EngineStore {
     pub fn create_engine(
         engine_name: &str,
@@ -64,10 +65,10 @@ impl EngineStore {
                 return Err(SqlgenError::EngineDoesntExist(engine_name.to_string()));
             }
 
-            Ok(TextToSqlEngine::from_row(row.first())?)
+            TextToSqlEngine::from_row(row.first())
         });
 
-        Ok(result?)
+        result
     }
 }
 

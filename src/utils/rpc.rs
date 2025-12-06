@@ -2,10 +2,7 @@ use crate::types::{errors::SqlgenError, traits::driver::TextEncoderDriver};
 
 // Get the properly formatted auth value for an Authorization HTTP header.
 pub fn get_auth_header(api_key: Option<String>, auth_type: &str) -> Option<String> {
-    let api_key = match api_key {
-        Some(k) => k,
-        None => return None,
-    };
+    let api_key = api_key?;
 
     Some(format!("{} {}", auth_type, api_key).trim().to_string())
 }

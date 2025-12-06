@@ -53,7 +53,7 @@ impl SQLGenerationRunner {
         let system_prompt = engine.get_generate_system_prompt()?;
 
         Ok(Self {
-            tera: tera,
+            tera,
             model,
             system_prompt,
         })

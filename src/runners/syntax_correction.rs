@@ -158,7 +158,7 @@ impl SyntaxCorrectionRunner {
 
         match self.get_prepare_error(query.clone()).await? {
             Some(e) => Err(SqlgenError::SyntaxCorrectionFailed(e)),
-            None => return Ok(query),
+            None => Ok(query),
         }
     }
 }

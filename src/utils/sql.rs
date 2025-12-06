@@ -52,7 +52,7 @@ pub fn get_current_schema() -> Result<String, SqlgenError> {
 
 // Generates a guaranteed unique string to be used as a `PREPARE` identifier.
 pub fn get_unique_prepared_statement_id() -> String {
-    format!("stmt{}", Uuid::new_v4().simple().to_string())
+    format!("stmt{}", Uuid::new_v4().simple())
 }
 
 pub fn get_caught_error_string(cause: CaughtError) -> String {

@@ -21,17 +21,17 @@ impl ModelStore {
                 return Err(SqlgenError::ModelDoesntExist(name.to_string()));
             }
 
-            Ok(ModelProfile::from_row(row.first())?)
+            ModelProfile::from_row(row.first())
         });
 
-        Ok(result?)
+        result
     }
 
     pub fn create_model_profile(name: &str, config_str: &str) -> Result<ModelProfile, SqlgenError> {
         let config: ModelConfig = from_str(config_str)?;
         let profile = ModelProfile {
             name: name.to_string(),
-            config: config,
+            config,
         };
         let query = "SELECT sqlgen_internal.create_model($1, $2::JSONB);";
 
@@ -55,7 +55,7 @@ impl ModelStore {
     ) -> Result<Box<dyn TextEncoderDriver>, SqlgenError> {
         let profile = Self::get_model_profile(model_name)?;
 
-        Ok(profile.get_text_encoder_model()?)
+        profile.get_text_encoder_model()
     }
 
     pub fn get_text_instruct_model(
@@ -63,7 +63,7 @@ impl ModelStore {
     ) -> Result<Box<dyn TextInstructDriver>, SqlgenError> {
         let profile = Self::get_model_profile(model_name)?;
 
-        Ok(profile.get_text_instruct_model()?)
+        profile.get_text_instruct_model()
     }
 }
 
