@@ -32,6 +32,17 @@ SELECT sqlgen.generate('A default stub query');
 -- Execute query via cursor with engine parameter.
 SELECT sqlgen.generate('Another stub query', 'stub_engine');
 
+-- Fail to certify a query
+SELECT sqlgen.certify_query(
+    'Invalid query',
+    'SELECT asd123'
+);
+
+-- Create and delete certified query
+SELECT sqlgen.decertify_query(
+    (SELECT sqlgen.certify_query('Basic query', 'SELECT 2'))
+);
+
 -- Delete engine.
 SELECT sqlgen.remove_engine('stub_engine');
 

@@ -67,6 +67,21 @@ SELECT sqlgen.generate('Another stub query', 'stub_engine');
  SELECT 1;
 (1 row)
 
+-- Fail to certify a query
+SELECT sqlgen.certify_query(
+    'Invalid query',
+    'SELECT asd123'
+);
+ERROR:  ERRCODE_UNDEFINED_COLUMN: column "asd123" does not exist
+-- Create and delete certified query
+SELECT sqlgen.decertify_query(
+    (SELECT sqlgen.certify_query('Basic query', 'SELECT 2'))
+);
+ decertify_query 
+-----------------
+ 
+(1 row)
+
 -- Delete engine.
 SELECT sqlgen.remove_engine('stub_engine');
  remove_engine 
