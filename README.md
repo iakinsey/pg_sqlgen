@@ -113,3 +113,9 @@ BEGIN;
     FETCH ALL FROM sqlgen_query;
 COMMIT;
 ```
+
+## Licensing
+Licensed under the MIT License. See [LICENSE](./LICENSE) for details.
+
+This project includes components licensed under the Apache License 2.0.
+See [LICENSE-APACHE](./LICENSE-APACHE) for details.
