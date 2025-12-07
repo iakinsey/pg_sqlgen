@@ -22,7 +22,7 @@ test:
 	cargo pgrx regress
 	cargo clippy
 
-test-release: test package test-packaging
+test-release: lint-sql test package test-packaging
 
 release: test-release
 	git tag $(tag)
@@ -37,4 +37,9 @@ docs:
 	cd docs && mdbook build
 
 lint-sql:
+	sqlfluff lint sql-scripts
+	sqlfluff lint tests/pg_regress/sql
+
+fix-sql:
 	sqlfluff fix sql-scripts
+	sqlfluff fix tests/pg_regress/sql

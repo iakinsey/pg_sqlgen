@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 
 CREATE TABLE sqlgen_internal.config (
-    key TEXT NOT NULL PRIMARY KEY,
-    value TEXT NOT NULL
+    key TEXT NOT NULL PRIMARY KEY, -- noqa: RF04
+    value TEXT NOT NULL -- noqa: RF04
 );
 REVOKE ALL ON TABLE sqlgen_internal.config FROM public;
 

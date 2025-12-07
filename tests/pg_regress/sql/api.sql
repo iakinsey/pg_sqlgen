@@ -3,16 +3,22 @@ DROP EXTENSION IF EXISTS sqlgen CASCADE;
 CREATE EXTENSION sqlgen CASCADE;
 
 -- Create model.
-SELECT sqlgen.add_model('stub_model', sqlgen.stub_config('{"query": "SELECT 1;"}', ARRAY[1.1, 1.2, 2.3, 3.4]::REAL []));
+SELECT sqlgen.add_model(
+    'stub_model',
+    sqlgen.stub_config(
+        '{"query": "SELECT 1;"}',
+        ARRAY[1.1, 1.2, 2.3, 3.4]::REAL []
+    )
+);
 
 -- Verify model exists.
-SELECT * FROM sqlgen.models;
+SELECT * FROM sqlgen.models; -- noqa: AM04
 
 -- Create engine.
 SELECT sqlgen.create_engine('stub_engine', 'stub_model', 'stub_model', 'quick');
 
 -- Verify engine exists.
-SELECT * FROM sqlgen.engines;
+SELECT * FROM sqlgen.engines; -- noqa: AM04
 
 -- Set default engine.
 SELECT sqlgen.set_default_engine('stub_engine');
@@ -47,13 +53,13 @@ SELECT sqlgen.decertify_query(
 SELECT sqlgen.remove_engine('stub_engine');
 
 -- Verify engine no longer exists.
-SELECT * FROM sqlgen.engines;
+SELECT * FROM sqlgen.engines; -- noqa: AM04
 
 -- Delete model.
 SELECT sqlgen.remove_model('stub_model');
 
 -- Verify model no longer exists.
-SELECT * FROM sqlgen.models;
+SELECT * FROM sqlgen.models; -- noqa: AM04
 
 -- Drop the table to verify triggers don't fail.
 DROP TABLE t;
