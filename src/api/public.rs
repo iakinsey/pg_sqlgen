@@ -38,7 +38,7 @@ mod sqlgen {
             model_store::ModelStore,
         },
         types::errors::SqlgenError,
-        utils::globals::get_runtime,
+        utils::{globals::get_runtime, sql::get_prepare_error},
     };
     use pgrx::pg_extern;
 
@@ -135,6 +135,11 @@ mod sqlgen {
     ) -> Result<String, SqlgenError> {
         let engine = get_engine(engine);
         let rt = get_runtime();
+
+        if let Some(e) = get_prepare_error(sql_query.to_string())? {
+            return Err(SqlgenError::Any(e));
+        }
+
         let model = ModelStore::get_text_encoder_model(&engine.instruct_model)?;
         let language_vector = rt.block_on(async { model.encode(language_query).await })?;
 
@@ -163,10 +168,13 @@ mod sqlgen {
 #[cfg(any(test, feature = "pg_test"))]
 #[pg_schema]
 mod tests {
-    use pgrx::Spi;
+    use pgrx::{PgTryBuilder, Spi};
     use serde_json::to_string;
 
-    use crate::{pg_test, types::structs::generate_response::GenerateResponse};
+    use crate::{
+        pg_test, types::structs::generate_response::GenerateResponse,
+        utils::sql::get_caught_error_string,
+    };
 
     #[pg_test]
     fn test_add_list_and_remove_models() {
@@ -379,11 +387,11 @@ mod tests {
     fn test_certify_decertify() {
         let engine_name = "engine_name";
         let model_name = "stub_model";
-        let expected_query = "SELECT 'Hello world!'";
+        let sql_query = "SELECT 'Hello world!'";
         let language_query = "hello world query";
 
         let model_response = GenerateResponse {
-            query: Some(expected_query.to_string()),
+            query: Some(sql_query.to_string()),
             error: None,
         };
         let model_response_json = to_string(&model_response);
@@ -418,11 +426,7 @@ mod tests {
                 .select(
                     certify_query,
                     None,
-                    &[
-                        language_query.into(),
-                        expected_query.into(),
-                        engine_name.into(),
-                    ],
+                    &[language_query.into(), sql_query.into(), engine_name.into()],
                 )
                 .unwrap()
                 .first()
@@ -440,5 +444,69 @@ mod tests {
                 )
                 .unwrap();
         });
+    }
+
+    #[pg_test]
+    fn test_certify_prepare_fail() {
+        let engine_name = "engine_name";
+        let model_name = "stub_model";
+        let sql_query = "SELECT 123aaaa";
+        let language_query = "hello world query";
+
+        let model_response = GenerateResponse {
+            query: Some(sql_query.to_string()),
+            error: None,
+        };
+        let model_response_json = to_string(&model_response);
+        let create_model_query =
+            "SELECT sqlgen.add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT sqlgen.create_engine($1, $2, $2)";
+        let certify_query = "SELECT sqlgen.certify_query($1, $2, $3);";
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_model_query,
+                    None,
+                    &[model_name.into(), model_response_json.into()],
+                )
+                .unwrap();
+        });
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_engine_query,
+                    None,
+                    &[engine_name.into(), model_name.into()],
+                )
+                .unwrap();
+        });
+
+        let error: Option<String> = PgTryBuilder::new(|| {
+            Spi::connect(|client| {
+                client
+                    .select(
+                        certify_query,
+                        None,
+                        &[language_query.into(), sql_query.into(), engine_name.into()],
+                    )
+                    .unwrap()
+                    .first()
+                    .get_one::<String>()
+                    .unwrap()
+                    .expect("generate returned NULL")
+            });
+
+            None
+        })
+        .catch_others(|e| Some(get_caught_error_string(e)))
+        .catch_rust_panic(|e| Some(get_caught_error_string(e)))
+        .execute();
+
+        assert_eq!(
+            error.unwrap(),
+            r#"ERRCODE_DATA_EXCEPTION: ERRCODE_SYNTAX_ERROR: trailing junk after numeric literal at or near "123aaaa""#
+        );
     }
 }

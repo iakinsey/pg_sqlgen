@@ -10,9 +10,8 @@ use crate::{
         },
         traits::driver::TextInstructDriver,
     },
-    utils::sql::{get_caught_error_string, get_unique_prepared_statement_id},
+    utils::sql::get_prepare_error,
 };
-use pgrx::{PgTryBuilder, Spi};
 use serde_json::from_str;
 use tera::{Context, Tera};
 
@@ -106,28 +105,6 @@ impl SyntaxCorrectionRunner {
         ])
     }
 
-    pub async fn get_prepare_error(
-        &mut self,
-        query: String,
-    ) -> Result<Option<String>, SqlgenError> {
-        let id = get_unique_prepared_statement_id();
-        let prepare_query = format!("PREPARE {} AS {}", id, query);
-        let prepare_query = match prepare_query.ends_with(";") {
-            true => prepare_query.to_string(),
-            false => format!("{};", prepare_query),
-        };
-
-        let error: Option<String> = PgTryBuilder::new(|| {
-            Spi::run(&prepare_query).unwrap();
-            None
-        })
-        .catch_others(|e| Some(get_caught_error_string(e)))
-        .catch_rust_panic(|e| Some(get_caught_error_string(e)))
-        .execute();
-
-        Ok(error)
-    }
-
     // Main entrypoint for runner.
     pub async fn correct(
         &mut self,
@@ -135,7 +112,7 @@ impl SyntaxCorrectionRunner {
         ddls: &[String],
     ) -> Result<String, SqlgenError> {
         for _ in 0..self.attempts {
-            let error = match self.get_prepare_error(query.clone()).await? {
+            let error = match get_prepare_error(query.clone())? {
                 Some(e) => e,
                 None => return Ok(query),
             };
@@ -156,7 +133,7 @@ impl SyntaxCorrectionRunner {
             };
         }
 
-        match self.get_prepare_error(query.clone()).await? {
+        match get_prepare_error(query.clone())? {
             Some(e) => Err(SqlgenError::SyntaxCorrectionFailed(e)),
             None => Ok(query),
         }
