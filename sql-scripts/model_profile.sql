@@ -73,7 +73,18 @@ RETURNS VOID
 LANGUAGE plpgsql
 STRICT
 AS $$
+DECLARE
+    engines TEXT[];
 BEGIN
+
+    engines := sqlgen_internal.get_engines_used_by_model(name);
+
+    IF array_length(engines, 1) IS NOT NULL THEN
+        RAISE EXCEPTION
+            'model % is still in use by engines: %',
+            name, engines;
+    END IF;
+
     DELETE FROM sqlgen_internal.model_profile mp
     WHERE mp.model_name = name;
 END;

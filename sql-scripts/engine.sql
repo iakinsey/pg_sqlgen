@@ -146,3 +146,28 @@ BEGIN
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.list_engines FROM public;
+
+--------------------------------------------------------------------------------
+-- Engine uses model
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.get_engines_used_by_model(
+    model_name TEXT
+)
+RETURNS TEXT []
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    engines TEXT[];
+BEGIN
+    SELECT ARRAY(
+        SELECT engine_name
+        FROM sqlgen_internal.engine
+        WHERE encoder_model = model_name
+           OR instruct_model = model_name
+    )
+    INTO engines;
+
+    RETURN engines;
+END
+$$;
