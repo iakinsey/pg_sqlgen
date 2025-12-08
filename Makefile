@@ -24,8 +24,17 @@ test:
 
 test-release: lint-sql test package test-packaging
 
-release: test-release
-	git tag $(tag)
+release:
+	@[ -n "$(tag)" ] || { echo "tag is required"; exit 1; }
+	sed -i "/^\[package\]/,/^\[/ s/^version = \".*\"/version = \"$(tag)\"/" Cargo.toml
+	$(MAKE) lint-sql
+	$(MAKE) test
+	$(MAKE) package
+	$(MAKE) test-packaging
+	git add Cargo.toml
+	git commit -m "$(tag) release"
+	git tag v$(tag)
+
 
 clean:
 	cargo clean
