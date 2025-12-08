@@ -20,3 +20,25 @@ END
 $$;
 
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_vector_column_type FROM public;
+
+
+--------------------------------------------------------------------------------
+-- Use vector search
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.use_vector_search()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF impl IS NULL OR impl = 'in-memory' THEN
+        RETURN FALSE
+    ELSIF impl = 'pgvector' THEN
+        RETURN TRUE
+    END IF;
+
+    RETURN FALSE;
+END
+$$;
+
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.use_vector_search FROM public;

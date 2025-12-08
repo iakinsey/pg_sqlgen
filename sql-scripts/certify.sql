@@ -9,17 +9,21 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_certified_queries_table(
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    vector_column_type TEXT;
 BEGIN
+  vector_column_type := sqlgen_internal.get_vector_column_type(vector_size);
+
   EXECUTE format($fmt$
     CREATE TABLE sqlgen_internal.certified_queries_%I (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         language_query TEXT NOT NULL,
         sql_query TEXT NOT NULL,
-        language_vector VECTOR(%s) NOT NULL
+        language_vector %s NOT NULL
     );
 
     REVOKE ALL ON TABLE sqlgen_internal.certified_queries_%I FROM PUBLIC;
-  $fmt$, engine, vector_size, engine, engine, engine);
+  $fmt$, engine, vector_column_type, engine, engine, engine);
 END
 $$;
 
@@ -57,17 +61,21 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.certify_query(
     id UUID,
     language_query TEXT,
     sql_query TEXT,
-    language_vector VECTOR
+    language_vector FLOAT4 []
 )
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    vector_column_type TEXT;
 BEGIN
+    vector_column_type := sqlgen_internal.get_vector_column_type(vector_size);
+
     EXECUTE format($fmt$
         INSERT INTO sqlgen_internal.certified_queries_%I
             (id, language_query, sql_query, language_vector)
-        VALUES ($1, $2, $3, $4)
-    $fmt$, engine)
+        VALUES ($1, $2, $3, $4::%s)
+    $fmt$, engine, vector_column_type)
     USING id, language_query, sql_query, language_vector;
 END
 $$;
@@ -81,7 +89,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.certify_query FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_certified_queries(
     engine_name TEXT,
-    language_query_vector VECTOR,
+    language_query_vector FLOAT4 [],
     query_limit INT
 )
 RETURNS TABLE (
@@ -91,6 +99,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    -- TODO use in-memory cosine similarity
     RETURN QUERY EXECUTE format($fmt$
         SELECT
             language_query,
@@ -103,7 +112,7 @@ BEGIN
             (language_vector <=> $1) ASC
         LIMIT $2
     $fmt$, engine_name)
-    USING language_query_vector, query_limit;
+    USING language_query_vector::VECTOR, query_limit;
 END
 $$;
 
