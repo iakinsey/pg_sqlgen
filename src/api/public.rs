@@ -32,13 +32,23 @@ mod sqlgen {
         },
         stores::{
             certify_store::CertifyStore,
-            config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
+            config_store::{
+                ConfigStore, DEFAULT_ENGINE_CONFIG_KEY, VECTOR_COLUMN_IMPL_DEFAULT,
+                VECTOR_COLUMN_IMPL_KEY, VECTOR_COLUMN_IMPL_PGVECTOR,
+            },
             engine_store::EngineStore,
             metadata_store::MetadataStore,
             model_store::ModelStore,
         },
         types::errors::SqlgenError,
-        utils::{globals::get_runtime, sql::get_prepare_error},
+        utils::{
+            globals::get_runtime,
+            sql::get_prepare_error,
+            vector::{
+                convert_vectors_to_in_memory, convert_vectors_to_pgvector,
+                guess_vectors_and_convert,
+            },
+        },
     };
     use pgrx::pg_extern;
 
@@ -162,6 +172,25 @@ mod sqlgen {
     #[pg_extern(name = "decertify_query")]
     fn decertify_query_1(id: &str) -> Result<(), SqlgenError> {
         decertify_query(id, None)
+    }
+
+    #[pg_extern]
+    fn toggle_pgvector() -> Result<(), SqlgenError> {
+        match ConfigStore::get_config_value(VECTOR_COLUMN_IMPL_KEY) {
+            Ok(ref s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => {
+                convert_vectors_to_in_memory()?;
+                Ok(())
+            }
+            Ok(ref s) if s == VECTOR_COLUMN_IMPL_DEFAULT => {
+                convert_vectors_to_pgvector()?;
+                Ok(())
+            }
+            Ok(_) => {
+                guess_vectors_and_convert()?;
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
     }
 }
 

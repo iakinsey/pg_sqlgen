@@ -22,6 +22,7 @@ extension_sql_file!(
 extension_sql_file!("../../sql-scripts/profiles.sql", name = "profiles");
 extension_sql_file!("../../sql-scripts/metadata.sql", name = "metadata");
 extension_sql_file!("../../sql-scripts/certify.sql", name = "certify");
+extension_sql_file!("../../sql-scripts/vectors.sql", name = "vectors");
 extension_sql_file!(
     "../../sql-scripts/finalized.sql",
     name = "finalized",

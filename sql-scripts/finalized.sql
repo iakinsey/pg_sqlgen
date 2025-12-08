@@ -14,11 +14,11 @@ FROM sqlgen_internal.get_descriptions();
 CREATE OR REPLACE FUNCTION sqlgen_internal.encode_text(
     engine TEXT, text_value TEXT
 )
-RETURNS VECTOR
+RETURNS FLOAT4 []
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    RETURN sqlgen_internal.internal_encode_text(engine, text_value)::vector;
+    RETURN sqlgen_internal.internal_encode_text(engine, text_value);
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.encode_text(TEXT, TEXT) FROM public;

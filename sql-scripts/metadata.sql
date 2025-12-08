@@ -51,7 +51,13 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  vector_column_type TEXT;
 BEGIN
+  SELECT
+    sqlgen_internal.get_vector_column_type(vector_size)
+  INTO vector_column_type;
+
   EXECUTE format($fmt$
     CREATE TABLE sqlgen_internal.db_metadata_%I (
       schema_name     TEXT NOT NULL,
@@ -59,10 +65,10 @@ BEGIN
       column_name     TEXT NOT NULL,
       ddl             TEXT NOT NULL,
       comment         TEXT,
-      ddl_vector      VECTOR(%s) NOT NULL,
-      comment_vector  VECTOR(%s)
+      ddl_vector      %s NOT NULL,
+      comment_vector  %s
     );
-  $fmt$, engine, vector_size, vector_size);
+  $fmt$, engine, vector_column_type, vector_column_type);
 
   EXECUTE format($fmt$
     REVOKE ALL ON TABLE sqlgen_internal.db_metadata_%I FROM PUBLIC;
@@ -436,6 +442,10 @@ END;
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.update_comment FROM public;
 
+--------------------------------------------------------------------------------
+-- Update comment event
+--------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION sqlgen_internal.do_update_comment(
     engine TEXT,
     schema_name TEXT,
@@ -448,15 +458,21 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   comment_vector TEXT;
+  vector_column_type TEXT;
 BEGIN
   comment_vector := sqlgen_internal.encode_text(engine, comment);
+  vector_column_type := sqlgen_internal.get_vector_column_type(vector_size);
 
   EXECUTE format($fmt$
-  UPDATE sqlgen_internal.db_metadata_%I
-  SET comment = %L, comment_vector = %L
-  WHERE table_name = %L
-  AND column_name = %L
-  $fmt$, engine, comment, comment_vector, table_name, column_name);
-
+    UPDATE sqlgen_internal.db_metadata_%I
+    SET
+      comment = %L,
+      comment_vector = %L::%s
+    WHERE
+      table_name = %L
+      AND column_name = %L
+  $fmt$, engine, comment, comment_vector, vector_column_type, table_name, column_name);
 END
 $$;
+
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.do_update_comment FROM public;
