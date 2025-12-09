@@ -6,11 +6,7 @@ use crate::{
         structs::table_metadata::{CrawlSchema, TableMetadata},
         traits::driver::TextEncoderDriver,
     },
-    utils::{
-        rpc::wrap_encode,
-        sql::get_column_heap,
-        vector::{self, get_vector_column_type},
-    },
+    utils::{rpc::wrap_encode, sql::get_column_heap, vector::get_vector_column_type},
 };
 
 // Handles state management for table metadata. For every engine, an associated
@@ -261,9 +257,9 @@ mod tests {
                 let comment_vector: String = get_column_heap(&row, "comment_vector").unwrap();
 
                 assert_eq!(written_schema_name, schema_name);
-                assert_eq!(ddl_vector, "[0,0.1,0.2,0.3]");
+                assert_eq!(ddl_vector, "{0,0.1,0.2,0.3}");
                 assert_eq!(comment, "Hello world");
-                assert_eq!(comment_vector, "[0,0.1,0.2,0.3]");
+                assert_eq!(comment_vector, "{0,0.1,0.2,0.3}");
             }
 
             assert_eq!(meta_count, 18);
@@ -314,7 +310,7 @@ mod tests {
 
                 assert_eq!(schema_name, "test_example");
                 assert_eq!(table_name, "authors");
-                assert_eq!(ddl_vector, "[0,0.1,0.2,0.3]");
+                assert_eq!(ddl_vector, "{0,0.1,0.2,0.3}");
             }
 
             assert_eq!(count, 2)
@@ -360,7 +356,7 @@ mod tests {
 
             assert_eq!(schema_name, "test_example");
             assert_eq!(table_name, "authors");
-            assert_eq!(ddl_vector, "[0,0.1,0.2,0.3]");
+            assert_eq!(ddl_vector, "{0,0.1,0.2,0.3}");
         });
 
         // Delete table
@@ -438,7 +434,7 @@ mod tests {
                 if column_name == "quantity" {
                     count += 1;
                     assert_eq!(comment.unwrap(), "This is a test");
-                    assert_eq!(comment_vector.unwrap(), "[0,0.1,0.2,0.3]");
+                    assert_eq!(comment_vector.unwrap(), "{0,0.1,0.2,0.3}");
                 } else if column_name == "product_id" {
                     count += 1;
                     assert!(comment.is_none());

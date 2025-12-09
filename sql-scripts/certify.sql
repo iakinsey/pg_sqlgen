@@ -12,7 +12,7 @@ AS $$
 DECLARE
     vector_column_type TEXT;
 BEGIN
-  vector_column_type := sqlgen_internal.get_vector_column_type(vector_size);
+  vector_column_type := sqlgen_internal.get_vector_column_type_sized(vector_size);
 
   EXECUTE format($fmt$
     CREATE TABLE sqlgen_internal.certified_queries_%I (
@@ -69,7 +69,7 @@ AS $$
 DECLARE
     vector_column_type TEXT;
 BEGIN
-    vector_column_type := sqlgen_internal.get_vector_column_type(vector_size);
+    vector_column_type := sqlgen_internal.get_vector_column_type();
 
     EXECUTE format($fmt$
         INSERT INTO sqlgen_internal.certified_queries_%I

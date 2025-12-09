@@ -55,7 +55,7 @@ DECLARE
   vector_column_type TEXT;
 BEGIN
   SELECT
-    sqlgen_internal.get_vector_column_type(vector_size)
+    sqlgen_internal.get_vector_column_type_sized(vector_size)
   INTO vector_column_type;
 
   EXECUTE format($fmt$
@@ -478,7 +478,7 @@ DECLARE
   vector_column_type TEXT;
 BEGIN
   comment_vector := sqlgen_internal.encode_text(engine, comment);
-  vector_column_type := sqlgen_internal.get_vector_column_type(vector_size);
+  vector_column_type := sqlgen_internal.get_vector_column_type();
 
   EXECUTE format($fmt$
     UPDATE sqlgen_internal.db_metadata_%I

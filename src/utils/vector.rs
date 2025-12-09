@@ -18,15 +18,6 @@ pub fn guess_vectors_and_convert() -> Result<(), SqlgenError> {
     unimplemented!()
 }
 
-pub fn use_vector_search() -> bool {
-    match ConfigStore::get_config_value(VECTOR_COLUMN_IMPL_KEY) {
-        Ok(s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => true,
-        Ok(s) if s == VECTOR_COLUMN_IMPL_DEFAULT => false,
-        Err(SqlgenError::ConfigDoesntExist(_)) => false,
-        _ => false,
-    }
-}
-
 pub fn get_vector_column_type() -> String {
     match ConfigStore::get_config_value(VECTOR_COLUMN_IMPL_KEY) {
         Ok(s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => format!("VECTOR"),
