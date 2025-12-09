@@ -1,5 +1,3 @@
-use pgrx::prelude::*;
-
 use crate::{
     stores::{
         config_store::{ConfigStore, DEFAULT_ENGINE_CONFIG_KEY},
@@ -7,6 +5,7 @@ use crate::{
     },
     types::{errors::SqlgenError, structs::engine::TextToSqlEngine},
 };
+use pgrx::prelude::*;
 
 // Retrieve engine by name. If one isn't provided, return the default engine.
 fn get_engine(name: Option<&str>) -> TextToSqlEngine {
@@ -51,6 +50,7 @@ mod sqlgen {
         },
     };
     use pgrx::pg_extern;
+    use simsimd::SpatialSimilarity;
 
     // Create a new model instance usable by engines.
     #[pg_extern]
@@ -191,6 +191,12 @@ mod sqlgen {
             }
             Err(e) => Err(e),
         }
+    }
+
+    // Calculates cosine_distance with optional SIMD optimizations
+    #[pg_extern]
+    fn cosine_distance(a: Vec<f32>, b: Vec<f32>) -> Option<f64> {
+        f32::cosine(a.as_slice(), b.as_slice())
     }
 }
 
