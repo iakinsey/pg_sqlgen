@@ -1,6 +1,6 @@
 -- Setup extension
 DROP EXTENSION IF EXISTS sqlgen CASCADE;
-CREATE EXTENSION sqlgen CASCADE;
+CREATE EXTENSION sqlgen;
 -- Create model.
 SELECT sqlgen.add_model(
     'stub_model',
