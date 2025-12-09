@@ -43,7 +43,9 @@ BEGIN
 END
 $$;
 
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_vector_column_type_sized FROM public;
+REVOKE
+EXECUTE
+ON FUNCTION sqlgen_internal.get_vector_column_type_sized FROM public;
 
 
 --------------------------------------------------------------------------------

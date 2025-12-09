@@ -20,7 +20,7 @@ pub fn guess_vectors_and_convert() -> Result<(), SqlgenError> {
 
 pub fn get_vector_column_type() -> String {
     match ConfigStore::get_config_value(VECTOR_COLUMN_IMPL_KEY) {
-        Ok(s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => format!("VECTOR"),
+        Ok(s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => "VECTOR".into(),
         Ok(s) if s == VECTOR_COLUMN_IMPL_DEFAULT => "FLOAT4[]".into(),
         Err(SqlgenError::ConfigDoesntExist(_)) => "FLOAT4[]".into(),
         _ => "FLOAT4[]".into(),
