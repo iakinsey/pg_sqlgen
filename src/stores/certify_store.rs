@@ -35,7 +35,7 @@ impl CertifyStore {
     ) -> Result<String, SqlgenError> {
         let id = Uuid::new_v4().to_string();
         Spi::run_with_args(
-            "SELECT sqlgen_internal.certify_query($1, $2::UUID, $3, $4, $5::VECTOR);",
+            "SELECT sqlgen_internal.certify_query($1, $2::UUID, $3, $4, $5);",
             &[
                 engine_name.into(),
                 id.clone().into(),
@@ -79,7 +79,7 @@ impl CertifyStore {
             SELECT
                 language_query,
                 sql_query
-            FROM sqlgen_internal.get_certified_queries($1, $2::VECTOR, $3)
+            FROM sqlgen_internal.get_certified_queries($1, $2, $3)
             t(language_query, sql_query) 
             "#;
 

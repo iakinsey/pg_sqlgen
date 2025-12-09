@@ -98,23 +98,44 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    use_vec BOOLEAN;
 BEGIN
-    -- TODO use in-memory cosine similarity
-    RETURN QUERY EXECUTE format($fmt$
-        SELECT
-            language_query,
-            sql_query
-        FROM
-            sqlgen_internal.certified_queries_%I
-        WHERE
-            (language_vector <=> $1) <= 0.25
-        ORDER BY
-            (language_vector <=> $1) ASC
-        LIMIT $2
-    $fmt$, engine_name)
-    USING language_query_vector::VECTOR, query_limit;
+    use_vec := sqlgen_internal.use_vector_search();
+
+    IF use_vec THEN
+        RETURN QUERY EXECUTE format($fmt$
+            SELECT language_query, sql_query
+            FROM sqlgen_internal.certified_queries_%I
+            WHERE (language_vector <=> $1) <= 0.25
+            ORDER BY (language_vector <=> $1) ASC
+            LIMIT $2
+        $fmt$, engine_name)
+        USING language_query_vector::VECTOR, query_limit;
+    ELSE
+        RETURN QUERY EXECUTE format($fmt$
+            SELECT
+                language_query,
+                sql_query
+            FROM (
+                SELECT
+                    language_query,
+                    sql_query,
+                    sqlgen.cosine_distance(language_vector, $1) AS dist
+                FROM
+                    sqlgen_internal.certified_queries_%I
+            ) t
+            WHERE
+                dist <= 0.25
+            ORDER BY
+                dist ASC
+            LIMIT $2
+        $fmt$, engine_name)
+        USING language_query_vector, query_limit;
+    END IF;
 END
 $$;
+
 
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_certified_queries FROM public;
 

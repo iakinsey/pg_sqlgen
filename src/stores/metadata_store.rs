@@ -6,7 +6,11 @@ use crate::{
         structs::table_metadata::{CrawlSchema, TableMetadata},
         traits::driver::TextEncoderDriver,
     },
-    utils::{rpc::wrap_encode, sql::get_column_heap},
+    utils::{
+        rpc::wrap_encode,
+        sql::get_column_heap,
+        vector::{self, get_vector_column_type},
+    },
 };
 
 // Handles state management for table metadata. For every engine, an associated
@@ -91,13 +95,14 @@ impl MetadataStore {
         engine: &str,
         metadatas: Vec<TableMetadata>,
     ) -> Result<(), SqlgenError> {
+        let vector_column_type = get_vector_column_type();
         let query = format!(
             "
             INSERT INTO sqlgen_internal.db_metadata_{} (
                 schema_name, table_name, column_name, ddl, comment, ddl_vector, comment_vector
-            ) VALUES ($1, $2, $3, $4, $5, $6::VECTOR, $7::VECTOR);
+            ) VALUES ($1, $2, $3, $4, $5, $6::{}, $7::{});
         ",
-            engine
+            engine, vector_column_type, vector_column_type
         );
 
         Spi::connect(|client| {
@@ -150,7 +155,7 @@ impl MetadataStore {
         user_query: Vec<f32>,
         limit: i32,
     ) -> Result<Vec<String>, SqlgenError> {
-        let query = "SELECT sqlgen_internal.get_similar_ddls($1, $2::VECTOR, $3) AS ddl;";
+        let query = "SELECT sqlgen_internal.get_similar_ddls($1, $2, $3) AS ddl;";
 
         Spi::connect(|client| {
             let rows = client.select(

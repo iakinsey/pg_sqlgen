@@ -4,4 +4,3 @@ module_pathname = 'sqlgen'
 relocatable = false
 superuser = true
 trusted = false
-requires = 'vector'

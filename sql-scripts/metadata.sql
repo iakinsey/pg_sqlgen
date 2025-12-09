@@ -84,24 +84,41 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.create_metadata_table FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.get_similar_ddls(
     engine TEXT,
-    user_query VECTOR,
+    user_query FLOAT4 [],
     similarity_limit INT
 )
 RETURNS SETOF TEXT
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  use_vec_search BOOLEAN;
 BEGIN
-  RETURN QUERY EXECUTE format(
-    'SELECT ddl
-       FROM %I.%I
-       ORDER BY ddl_vector <-> $1
-       LIMIT $2',
-    'sqlgen_internal',
-    'db_metadata_' || engine
-  )
-  USING user_query, similarity_limit;
+  use_vec_search := sqlgen_internal.use_vector_search();
+
+  IF use_vec_search THEN
+    RETURN QUERY EXECUTE format(
+      'SELECT ddl
+         FROM %I.%I
+         ORDER BY ddl_vector <-> $1::VECTOR
+         LIMIT $2',
+      'sqlgen_internal',
+      'db_metadata_' || engine
+    )
+    USING user_query, similarity_limit;
+  ELSE
+    RETURN QUERY EXECUTE format(
+      'SELECT ddl
+         FROM %I.%I
+         ORDER BY sqlgen.cosine_distance($1::float4[], ddl_vector)
+         LIMIT $2',
+      'sqlgen_internal',
+      'db_metadata_' || engine
+    )
+    USING user_query, similarity_limit;
+  END IF;
 END
 $$;
+
 
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_similar_ddls FROM public;
 

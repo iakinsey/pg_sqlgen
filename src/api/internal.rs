@@ -54,6 +54,7 @@ mod sqlgen_internal {
     use crate::utils::sql::get_column_heap;
     use crate::utils::sql::get_column_heap_optional;
     use crate::utils::sql::get_current_schema;
+    use crate::utils::vector::get_vector_column_type;
 
     // Create associated metadata rows for a table so that it can be tracked for
     // text-to-sql generation.
@@ -145,6 +146,7 @@ mod sqlgen_internal {
         })?;
 
         let mut table_metadata: Vec<TableMetadata> = Vec::new();
+        let vector_column_type = get_vector_column_type();
 
         for (i, (column_name, ddl, comment)) in metadata.iter().enumerate() {
             let ddl_vector = ddl_encodings.get(i).cloned().ok_or_else(|| {
@@ -176,9 +178,9 @@ mod sqlgen_internal {
             comment,
             ddl_vector,
             comment_vector
-        ) VALUES ($1, $2, $3, $4, $5, $6::VECTOR, $7::VECTOR);
+        ) VALUES ($1, $2, $3, $4, $5, $6::{}, $7::{});
     "#,
-            engine_name
+            engine_name, vector_column_type, vector_column_type
         );
 
         Spi::connect(|client| {
