@@ -191,6 +191,25 @@ impl MetadataStore {
             Ok(results)
         })
     }
+
+    pub fn get_engines_and_vector_length() -> Result<Vec<(String, i32)>, SqlgenError> {
+        let query =
+            "SELECT engine_name, vector_size FROM sqlgen_internal.get_engines_and_vector_sizes()";
+
+        Spi::connect(|client| {
+            let rows = client.select(query, None, &[])?;
+            let mut results = Vec::new();
+
+            for row in rows {
+                let engine_name: String = get_column_heap(&row, "engine_name")?;
+                let vector_size: i32 = get_column_heap(&row, "vector_size")?;
+
+                results.push((engine_name, vector_size))
+            }
+
+            Ok(results)
+        })
+    }
 }
 
 #[cfg(any(test, feature = "pg_test"))]

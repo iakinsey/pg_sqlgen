@@ -1,6 +1,9 @@
 use pgrx::Spi;
 
-use crate::types::{errors::SqlgenError, structs::engine::TextToSqlEngine};
+use crate::{
+    types::{errors::SqlgenError, structs::engine::TextToSqlEngine},
+    utils::sql::get_column_heap,
+};
 
 // Handles state management for engines.
 pub struct EngineStore {}
@@ -69,6 +72,22 @@ impl EngineStore {
         });
 
         result
+    }
+    pub fn list_engines() -> Result<Vec<String>, SqlgenError> {
+        let query = "SELECT engine_name FROM sqlgen_internal.list_engines();";
+
+        Spi::connect(|client| {
+            let rows = client.select(query, None, &[])?;
+            let mut results = Vec::new();
+
+            for row in rows {
+                let engine_name: String = get_column_heap(&row, "engine_name")?;
+
+                results.push(engine_name)
+            }
+
+            Ok(results)
+        })
     }
 }
 

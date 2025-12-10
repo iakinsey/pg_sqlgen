@@ -43,10 +43,7 @@ mod sqlgen {
         utils::{
             globals::get_runtime,
             sql::get_prepare_error,
-            vector::{
-                convert_vectors_to_in_memory, convert_vectors_to_pgvector,
-                guess_vectors_and_convert,
-            },
+            vector::{convert_vectors_to_in_memory, convert_vectors_to_pgvector},
         },
     };
     use pgrx::pg_extern;
@@ -174,8 +171,9 @@ mod sqlgen {
         decertify_query(id, None)
     }
 
+    // Toggles vector implementation used internally
     #[pg_extern]
-    fn toggle_pgvector() -> Result<(), SqlgenError> {
+    fn toggle_vector_impl() -> Result<(), SqlgenError> {
         match ConfigStore::get_config_value(VECTOR_COLUMN_IMPL_KEY) {
             Ok(ref s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => {
                 convert_vectors_to_in_memory()?;
@@ -185,8 +183,11 @@ mod sqlgen {
                 convert_vectors_to_pgvector()?;
                 Ok(())
             }
-            Ok(_) => {
-                guess_vectors_and_convert()?;
+            Ok(_) => Err(SqlgenError::UnsupportedScenario(
+                "Invalid configuration set for vector column type",
+            )),
+            Err(SqlgenError::ConfigDoesntExist(_)) => {
+                convert_vectors_to_pgvector()?;
                 Ok(())
             }
             Err(e) => Err(e),
