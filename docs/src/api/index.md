@@ -7,3 +7,4 @@ All functions and views live under the `sqlgen` prefix.
 - [Model](./model.md)
 - [Model Configs](./model_configs.md)
 - [Query Certification](./certify.md)
+- [Vector](./vector.md)

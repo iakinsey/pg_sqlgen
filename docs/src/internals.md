@@ -1,6 +1,28 @@
 # Internals
 
-These Internal mechanisms may inform how to configure and tune the extension.
+These internal mechanisms may inform how to configure and tune the extension.
+
+## Vector backends {#vector-backend}
+
+Vectors enable search capabilities on entities necessary for the RAG workflow.
+The vector backend determines how vectors are stored and processed.
+
+The backend can be toggled via
+[`toggle_vector_impl()`](./api/vector.md#toggle-vector-impl).
+
+### default
+
+Vectors are stored as an array of single precision floating-point numbers
+(`FLOAT4[]`). Cosine distance is computed with an internal function that
+detects available CPU features and leverages SIMD instructions when
+supported.
+
+### pg_vector
+
+Uses the `VECTOR` type and cosine distance `<=>` operator. These are usually
+provided by [pgvector](https://github.com/pgvector/pgvector), but other
+extensions, such as [VectorChord](https://github.com/tensorchord/VectorChord),
+can be used too.
 
 ## RAG workflow {#rag-workflow}
 
@@ -9,7 +31,7 @@ The rag workflow for text-to-sql generation works as follows:
 engine's `table_filter_type` value:
     - `smart` - The instruct model is asked to filter for DDLs relevant to the
     user query.
-    - `quick` - DDLs are filtered via cosine similarity through pgvector.
+    - `quick` - DDLs are filtedetects available CPU features and leverages SIMD instructions when supported.red via cosine similarity through pgvector.
 - Provide the user query, DDLs, and relevant instructions to the instruct model.
 - The resulting query run against a `PREPARE` statement to check if it's valid.
     - If it's valid, return the query to the user.

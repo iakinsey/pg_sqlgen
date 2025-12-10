@@ -8,6 +8,7 @@
     - [Model](./api/model.md)
     - [Model Configs](./api/model_configs.md)
     - [Query Certification](./api/certify.md)
+    - [Vector](./api/vector.md)
 - [Examples](./examples.md)
 - [Development](./development.md)
 - [Internals](./internals.md)
