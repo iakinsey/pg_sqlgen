@@ -29,7 +29,7 @@ $ export PG_CONFIG=/path/to/pg_config
 
 ### Setup pgvector {#setup-pgvector}
 
-The __pgvector__ extension is a required dependency for __pg_sqlgen__. It must be
+The __pgvector__ extension is an optional dependency for __pg_sqlgen__. It must be
 installed manually.
 
 Note: This step is not necessary if __pgvector__ is already installed on an

@@ -29,6 +29,8 @@ $ dnf -y install pg_sqlgen-<release-version>-1.x86_64.rpm
 This assumes you already have PostgreSQL installed.
 
 Follow the instructions in __[Setup pgvector](development.md#setup-pgvector)__ before continuing.
+This is necessary for tests to pass, but not strictly needed for a functional developer environment.
+
 
 ```bash
 $ cargo pgrx init --pg-config "$(which pg_config)"
