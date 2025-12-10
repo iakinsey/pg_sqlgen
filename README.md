@@ -18,7 +18,7 @@ text-to-sql solutions, including:
 
 See [Documentation - Getting Started](http://www.iankinsey.com/pg_sqlgen/latest/getting-started.html)
 
-## Setup Development Environment
+## Set up Development Environment
 
 First, initialize pgrx.
 
@@ -28,7 +28,9 @@ $ cargo pgrx init --pg18 download
 $ export PG_CONFIG=$(cargo pgrx info pg-config 18)
 ```
 
-Clone pgvector and set it up
+[Optional] Clone pgvector, build, and install it.
+
+This is necessary for tests to pass, but not strictly needed for a functional developer environment.
 
 ```bash
 $ git clone https://github.com/pgvector/pgvector.git
@@ -76,7 +78,7 @@ sqlfluff fix .
 
 ```sql
 -- Create the extension
-CREATE EXTENSION sqlgen CASCADE;
+CREATE EXTENSION sqlgen;
 
 -- First add a language model, for this example OpenAI models are used
 SELECT sqlgen.add_model('openai_chat', sqlgen.openai_completions_config(api_key => 'sk-proj-12345'));
