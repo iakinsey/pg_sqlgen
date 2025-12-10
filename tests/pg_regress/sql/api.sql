@@ -14,6 +14,9 @@ SELECT sqlgen.add_model(
 -- Verify model exists.
 SELECT * FROM sqlgen.models; -- noqa: AM04
 
+-- Create a table before creating the engine
+CREATE TABLE s (x INT);
+
 -- Create engine.
 SELECT sqlgen.create_engine('stub_engine', 'stub_model', 'stub_model', 'quick');
 
@@ -32,10 +35,10 @@ ALTER TABLE t ADD COLUMN y INT;
 -- Add a new comment to verify triggers don't fail.
 COMMENT ON TABLE t IS 'test';
 
--- Execute query via cursor with default engine.
+-- Generate query with default engine.
 SELECT sqlgen.generate('A default stub query');
 
--- Execute query via cursor with engine parameter.
+-- Generate query with engine parameter.
 SELECT sqlgen.generate('Another stub query', 'stub_engine');
 
 -- Fail to certify a query

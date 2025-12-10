@@ -1,0 +1,67 @@
+-- Setup extension
+DROP EXTENSION IF EXISTS sqlgen CASCADE;
+DROP EXTENSION IF EXISTS vector;
+CREATE EXTENSION sqlgen;
+-- Create model.
+SELECT sqlgen.add_model(
+    'stub_model_1',
+    sqlgen.stub_config(
+        '{"query": "SELECT 1;"}',
+        ARRAY[1.1, 1.2, 2.3, 3.4]::REAL []
+    )
+);
+ add_model 
+-----------
+ 
+(1 row)
+
+-- Create engine.
+SELECT sqlgen.create_engine(
+    'stub_engine_1',
+    'stub_model_1',
+    'stub_model_1',
+    'quick'
+);
+ create_engine 
+---------------
+ 
+(1 row)
+
+-- Create a new table to verify triggers don't fail.
+CREATE TABLE v (x INT);
+ERROR:  relation "v" already exists
+-- Add a new comment 
+COMMENT ON TABLE v IS 'test';
+-- Fail to change vector impl
+SELECT sqlgen.toggle_vector_impl();
+ERROR:  Database lacks VECTOR type
+-- Create extension then try again
+CREATE EXTENSION vector;
+-- Change vector impl to VECTOR
+SELECT sqlgen.toggle_vector_impl();
+ toggle_vector_impl 
+--------------------
+ pgvector
+(1 row)
+
+-- Execute query
+SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
+ generate  
+-----------
+ SELECT 1;
+(1 row)
+
+-- Change vector impl to VECTOR
+SELECT sqlgen.toggle_vector_impl();
+ toggle_vector_impl 
+--------------------
+ in-memory
+(1 row)
+
+-- Execute query
+SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
+ generate  
+-----------
+ SELECT 1;
+(1 row)
+

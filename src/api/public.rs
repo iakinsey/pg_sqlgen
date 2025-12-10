@@ -173,22 +173,22 @@ mod sqlgen {
 
     // Toggles vector implementation used internally
     #[pg_extern]
-    fn toggle_vector_impl() -> Result<(), SqlgenError> {
+    fn toggle_vector_impl() -> Result<&'static str, SqlgenError> {
         match ConfigStore::get_config_value(VECTOR_COLUMN_IMPL_KEY) {
             Ok(ref s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => {
                 convert_vectors_to_in_memory()?;
-                Ok(())
+                Ok(VECTOR_COLUMN_IMPL_DEFAULT)
             }
             Ok(ref s) if s == VECTOR_COLUMN_IMPL_DEFAULT => {
                 convert_vectors_to_pgvector()?;
-                Ok(())
+                Ok(VECTOR_COLUMN_IMPL_PGVECTOR)
             }
             Ok(_) => Err(SqlgenError::UnsupportedScenario(
                 "Invalid configuration set for vector column type",
             )),
             Err(SqlgenError::ConfigDoesntExist(_)) => {
                 convert_vectors_to_pgvector()?;
-                Ok(())
+                Ok(VECTOR_COLUMN_IMPL_PGVECTOR)
             }
             Err(e) => Err(e),
         }

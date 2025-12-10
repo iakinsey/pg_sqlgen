@@ -99,7 +99,7 @@ BEGIN
     RETURN QUERY EXECUTE format(
       'SELECT ddl
          FROM %I.%I
-         ORDER BY ddl_vector <-> $1::VECTOR
+         ORDER BY ddl_vector::VECTOR <=> $1::VECTOR
          LIMIT $2',
       'sqlgen_internal',
       'db_metadata_' || engine
@@ -493,49 +493,3 @@ END
 $$;
 
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.do_update_comment FROM public;
-
---------------------------------------------------------------------------------
--- Get engines and vector sizes
---------------------------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION sqlgen_internal.get_engines_and_vector_sizes()
-RETURNS TABLE (engine_name TEXT, vector_size INT)
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    e          sqlgen_internal.engine;
-    ddl_vec    FLOAT4[];
-    sql_stmt   TEXT;
-BEGIN
-    FOR e IN
-        SELECT *
-        FROM sqlgen_internal.list_engines()
-    LOOP
-        sql_stmt := format($fmt$
-            SELECT 
-              ddl_vector::FLOAT4[]
-            FROM sqlgen_internal.db_metadata_%I
-            LIMIT 1
-        $fmt$,
-            e.engine_name
-        );
-
-        BEGIN
-            EXECUTE sql_stmt INTO ddl_vec;
-        EXCEPTION
-            WHEN undefined_table THEN
-                CONTINUE;
-        END;
-
-        IF ddl_vec IS NOT NULL THEN
-            engine_name := e.engine_name;
-            vector_size := array_length(ddl_vec, 1);
-            RETURN NEXT;
-        END IF;
-    END LOOP;
-END
-$$;
-
-REVOKE
-EXECUTE ON
-FUNCTION sqlgen_internal.get_engines_and_vector_sizes FROM public;

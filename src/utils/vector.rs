@@ -7,10 +7,10 @@ use crate::{
             VECTOR_COLUMN_IMPL_PGVECTOR,
         },
         engine_store::EngineStore,
-        metadata_store::MetadataStore,
+        model_store::ModelStore,
     },
     types::errors::SqlgenError,
-    utils::sql::get_column,
+    utils::{globals::get_runtime, sql::get_column},
 };
 
 pub fn convert_vectors_to_pgvector() -> Result<(), SqlgenError> {
@@ -20,12 +20,18 @@ pub fn convert_vectors_to_pgvector() -> Result<(), SqlgenError> {
         ));
     }
 
-    let mut queries = vec![];
+    let rt = get_runtime();
 
-    for (engine, size) in MetadataStore::get_engines_and_vector_length()? {
-        let query = format!(
-            r#"
-             ALTER TABLE sqlgen_internal.db_metadata_{engine}
+    let queries: Result<Vec<String>, SqlgenError> = rt.block_on(async {
+        let mut queries = vec![];
+        for engine_name in EngineStore::list_engines()? {
+            let engine = EngineStore::get_engine(&engine_name)?;
+            let encoder_model = ModelStore::get_text_encoder_model(&engine.encoder_model)?;
+            let size = encoder_model.dimensions().await?;
+
+            let query = format!(
+                r#"
+             ALTER TABLE sqlgen_internal.db_metadata_{engine_name}
                 ALTER COLUMN ddl_vector
                     TYPE VECTOR({size})
                     USING (ddl_vector::VECTOR({size})),
@@ -34,12 +40,15 @@ pub fn convert_vectors_to_pgvector() -> Result<(), SqlgenError> {
                 TYPE VECTOR({size})
                 USING (comment_vector::VECTOR({size}));
         "#
-        );
+            );
 
-        queries.push(query)
-    }
+            queries.push(query)
+        }
 
-    let query = queries.join("");
+        Ok(queries)
+    });
+
+    let query = queries?.join("");
 
     Spi::run(&query)?;
     ConfigStore::set_config_value(VECTOR_COLUMN_IMPL_KEY, VECTOR_COLUMN_IMPL_PGVECTOR)?;

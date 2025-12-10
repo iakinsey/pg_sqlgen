@@ -107,8 +107,8 @@ BEGIN
         RETURN QUERY EXECUTE format($fmt$
             SELECT language_query, sql_query
             FROM sqlgen_internal.certified_queries_%I
-            WHERE (language_vector <=> $1) <= 0.25
-            ORDER BY (language_vector <=> $1) ASC
+            WHERE (language_vector::VECTOR <=> $1::VECTOR) <= 0.25
+            ORDER BY (language_vector::VECTOR <=> $1::VECTOR) ASC
             LIMIT $2
         $fmt$, engine_name)
         USING language_query_vector::VECTOR, query_limit;
