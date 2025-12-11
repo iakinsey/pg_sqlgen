@@ -2,6 +2,7 @@
 DROP EXTENSION IF EXISTS sqlgen CASCADE;
 DROP EXTENSION IF EXISTS vector;
 CREATE EXTENSION sqlgen;
+DROP TABLE IF EXISTS v;
 
 -- Create model.
 SELECT sqlgen.add_model(
