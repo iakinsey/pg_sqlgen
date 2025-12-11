@@ -78,7 +78,7 @@ $$;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen.set_vector_backend(
-    instance TEXT DEFAULT NULL
+    backend TEXT DEFAULT NULL
 )
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -86,7 +86,7 @@ AS $$
 DECLARE
     result TEXT;
 BEGIN
-    SELECT sqlgen_internal.set_vector_backend_external(instance) INTO result;
+    SELECT sqlgen_internal.set_vector_backend_external(backend) INTO result;
     RETURN result;
 END
 $$;

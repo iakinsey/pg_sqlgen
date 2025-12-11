@@ -7,8 +7,8 @@ These internal mechanisms may inform how to configure and tune the extension.
 Vectors enable search capabilities on entities necessary for the RAG workflow.
 The vector backend determines how vectors are stored and processed.
 
-The backend can be toggled via
-[`toggle_vector_impl()`](./api/vector.md#toggle-vector-impl).
+The backend can be changed via
+[`set_vector_backend()`](./api/vector.md#set-vector-backend).
 
 ### default
 
@@ -17,7 +17,7 @@ Vectors are stored as an array of single precision floating-point numbers
 detects available CPU features and leverages SIMD instructions when
 supported.
 
-### pg_vector
+### pgvector
 
 Uses the `VECTOR` type and cosine distance `<=>` operator. These are usually
 provided by [pgvector](https://github.com/pgvector/pgvector), but other

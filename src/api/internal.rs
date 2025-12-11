@@ -300,8 +300,8 @@ mod sqlgen_internal {
     }
 
     #[pg_extern]
-    fn set_vector_backend_external(instance: Option<&str>) -> Result<&'static str, SqlgenError> {
-        match instance {
+    fn set_vector_backend_external(backend: Option<&str>) -> Result<&'static str, SqlgenError> {
+        match backend {
             None | Some("") => match ConfigStore::get_config_value(VECTOR_COLUMN_IMPL_KEY) {
                 Ok(ref s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => {
                     convert_vectors_to_in_memory()?;
