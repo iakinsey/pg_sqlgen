@@ -33,13 +33,13 @@ CREATE TABLE v (x INT);
 -- Add a new comment 
 COMMENT ON TABLE v IS 'test';
 -- Fail to change vector impl
-SELECT sqlgen.toggle_vector_impl();
+SELECT sqlgen.set_vector_backend();
 ERROR:  Database lacks VECTOR type
 -- Create extension then try again
 CREATE EXTENSION vector;
 -- Change vector impl to VECTOR
-SELECT sqlgen.toggle_vector_impl();
- toggle_vector_impl 
+SELECT sqlgen.set_vector_backend();
+ set_vector_backend 
 --------------------
  pgvector
 (1 row)
@@ -52,8 +52,8 @@ SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
 (1 row)
 
 -- Change vector impl to VECTOR
-SELECT sqlgen.toggle_vector_impl();
- toggle_vector_impl 
+SELECT sqlgen.set_vector_backend();
+ set_vector_backend 
 --------------------
  in-memory
 (1 row)

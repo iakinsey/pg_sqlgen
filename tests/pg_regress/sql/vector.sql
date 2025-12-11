@@ -28,19 +28,19 @@ CREATE TABLE v (x INT);
 COMMENT ON TABLE v IS 'test';
 
 -- Fail to change vector impl
-SELECT sqlgen.toggle_vector_impl();
+SELECT sqlgen.set_vector_backend();
 
 -- Create extension then try again
 CREATE EXTENSION vector;
 
 -- Change vector impl to VECTOR
-SELECT sqlgen.toggle_vector_impl();
+SELECT sqlgen.set_vector_backend();
 
 -- Execute query
 SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
 
 -- Change vector impl to VECTOR
-SELECT sqlgen.toggle_vector_impl();
+SELECT sqlgen.set_vector_backend();
 
 -- Execute query
 SELECT sqlgen.generate('A default stub query', 'stub_engine_1');

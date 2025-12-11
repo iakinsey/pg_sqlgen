@@ -72,3 +72,21 @@ AS $$
         explain_query_template
     );
 $$;
+
+--------------------------------------------------------------------------------
+-- Change vector backend
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen.set_vector_backend(
+    instance TEXT DEFAULT NULL
+)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    result TEXT;
+BEGIN
+    SELECT sqlgen_internal.set_vector_backend_external(instance) INTO result;
+    RETURN result;
+END
+$$;

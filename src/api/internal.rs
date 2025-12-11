@@ -43,6 +43,10 @@ mod sqlgen_internal {
 
     use crate::drivers::get_model_descriptions;
     use crate::stores::certify_store::CertifyStore;
+    use crate::stores::config_store::ConfigStore;
+    use crate::stores::config_store::VECTOR_COLUMN_IMPL_DEFAULT;
+    use crate::stores::config_store::VECTOR_COLUMN_IMPL_KEY;
+    use crate::stores::config_store::VECTOR_COLUMN_IMPL_PGVECTOR;
     use crate::stores::engine_store::EngineStore;
     use crate::stores::metadata_store::MetadataStore;
     use crate::stores::model_store::ModelStore;
@@ -54,6 +58,8 @@ mod sqlgen_internal {
     use crate::utils::sql::get_column_heap;
     use crate::utils::sql::get_column_heap_optional;
     use crate::utils::sql::get_current_schema;
+    use crate::utils::vector::convert_vectors_to_in_memory;
+    use crate::utils::vector::convert_vectors_to_pgvector;
     use crate::utils::vector::get_vector_column_type;
 
     // Create associated metadata rows for a table so that it can be tracked for
@@ -291,6 +297,44 @@ mod sqlgen_internal {
             CertifyStore::create_certified_queries_table(name, dims as i32)?;
             MetadataStore::initialize_metadata(name, &schema_name, encoder).await
         })
+    }
+
+    #[pg_extern]
+    fn set_vector_backend_external(instance: Option<&str>) -> Result<&'static str, SqlgenError> {
+        match instance {
+            None | Some("") => match ConfigStore::get_config_value(VECTOR_COLUMN_IMPL_KEY) {
+                Ok(ref s) if s == VECTOR_COLUMN_IMPL_PGVECTOR => {
+                    convert_vectors_to_in_memory()?;
+                    Ok(VECTOR_COLUMN_IMPL_DEFAULT)
+                }
+                Ok(ref s) if s == VECTOR_COLUMN_IMPL_DEFAULT => {
+                    convert_vectors_to_pgvector()?;
+                    Ok(VECTOR_COLUMN_IMPL_PGVECTOR)
+                }
+                Ok(_) => Err(SqlgenError::UnsupportedScenario(
+                    "Invalid configuration set for vector column type",
+                )),
+                Err(SqlgenError::ConfigDoesntExist(_)) => {
+                    convert_vectors_to_pgvector()?;
+                    Ok(VECTOR_COLUMN_IMPL_PGVECTOR)
+                }
+                Err(e) => Err(e),
+            },
+
+            Some(s) => {
+                if s == VECTOR_COLUMN_IMPL_PGVECTOR {
+                    convert_vectors_to_pgvector()?;
+                    Ok(VECTOR_COLUMN_IMPL_PGVECTOR)
+                } else if s == VECTOR_COLUMN_IMPL_DEFAULT {
+                    convert_vectors_to_in_memory()?;
+                    Ok(VECTOR_COLUMN_IMPL_DEFAULT)
+                } else {
+                    Err(SqlgenError::UnsupportedScenario(
+                        "unknown vector backend provided",
+                    ))
+                }
+            }
+        }
     }
 }
 
