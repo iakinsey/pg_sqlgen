@@ -38,9 +38,48 @@ SELECT sqlgen.set_vector_backend();
 
 -- Execute query
 SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
+DO $$
+BEGIN
+    PERFORM sqlgen.certify_query('example query', 'SELECT 1', 'stub_engine_1');
+END;
+$$;
 
--- Change vector impl to VECTOR
+-- Change vector impl to default
 SELECT sqlgen.set_vector_backend();
 
 -- Execute query
 SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
+DO $$
+BEGIN
+    PERFORM sqlgen.certify_query('example query', 'SELECT 1', 'stub_engine_1');
+END;
+$$;
+
+-- Change to default while already default
+SELECT sqlgen.set_vector_backend('default');
+SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
+DO $$
+BEGIN
+    PERFORM sqlgen.certify_query('example query', 'SELECT 1', 'stub_engine_1');
+END;
+$$;
+
+-- Change to pgvector
+SELECT sqlgen.set_vector_backend('pgvector');
+
+SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
+DO $$
+BEGIN
+    PERFORM sqlgen.certify_query('example query', 'SELECT 1', 'stub_engine_1');
+END;
+$$;
+
+-- Change to default 
+SELECT sqlgen.set_vector_backend('default');
+
+SELECT sqlgen.generate('A default stub query', 'stub_engine_1');
+DO $$
+BEGIN
+    PERFORM sqlgen.certify_query('example query', 'SELECT 1', 'stub_engine_1');
+END;
+$$;

@@ -9,10 +9,10 @@ AS $$
 DECLARE
     impl TEXT := sqlgen_internal.get_config_value('vector_column_impl');
 BEGIN
-    IF impl IS NULL OR impl = 'in-memory' THEN
+    IF impl IS NULL OR impl = 'default' THEN
         RETURN 'FLOAT4[]';
     ELSIF impl = 'pgvector' THEN
-        RETURN format('VECTOR', len);
+        RETURN 'VECTOR';
     END IF;
 
     RETURN 'FLOAT4[]';
@@ -33,7 +33,7 @@ AS $$
 DECLARE
     impl TEXT := sqlgen_internal.get_config_value('vector_column_impl');
 BEGIN
-    IF impl IS NULL OR impl = 'in-memory' THEN
+    IF impl IS NULL OR impl = 'default' THEN
         RETURN 'FLOAT4[]';
     ELSIF impl = 'pgvector' THEN
         RETURN format('VECTOR(%s)', len);
@@ -59,7 +59,7 @@ AS $$
 DECLARE
     impl TEXT := sqlgen_internal.get_config_value('vector_column_impl');
 BEGIN
-    IF impl IS NULL OR impl = 'in-memory' THEN
+    IF impl IS NULL OR impl = 'default' THEN
         RETURN FALSE;
     ELSIF impl = 'pgvector' THEN
         RETURN TRUE;

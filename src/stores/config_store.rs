@@ -9,7 +9,7 @@ pub static DEFAULT_ENGINE_CONFIG_KEY: &str = "default_engine";
 pub static VECTOR_COLUMN_IMPL_KEY: &str = "vector_column_impl";
 
 // Values
-pub static VECTOR_COLUMN_IMPL_DEFAULT: &str = "in-memory";
+pub static VECTOR_COLUMN_IMPL_DEFAULT: &str = "default";
 pub static VECTOR_COLUMN_IMPL_PGVECTOR: &str = "pgvector";
 
 // Handles state management for extension-level config.
