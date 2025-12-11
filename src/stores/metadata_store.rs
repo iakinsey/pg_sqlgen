@@ -18,15 +18,15 @@ impl MetadataStore {
     // Initializes a metadata table for a given schema and populates it.
     pub async fn initialize_metadata(
         engine: &str,
-        schema: &str,
+        schemas: &[&str],
         encoder: Box<dyn TextEncoderDriver>,
     ) -> Result<(), SqlgenError> {
         let query = "SELECT sqlgen_internal.initialize_metadata($1, $2, $3);";
         let vector_size = i32::try_from(encoder.dimensions().await?)?;
 
-        Spi::run_with_args(query, &[engine.into(), schema.into(), vector_size.into()])?;
+        Spi::run_with_args(query, &[engine.into(), schemas.into(), vector_size.into()])?;
 
-        Self::populate_metadata_table(engine, schema, encoder).await?;
+        Self::populate_metadata_table(engine, schemas, encoder).await?;
 
         Ok(())
     }
@@ -35,45 +35,48 @@ impl MetadataStore {
     // record in the metadata table.
     pub async fn populate_metadata_table(
         engine: &str,
-        schema: &str,
+        schemas: &[&str],
         encoder: Box<dyn TextEncoderDriver>,
     ) -> Result<(), SqlgenError> {
         let query =
             "SELECT table_name, column_name, ddl, comment FROM sqlgen_internal.crawl_schema($1);";
+        let mut schemas_to_save = vec![];
 
-        let schemas: Result<Vec<CrawlSchema>, SqlgenError> = Spi::connect(|client| {
-            let mut schemas: Vec<CrawlSchema> = Vec::new();
-            let rows = client.select(query, None, &[schema.into()])?;
+        for &schema in schemas {
+            let crawled_schemas: Result<Vec<CrawlSchema>, SqlgenError> = Spi::connect(|client| {
+                let mut schemas: Vec<CrawlSchema> = Vec::new();
+                let rows = client.select(query, None, &[schema.into()])?;
 
-            for row in rows {
-                let crawl_schema = CrawlSchema::from_row(row)?;
+                for row in rows {
+                    let crawl_schema = CrawlSchema::from_row(row)?;
 
-                schemas.push(crawl_schema);
-            }
+                    schemas.push(crawl_schema);
+                }
 
-            Ok(schemas)
-        });
+                Ok(schemas)
+            });
 
-        let schemas = schemas?;
+            schemas_to_save.extend(crawled_schemas?);
+        }
 
-        if schemas.is_empty() {
+        if schemas_to_save.is_empty() {
             return Ok(());
         }
 
-        let ddls: Vec<&str> = schemas.iter().map(|c| c.ddl.as_str()).collect();
-        let comments: Vec<String> = schemas
+        let ddls: Vec<&str> = schemas_to_save.iter().map(|c| c.ddl.as_str()).collect();
+        let comments: Vec<String> = schemas_to_save
             .iter()
             .map(|c| c.comment.clone().unwrap_or_default())
             .collect();
         let comments: Vec<&str> = comments.iter().map(|s| s.as_str()).collect();
         let ddl_vecs = encoder.encode_many(&ddls).await?;
         let comment_vecs = wrap_encode(encoder, comments).await?;
-        let metadatas: Vec<TableMetadata> = schemas
+        let metadatas: Vec<TableMetadata> = schemas_to_save
             .into_iter()
             .zip(ddl_vecs)
             .zip(comment_vecs)
             .map(|((crawl_schema, ddl_vec), comment_vec)| TableMetadata {
-                schema_name: schema.to_string(),
+                schema_name: crawl_schema.schema_name.to_string(),
                 table_name: crawl_schema.table_name,
                 column_name: crawl_schema.column_name,
                 ddl: crawl_schema.ddl,
@@ -210,6 +213,8 @@ mod tests {
         },
     };
 
+    // TODO add multi schema test:w
+
     #[pg_test]
     fn test_init_schema() {
         let schema_name = "test_example";
@@ -222,7 +227,7 @@ mod tests {
         create_schema(schema_name);
 
         rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap()
         });
@@ -456,7 +461,7 @@ mod tests {
         create_schema(schema_name);
 
         rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap()
         });
@@ -481,7 +486,7 @@ mod tests {
         create_schema(schema_name);
 
         rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap()
         });
@@ -503,7 +508,7 @@ mod tests {
         create_schema(schema_name);
 
         rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap()
         });

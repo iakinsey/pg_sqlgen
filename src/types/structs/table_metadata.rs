@@ -21,6 +21,7 @@ pub struct TableMetadata {
 // The return type from the `sqlgen_internal.crawl_schema` SQL function. Used to
 // populate TableMetadata.
 pub struct CrawlSchema {
+    pub schema_name: String,
     pub table_name: String,
     pub column_name: String,
     pub ddl: String,
@@ -29,12 +30,14 @@ pub struct CrawlSchema {
 
 impl CrawlSchema {
     pub fn from_row(row: SpiHeapTupleData) -> Result<Self, SqlgenError> {
+        let schema_name: String = get_column_heap(&row, "schema_name")?;
         let table_name: String = get_column_heap(&row, "table_name")?;
         let column_name: String = get_column_heap(&row, "column_name")?;
         let ddl: String = get_column_heap(&row, "ddl")?;
         let comment: Option<String> = get_column_heap_optional(&row, "comment")?;
 
         Ok(Self {
+            schema_name,
             table_name,
             column_name,
             ddl,

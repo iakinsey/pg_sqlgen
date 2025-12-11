@@ -244,7 +244,7 @@ mod sqlgen_internal {
         name: &str,
         instruct_model: &str,
         encoder_model: &str,
-        schema_name: Option<&str>,
+        schema_names: Vec<String>,
         table_filter_type: Option<&str>,
         column_filter_limit: Option<i32>,
         error_correction_rounds: Option<i32>,
@@ -256,15 +256,17 @@ mod sqlgen_internal {
         syntax_correction_template: Option<&str>,
         explain_query_template: Option<&str>,
     ) -> Result<(), SqlgenError> {
-        let schema_name = match schema_name {
-            Some(s) => s.to_string(),
-            None => get_current_schema()?,
-        };
-
         let table_filter_type = match table_filter_type {
             Some(s) => TableFilterType::from_str(s)?,
             None => TableFilterType::Smart,
         };
+
+        let mut schemas: Vec<&str> = schema_names.iter().map(|s| s.as_str()).collect();
+        let default_schema = get_current_schema()?;
+
+        if schemas.is_empty() {
+            schemas.push(&default_schema);
+        }
 
         let column_filter_limit = column_filter_limit.unwrap_or(128);
 
@@ -275,7 +277,7 @@ mod sqlgen_internal {
 
         EngineStore::create_engine(
             name,
-            &schema_name,
+            &schemas,
             encoder_model,
             instruct_model,
             table_filter_type.to_str(),
@@ -295,7 +297,7 @@ mod sqlgen_internal {
         rt.block_on(async {
             let dims = encoder.dimensions().await?;
             CertifyStore::create_certified_queries_table(name, dims as i32)?;
-            MetadataStore::initialize_metadata(name, &schema_name, encoder).await
+            MetadataStore::initialize_metadata(name, &schemas, encoder).await
         })
     }
 

@@ -191,7 +191,7 @@ mod tests {
         create_schema(schema_name);
 
         rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap();
             let mut runner = DDLFilterRunner::new(&engine).unwrap();
@@ -214,7 +214,7 @@ mod tests {
         create_schema(schema_name);
 
         rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap();
             let mut runner = DDLFilterRunner::new(&engine).unwrap();
@@ -238,7 +238,7 @@ mod tests {
         create_schema(schema_name);
 
         rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap();
             let mut runner = DDLFilterRunner::new(&engine).unwrap();

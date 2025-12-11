@@ -12,7 +12,7 @@ pub struct EngineStore {}
 impl EngineStore {
     pub fn create_engine(
         engine_name: &str,
-        schema_name: &str,
+        schema_names: &[&str],
         encoder_model: &str,
         instruct_model: &str,
         table_filter_type: &str,
@@ -30,7 +30,7 @@ impl EngineStore {
             "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
             &[
                 engine_name.into(),
-                schema_name.into(),
+                schema_names.into(),
                 encoder_model.into(),
                 instruct_model.into(),
                 table_filter_type.into(),
@@ -107,6 +107,8 @@ mod tests {
         },
     };
 
+    // TODO test multiple schemas
+
     #[pg_test]
     fn test_engine_crud() {
         let name = "test_engine_name";
@@ -139,7 +141,7 @@ mod tests {
 
         EngineStore::create_engine(
             name,
-            schema_name,
+            &[schema_name],
             encoder_model_name,
             instruct_model_name,
             table_filter_type,
@@ -182,7 +184,7 @@ mod tests {
         let result = PgTryBuilder::new(|| {
             EngineStore::create_engine(
                 name,
-                schema_name,
+                &[schema_name],
                 encoder_model_name,
                 instruct_model_name,
                 table_filter_type,

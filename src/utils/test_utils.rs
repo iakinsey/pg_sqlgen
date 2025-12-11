@@ -38,7 +38,7 @@ pub(crate) fn create_engine(
 
     EngineStore::create_engine(
         name,
-        schema_name,
+        &[schema_name],
         encoder_model_name,
         instruct_model_name,
         table_filter_type,

@@ -209,7 +209,7 @@ mod tests {
         create_schema(schema_name);
 
         let generate_response = rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
@@ -239,7 +239,7 @@ mod tests {
         create_schema(schema_name);
 
         let generate_error = rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
@@ -263,7 +263,7 @@ mod tests {
         create_schema(schema_name);
 
         let generate_error = rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
@@ -294,7 +294,7 @@ mod tests {
         create_schema(schema_name);
 
         let generate_response = rt.block_on(async {
-            MetadataStore::initialize_metadata(engine_name, schema_name, encoder)
+            MetadataStore::initialize_metadata(engine_name, &[schema_name], encoder)
                 .await
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
