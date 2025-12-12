@@ -4,21 +4,22 @@
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.initialize_metadata(
     engine TEXT,
-    schema_name TEXT,
+    schema_names TEXT [],
     vector_size INT
 )
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    schema_name TEXT;
 BEGIN
-  PERFORM sqlgen_internal.create_metadata_table(engine, schema_name, vector_size);
-  PERFORM sqlgen_internal.install_schema_triggers(engine, schema_name);
+    PERFORM sqlgen_internal.create_metadata_table(engine, vector_size);
+
+    FOREACH schema_name IN ARRAY schema_names LOOP
+        PERFORM sqlgen_internal.install_schema_triggers(engine, schema_name);
+    END LOOP;
 END
 $$;
-
-REVOKE EXECUTE ON FUNCTION sqlgen_internal.initialize_metadata(
-    TEXT, TEXT, INT
-) FROM public;
 
 --------------------------------------------------------------------------------
 -- Remove metadata
@@ -45,7 +46,6 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.create_metadata_table(
     engine TEXT,
-    schema_name TEXT,
     vector_size INT
 )
 RETURNS VOID
@@ -153,7 +153,12 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.install_schema_triggers(
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  trig_suffix TEXT;
 BEGIN
+  -- Ensure the names are unique per engine/schema
+  trig_suffix := format('%s__%s', engine, schema_name);
+
   EXECUTE format($fmt$
     -- Drop existing event triggers if present
     DROP EVENT TRIGGER IF EXISTS trigger_create_table_%1$I;
@@ -177,8 +182,8 @@ BEGIN
       LOOP
         v_tbl := r.table_name;
 
-        IF r.schema_name = %2$L THEN
-          PERFORM sqlgen_internal.add_table(%1$L, %2$L, v_tbl);
+        IF r.schema_name = %3$L THEN
+          PERFORM sqlgen_internal.add_table(%2$L, %3$L, v_tbl);
         END IF;
       END LOOP;
     END; $fn$;
@@ -199,8 +204,8 @@ BEGIN
       LOOP
         v_tbl := r.table_name;
 
-        IF r.schema_name = %2$L THEN
-          PERFORM sqlgen_internal.update_table(%1$L, %2$L, v_tbl);
+        IF r.schema_name = %3$L THEN
+          PERFORM sqlgen_internal.update_table(%2$L, %3$L, v_tbl);
         END IF;
       END LOOP;
     END; $fn$;
@@ -220,8 +225,8 @@ BEGIN
       LOOP
         v_tbl := r.table_name;
 
-        IF r.schema_name = %2$L THEN
-          PERFORM sqlgen_internal.remove_table(%1$L, %2$L, v_tbl);
+        IF r.schema_name = %3$L THEN
+          PERFORM sqlgen_internal.remove_table(%2$L, %3$L, v_tbl);
         END IF;
       END LOOP;
     END; $fn$;
@@ -231,7 +236,7 @@ BEGIN
     RETURNS event_trigger
     LANGUAGE plpgsql AS $fn$
     BEGIN
-      PERFORM sqlgen_internal.update_comment(%1$L, %2$L);
+      PERFORM sqlgen_internal.update_comment(%2$L, %3$L);
     END; $fn$;
 
     -- Create table trigger
@@ -246,7 +251,8 @@ BEGIN
       WHEN TAG IN ('ALTER TABLE')
       EXECUTE FUNCTION sqlgen_internal.on_alter_table_%1$I();
 
-     CREATE EVENT TRIGGER trigger_comment_%1$I
+    -- Comment trigger
+    CREATE EVENT TRIGGER trigger_comment_%1$I
       ON ddl_command_end
       WHEN TAG IN ('COMMENT')
       EXECUTE FUNCTION sqlgen_internal.on_comment_%1$I();
@@ -256,12 +262,14 @@ BEGIN
       ON sql_drop
       EXECUTE FUNCTION sqlgen_internal.on_drop_table_%1$I();
   $fmt$,
-    engine,       -- %1$*
-    schema_name   -- %2$*
+    trig_suffix,  -- %1$
+    engine,       -- %2$
+    schema_name   -- %3$
   );
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers FROM public;
+
 
 --------------------------------------------------------------------------------
 -- Remove metadata table
@@ -290,6 +298,9 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.crawl_schema(schema_name TEXT)
 RETURNS TABLE (
+    schema_name TEXT,
+    schema_name TEXT,
+    schema_name TEXT,
     table_name TEXT,
     column_name TEXT,
     ddl TEXT,
@@ -298,6 +309,7 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 SELECT
+  n.nspname AS schema_name,
   c.relname AS table_name,
   a.attname AS column_name,
   (
