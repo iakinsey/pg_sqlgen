@@ -138,11 +138,11 @@ impl MetadataStore {
         })
     }
 
-    // Remove a record from the metadata table.
-    pub fn remove_metadata(engine: &str, model_name: &str) -> Result<(), SqlgenError> {
-        let query = "SELECT sqlgen_internal.remove_metadata($1, $2);";
+    // Remove the metadata table
+    pub fn remove_metadata(engine: &str) -> Result<(), SqlgenError> {
+        let query = "SELECT sqlgen_internal.remove_metadata($1);";
 
-        Spi::run_with_args(query, &[engine.into(), model_name.into()])?;
+        Spi::run_with_args(query, &[engine.into()])?;
 
         Ok(())
     }

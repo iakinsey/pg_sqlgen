@@ -102,7 +102,7 @@ impl TableFilterType {
 pub struct TextToSqlEngine {
     pub name: String,
     #[allow(dead_code)]
-    pub schema_name: String,
+    pub schema_names: Vec<String>,
     pub encoder_model: String,
     pub instruct_model: String,
     pub system_prompt_template: String,
@@ -155,7 +155,7 @@ impl TextToSqlEngine {
                 None => DEFAULT_EXPLAIN_QUERY_TEMPLATE.to_string(),
             };
         let name = get_column(&row, "engine_name")?;
-        let schema_name = get_column(&row, "schema_name")?;
+        let schema_names = get_column(&row, "schema_name")?;
         let encoder_model = get_column(&row, "encoder_model")?;
         let instruct_model = get_column(&row, "instruct_model")?;
         let filter_type_str = get_column(&row, "table_filter_type")?;
@@ -165,7 +165,7 @@ impl TextToSqlEngine {
 
         Ok(Self {
             name,
-            schema_name,
+            schema_names,
             encoder_model,
             instruct_model,
             system_prompt_template,

@@ -4,7 +4,7 @@
 
 CREATE TABLE sqlgen_internal.engine (
     engine_name TEXT PRIMARY KEY,
-    schema_name TEXT NOT NULL,
+    schema_names TEXT [] NOT NULL,
     encoder_model TEXT NOT NULL,
     instruct_model TEXT NOT NULL,
     column_filter_limit INT NOT NULL,
@@ -44,7 +44,7 @@ SELECT * FROM sqlgen_internal.engine; -- noqa: AM04
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.create_engine(
     engine_name TEXT,
-    schema_name TEXT,
+    schema_names TEXT [],
     encoder_model TEXT,
     instruct_model TEXT,
     table_filter_type TEXT DEFAULT 'smart',
@@ -64,7 +64,7 @@ AS $$
 BEGIN
     INSERT INTO sqlgen_internal.engine (
         engine_name,
-        schema_name,
+        schema_names,
         encoder_model,
         instruct_model,
         table_filter_type,
@@ -79,7 +79,7 @@ BEGIN
         explain_query_template
     ) VALUES (
         engine_name,
-        schema_name,
+        schema_names,
         encoder_model,
         instruct_model,
         table_filter_type,
@@ -172,3 +172,27 @@ BEGIN
     RETURN engines;
 END
 $$;
+
+--------------------------------------------------------------------------------
+-- Get engine schemas
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.get_engine_schema_names(
+    engine_name TEXT
+)
+RETURNS TEXT []
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    result TEXT[];
+BEGIN
+    SELECT e.schema_names
+    INTO result
+    FROM sqlgen_internal.engine e
+    WHERE e.engine_name = get_engine_schema_names.engine_name;
+
+    RETURN result;
+END
+$$;
+
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_engine_schema_names FROM public;

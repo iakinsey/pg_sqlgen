@@ -26,15 +26,19 @@ $$;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata(
-    engine TEXT,
-    schema_name TEXT
+    engine TEXT
 )
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  s TEXT;
 BEGIN
-  PERFORM sqlgen_internal.remove_schema_triggers(engine, schema_name);
-  PERFORM sqlgen_internal.remove_metadata_table(engine, schema_name);
+  FOREACH s IN ARRAY sqlgen_internal.get_engine_schema_names(engine) LOOP
+    PERFORM sqlgen_internal.remove_schema_triggers(engine, s);
+  END LOOP;
+
+  PERFORM sqlgen_internal.remove_metadata_table(engine);
 END
 $$;
 
@@ -276,8 +280,7 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.install_schema_triggers FROM public;
 --------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.remove_metadata_table(
-    engine TEXT,
-    schema_name TEXT
+    engine TEXT
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -298,8 +301,6 @@ REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_metadata_table FROM public;
 
 CREATE OR REPLACE FUNCTION sqlgen_internal.crawl_schema(schema_name TEXT)
 RETURNS TABLE (
-    schema_name TEXT,
-    schema_name TEXT,
     schema_name TEXT,
     table_name TEXT,
     column_name TEXT,
@@ -397,7 +398,12 @@ CREATE OR REPLACE FUNCTION sqlgen_internal.remove_schema_triggers(
 RETURNS VOID
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  trig_suffix TEXT;
 BEGIN
+  -- Must match install_schema_triggers naming
+  trig_suffix := format('%s__%s', engine, schema_name);
+
   EXECUTE format($fmt$
     -- Drop event triggers
     DROP EVENT TRIGGER IF EXISTS trigger_create_table_%1$I;
@@ -410,11 +416,12 @@ BEGIN
     DROP FUNCTION IF EXISTS sqlgen_internal.on_alter_table_%1$I();
     DROP FUNCTION IF EXISTS sqlgen_internal.on_drop_table_%1$I();
     DROP FUNCTION IF EXISTS sqlgen_internal.on_comment_%1$I();
-  $fmt$, engine);
+  $fmt$,
+    trig_suffix  -- %1$* identifier-safe suffix
+  );
 END
 $$;
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.remove_schema_triggers FROM public;
-
 
 --------------------------------------------------------------------------------
 -- Update comments

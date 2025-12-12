@@ -160,7 +160,7 @@ mod tests {
         let engine = EngineStore::get_engine(name).unwrap();
 
         assert_eq!(name, engine.name);
-        assert_eq!(schema_name, engine.schema_name);
+        assert_eq!(vec![schema_name], engine.schema_names);
         assert_eq!(encoder_model_name, engine.encoder_model);
         assert_eq!(instruct_model_name, engine.instruct_model);
         assert_eq!(table_filter_type, engine.filter_type.to_str());
