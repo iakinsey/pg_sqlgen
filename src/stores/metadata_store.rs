@@ -39,7 +39,7 @@ impl MetadataStore {
         encoder: Box<dyn TextEncoderDriver>,
     ) -> Result<(), SqlgenError> {
         let query =
-            "SELECT table_name, column_name, ddl, comment FROM sqlgen_internal.crawl_schema($1);";
+            "SELECT schema_name, table_name, column_name, ddl, comment FROM sqlgen_internal.crawl_schema($1);";
         let mut schemas_to_save = vec![];
 
         for &schema in schemas {
