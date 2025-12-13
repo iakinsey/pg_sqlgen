@@ -154,8 +154,9 @@ impl TextToSqlEngine {
                 Some(v) => v,
                 None => DEFAULT_EXPLAIN_QUERY_TEMPLATE.to_string(),
             };
+
         let name = get_column(&row, "engine_name")?;
-        let schema_names = get_column(&row, "schema_name")?;
+        let schema_names = get_column(&row, "schema_names")?;
         let encoder_model = get_column(&row, "encoder_model")?;
         let instruct_model = get_column(&row, "instruct_model")?;
         let filter_type_str = get_column(&row, "table_filter_type")?;
