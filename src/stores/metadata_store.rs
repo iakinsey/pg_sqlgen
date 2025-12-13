@@ -271,7 +271,7 @@ mod tests {
         });
 
         // Create table
-        let table_name = format!("{}.authors", engine.schema_name);
+        let table_name = format!("{}.authors", schema_name);
         Spi::run(
             format!(
                 r#"
@@ -322,7 +322,7 @@ mod tests {
         });
 
         // Alter table add column
-        let table_name = format!("{}.authors", engine.schema_name);
+        let table_name = format!("{}.authors", schema_name);
         Spi::run(
             format!(
                 r#"
@@ -365,7 +365,7 @@ mod tests {
         });
 
         // Delete table
-        let table_name = format!("{}.authors", engine.schema_name);
+        let table_name = format!("{}.authors", schema_name);
         Spi::run(
             format!(
                 r#"
@@ -403,7 +403,7 @@ mod tests {
                 COMMENT ON COLUMN {schema}.order_items.quantity IS 'This is a test';
                 COMMENT ON COLUMN {schema}.order_items.product_id IS NULL;
                 "#,
-                schema = engine.schema_name,
+                schema = schema_name,
             )
             .as_str(),
         )
@@ -513,7 +513,7 @@ mod tests {
                 .unwrap()
         });
 
-        MetadataStore::remove_metadata(engine_name, &engine.encoder_model).unwrap();
+        MetadataStore::remove_metadata(engine_name).unwrap();
 
         let result = catch_unwind(|| MetadataStore::get_ddls(engine_name));
 

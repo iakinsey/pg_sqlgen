@@ -121,7 +121,7 @@ mod sqlgen {
     fn remove_engine(name: &str) -> Result<(), SqlgenError> {
         let engine = EngineStore::get_engine(name)?;
 
-        MetadataStore::remove_metadata(name, &engine.encoder_model)?;
+        MetadataStore::remove_metadata(name)?;
         EngineStore::remove_engine(name)?;
         CertifyStore::delete_certified_queries_table(&engine.name)
     }
