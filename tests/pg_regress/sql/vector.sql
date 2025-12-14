@@ -15,10 +15,10 @@ SELECT sqlgen.add_model(
 
 -- Create engine.
 SELECT sqlgen.create_engine(
-    'stub_engine_1',
-    'stub_model_1',
-    'stub_model_1',
-    'quick'
+    name => 'stub_engine_1',
+    instruct_model => 'stub_model_1',
+    encoder_model => 'stub_model_1',
+    table_filter_type => 'quick'
 );
 
 -- Create a new table to verify triggers don't fail.

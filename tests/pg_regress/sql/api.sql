@@ -20,7 +20,12 @@ SELECT * FROM sqlgen.models; -- noqa: AM04
 CREATE TABLE s (x INT);
 
 -- Create engine.
-SELECT sqlgen.create_engine('stub_engine', 'stub_model', 'stub_model', 'quick');
+SELECT sqlgen.create_engine(
+    name => 'stub_engine',
+    instruct_model => 'stub_model',
+    encoder_model => 'stub_model',
+    table_filter_type => 'quick'
+);
 
 -- Verify engine exists.
 SELECT * FROM sqlgen.engines; -- noqa: AM04
