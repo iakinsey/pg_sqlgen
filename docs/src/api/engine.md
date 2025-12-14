@@ -235,3 +235,37 @@ Removes the default engine.
 ```sql
 SELECT sqlgen.remove_default_engine('my_engine');
 ```
+
+---
+
+## add_schema_to_engine
+
+Enable query generation capabilities for a specified text-to-sql engine.
+
+### Returns
+
+- __Type__: `VOID`
+
+### Parameters
+
+<div style="font-size: 110%">
+<code>engine</code>
+</div>
+
+- __Description__: Name of engine.
+- __Type__: `TEXT`
+- __Optional__: `false`
+
+<div style="font-size: 110%">
+<code>schema</code>
+</div>
+
+- __Description__: Name of schema to add.
+- __Type__: `TEXT`
+- __Optional__: `false`
+
+### Example
+
+```sql
+SELECT sqlgen.add_schema_to_engine('my_engine', 'my_schema');
+```
