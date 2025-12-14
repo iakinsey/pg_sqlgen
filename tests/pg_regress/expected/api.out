@@ -36,12 +36,17 @@ SELECT * FROM sqlgen.models; -- noqa: AM04
 
 -- Create a table before creating the engine
 CREATE TABLE s (x INT);
+-- Create alternative schemas
+CREATE SCHEMA IF NOT EXISTS secondary_schema;
+CREATE SCHEMA IF NOT EXISTS tertiary_schema;
+CREATE TABLE secondary_schema.example_table_1 (x INT);
 -- Create engine.
 SELECT sqlgen.create_engine(
     name => 'stub_engine',
     instruct_model => 'stub_model',
     encoder_model => 'stub_model',
-    table_filter_type => 'quick'
+    table_filter_type => 'quick',
+    schema_names => ARRAY['public', 'secondary_schema']
 );
  create_engine 
 ---------------
@@ -50,9 +55,24 @@ SELECT sqlgen.create_engine(
 
 -- Verify engine exists.
 SELECT * FROM sqlgen.engines; -- noqa: AM04
- engine_name | schema_names | encoder_model | instruct_model | column_filter_limit | error_correction_rounds | system_prompt_template | user_prompt_template | relevant_ddls_template | similar_queries_template | filter_ddls_template | syntax_correction_template | explain_query_template | table_filter_type 
--------------+--------------+---------------+----------------+---------------------+-------------------------+------------------------+----------------------+------------------------+--------------------------+----------------------+----------------------------+------------------------+-------------------
- stub_engine | {public}     | stub_model    | stub_model     |                 128 |                       3 |                        |                      |                        |                          |                      |                            |                        | quick
+ engine_name |       schema_names        | encoder_model | instruct_model | column_filter_limit | error_correction_rounds | system_prompt_template | user_prompt_template | relevant_ddls_template | similar_queries_template | filter_ddls_template | syntax_correction_template | explain_query_template | table_filter_type 
+-------------+---------------------------+---------------+----------------+---------------------+-------------------------+------------------------+----------------------+------------------------+--------------------------+----------------------+----------------------------+------------------------+-------------------
+ stub_engine | {public,secondary_schema} | stub_model    | stub_model     |                 128 |                       3 |                        |                      |                        |                          |                      |                            |                        | quick
+(1 row)
+
+-- Add schema to engine
+SELECT sqlgen.add_schema_to_engine('stub_engine', 'tertiary_schema');
+ add_schema_to_engine 
+----------------------
+ 
+(1 row)
+
+CREATE TABLE tertiary_schema.example_table_2 (x INT);
+-- Verify new schema added
+SELECT * FROM sqlgen.engines; -- noqa: AM04
+ engine_name |               schema_names                | encoder_model | instruct_model | column_filter_limit | error_correction_rounds | system_prompt_template | user_prompt_template | relevant_ddls_template | similar_queries_template | filter_ddls_template | syntax_correction_template | explain_query_template | table_filter_type 
+-------------+-------------------------------------------+---------------+----------------+---------------------+-------------------------+------------------------+----------------------+------------------------+--------------------------+----------------------+----------------------------+------------------------+-------------------
+ stub_engine | {public,tertiary_schema,secondary_schema} | stub_model    | stub_model     |                 128 |                       3 |                        |                      |                        |                          |                      |                            |                        | quick
 (1 row)
 
 -- Set default engine.

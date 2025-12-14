@@ -19,15 +19,30 @@ SELECT * FROM sqlgen.models; -- noqa: AM04
 -- Create a table before creating the engine
 CREATE TABLE s (x INT);
 
+-- Create alternative schemas
+CREATE SCHEMA IF NOT EXISTS secondary_schema;
+CREATE SCHEMA IF NOT EXISTS tertiary_schema;
+
+CREATE TABLE secondary_schema.example_table_1 (x INT);
+
 -- Create engine.
 SELECT sqlgen.create_engine(
     name => 'stub_engine',
     instruct_model => 'stub_model',
     encoder_model => 'stub_model',
-    table_filter_type => 'quick'
+    table_filter_type => 'quick',
+    schema_names => ARRAY['public', 'secondary_schema']
 );
 
 -- Verify engine exists.
+SELECT * FROM sqlgen.engines; -- noqa: AM04
+
+-- Add schema to engine
+SELECT sqlgen.add_schema_to_engine('stub_engine', 'tertiary_schema');
+
+CREATE TABLE tertiary_schema.example_table_2 (x INT);
+
+-- Verify new schema added
 SELECT * FROM sqlgen.engines; -- noqa: AM04
 
 -- Set default engine.
