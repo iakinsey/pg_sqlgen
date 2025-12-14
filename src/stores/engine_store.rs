@@ -58,6 +58,15 @@ impl EngineStore {
         Ok(())
     }
 
+    pub fn add_schema_to_engine(engine_name: &str, schema_name: &str) -> Result<(), SqlgenError> {
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.add_schema_to_engine($1, $2);",
+            &[engine_name.into(), schema_name.into()],
+        )?;
+
+        Ok(())
+    }
+
     pub fn get_engine(engine_name: &str) -> Result<TextToSqlEngine, SqlgenError> {
         let query = "SELECT (sqlgen_internal.get_engine($1)).*";
 

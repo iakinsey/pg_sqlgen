@@ -40,7 +40,6 @@ mod sqlgen {
         utils::{globals::get_runtime, sql::get_prepare_error},
     };
     use pgrx::pg_extern;
-    use simsimd::SpatialSimilarity;
 
     // Create a new model instance usable by engines.
     #[pg_extern]
@@ -140,7 +139,7 @@ mod sqlgen {
             return Err(SqlgenError::Any(e));
         }
 
-        let model = ModelStore::get_text_encoder_model(&engine.instruct_model)?;
+        let model = ModelStore::get_text_encoder_model(&engine.encoder_model)?;
         let language_vector = rt.block_on(async { model.encode(language_query).await })?;
 
         CertifyStore::certify_query(&engine.name, language_query, sql_query, language_vector)
@@ -164,10 +163,16 @@ mod sqlgen {
         decertify_query(id, None)
     }
 
-    // Calculates cosine_distance with optional SIMD optimizations
     #[pg_extern]
-    fn cosine_distance(a: Vec<f32>, b: Vec<f32>) -> Option<f64> {
-        f32::cosine(a.as_slice(), b.as_slice())
+    fn add_schema_to_engine(engine: &str, schema: &str) -> Result<(), SqlgenError> {
+        let encoder_model_name = EngineStore::get_engine(engine)?.encoder_model;
+        let encoder = ModelStore::get_text_encoder_model(&encoder_model_name)?;
+        let rt = get_runtime();
+
+        rt.block_on(async {
+            EngineStore::add_schema_to_engine(engine, schema)?;
+            MetadataStore::add_schema_to_engine(engine, schema, encoder).await
+        })
     }
 }
 
@@ -178,8 +183,8 @@ mod tests {
     use serde_json::to_string;
 
     use crate::{
-        pg_test, types::structs::generate_response::GenerateResponse,
-        utils::sql::get_caught_error_string,
+        pg_test, stores::engine_store::EngineStore,
+        types::structs::generate_response::GenerateResponse, utils::sql::get_caught_error_string,
     };
 
     #[pg_test]
@@ -514,5 +519,55 @@ mod tests {
             error.unwrap(),
             r#"ERRCODE_DATA_EXCEPTION: ERRCODE_SYNTAX_ERROR: trailing junk after numeric literal at or near "123aaaa""#
         );
+    }
+
+    #[pg_test]
+    fn test_add_schema_to_engine() {
+        let engine_name = "engine_name";
+        let model_name = "stub_model";
+        let expected_query = "SELECT 'Hello world!'";
+        let model_response = GenerateResponse {
+            query: Some(expected_query.to_string()),
+            error: None,
+        };
+        let model_response_json = to_string(&model_response);
+        let secondary_schema_name = "secondary_schema";
+        let create_model_query =
+            "SELECT sqlgen.add_model($1, sqlgen.stub_config($2, ARRAY[0.0, 0.5, 1.0]::REAL[]))";
+        let create_engine_query = "SELECT sqlgen.create_engine($1, $2, $2)";
+        let create_schema_query = format!("CREATE SCHEMA {}", secondary_schema_name);
+        let add_schema_query = "SELECT sqlgen.add_schema_to_engine($1, $2)";
+
+        Spi::run(&create_schema_query).unwrap();
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_model_query,
+                    None,
+                    &[model_name.into(), model_response_json.into()],
+                )
+                .unwrap();
+        });
+
+        Spi::connect(|client| {
+            client
+                .select(
+                    create_engine_query,
+                    None,
+                    &[engine_name.into(), model_name.into()],
+                )
+                .unwrap();
+        });
+
+        Spi::run_with_args(
+            add_schema_query,
+            &[engine_name.into(), secondary_schema_name.into()],
+        )
+        .unwrap();
+
+        let engine = EngineStore::get_engine(engine_name).unwrap();
+
+        assert_eq!(engine.schema_names.len(), 2);
     }
 }

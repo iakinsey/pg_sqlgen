@@ -132,6 +132,57 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION sqlgen_internal.get_engine FROM public;
 
+--------------------------------------------------------------------------------
+-- Add schema to engine
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.add_schema_to_engine(
+    en TEXT,
+    schema_name TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    PERFORM sqlgen_internal.assert_schemas_exist(ARRAY[schema_name]);
+
+    UPDATE sqlgen_internal.engine e
+    SET schema_names = (
+        SELECT ARRAY(
+            SELECT DISTINCT s
+            FROM unnest(e.schema_names || schema_name) AS s
+        )
+    )
+    WHERE e.engine_name = en;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Engine does not exist: %', en;
+    END IF;
+END
+$$;
+
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.add_schema_to_engine FROM public;
+
+--------------------------------------------------------------------------------
+-- Assert engine exists
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION sqlgen_internal.assert_engine_exists(n TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM sqlgen_internal.get_engine(n)
+    ) THEN
+        RAISE EXCEPTION 'Engine does not exist: %', n
+            USING ERRCODE = 'invalid_parameter_value';
+    END IF;
+END
+$$;
+
+REVOKE EXECUTE ON FUNCTION sqlgen_internal.assert_engine_exists FROM public;
 
 --------------------------------------------------------------------------------
 -- List engines

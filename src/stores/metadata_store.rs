@@ -194,6 +194,32 @@ impl MetadataStore {
             Ok(results)
         })
     }
+
+    pub async fn add_schema_to_engine(
+        engine_name: &str,
+        schema_name: &str,
+        encoder: Box<dyn TextEncoderDriver>,
+    ) -> Result<(), SqlgenError> {
+        let schema_names = vec![schema_name];
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.assert_schemas_exist($1)",
+            &[schema_names.into()],
+        )?;
+
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.assert_engine_exists($1)",
+            &[engine_name.into()],
+        )?;
+
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.install_schema_triggers($1, $2)",
+            &[engine_name.into(), schema_name.into()],
+        )?;
+
+        Self::populate_metadata_table(engine_name, &[schema_name], encoder).await?;
+
+        Ok(())
+    }
 }
 
 #[cfg(any(test, feature = "pg_test"))]
@@ -212,8 +238,6 @@ mod tests {
             test_utils::{create_engine, create_schema},
         },
     };
-
-    // TODO add multi schema test:w
 
     #[pg_test]
     fn test_init_schema() {

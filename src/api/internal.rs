@@ -40,6 +40,7 @@ mod sqlgen_internal {
     use pgrx::pg_extern;
     use pgrx::prelude::*;
     use pgrx::spi::Query;
+    use simsimd::SpatialSimilarity;
 
     use crate::drivers::get_model_descriptions;
     use crate::stores::certify_store::CertifyStore;
@@ -337,6 +338,12 @@ mod sqlgen_internal {
                 }
             }
         }
+    }
+
+    // Calculates cosine_distance with optional SIMD optimizations
+    #[pg_extern]
+    fn cosine_distance(a: Vec<f32>, b: Vec<f32>) -> Option<f64> {
+        f32::cosine(a.as_slice(), b.as_slice())
     }
 }
 

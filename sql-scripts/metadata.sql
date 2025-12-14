@@ -113,7 +113,7 @@ BEGIN
     RETURN QUERY EXECUTE format(
       'SELECT ddl
          FROM %I.%I
-         ORDER BY sqlgen.cosine_distance($1::float4[], ddl_vector)
+         ORDER BY sqlgen_internal.cosine_distance($1::float4[], ddl_vector)
          LIMIT $2',
       'sqlgen_internal',
       'db_metadata_' || engine

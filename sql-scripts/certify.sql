@@ -121,7 +121,7 @@ BEGIN
                 SELECT
                     language_query,
                     sql_query,
-                    sqlgen.cosine_distance(language_vector, $1) AS dist
+                    sqlgen_internal.cosine_distance(language_vector, $1) AS dist
                 FROM
                     sqlgen_internal.certified_queries_%I
             ) t
