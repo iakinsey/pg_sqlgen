@@ -180,6 +180,57 @@ mod tests {
     }
 
     #[pg_test]
+    #[should_panic(expected = "Schemas do not exist: {secondary_schema,test_schema_name}")]
+    fn test_create_engine_no_schema() {
+        let name = "test_engine_name";
+        let schema_name = "test_schema_name";
+        let secondary_schema_name = "secondary_schema";
+        let table_filter_type = "smart";
+        let encoder_model_name = "test_encoder_model_name";
+        let instruct_model_name = "test_instruct_model_name";
+        let expected_instruct_output = "expected_instruct_output";
+        let expected_encoding_output = vec![0.0, 0.1, 0.2, 0.3];
+        let config = StubConfig {
+            instruct_output: expected_instruct_output.to_string(),
+            encode_output: expected_encoding_output,
+        };
+        let encoder_profile = ModelConfig::Stub(config.clone());
+        let instruct_profile = ModelConfig::Stub(config);
+        let encoder_profile_json = to_string(&encoder_profile).unwrap();
+        let instruct_profile_json = to_string(&instruct_profile).unwrap();
+
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.create_model($1, $2::JSONB);",
+            &[encoder_model_name.into(), encoder_profile_json.into()],
+        )
+        .unwrap();
+
+        Spi::run_with_args(
+            "SELECT sqlgen_internal.create_model($1, $2::JSONB);",
+            &[instruct_model_name.into(), instruct_profile_json.into()],
+        )
+        .unwrap();
+
+        EngineStore::create_engine(
+            name,
+            &[schema_name, secondary_schema_name],
+            encoder_model_name,
+            instruct_model_name,
+            table_filter_type,
+            3,
+            128,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+    }
+
+    #[pg_test]
     fn test_create_engine_model_doesnt_exist() {
         let name = "test_engine_name";
         let schema_name = "test_schema_name";
