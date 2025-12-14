@@ -25,6 +25,7 @@ pub(crate) fn create_engine(
     let instruct_profile_json = to_string(&instruct_profile).unwrap();
     let secondary_schema_name = "secondary_schema";
 
+    Spi::run(format!("CREATE SCHEMA IF NOT EXISTS {}", schema_name).as_str()).unwrap();
     Spi::run(format!("CREATE SCHEMA {}", secondary_schema_name).as_str()).unwrap();
 
     Spi::run_with_args(
@@ -64,7 +65,7 @@ pub(crate) fn create_schema(name: &str) {
     Spi::run(
         format!(
             r#"
-                CREATE SCHEMA {name};
+                CREATE SCHEMA IF NOT EXISTS {name};
 
                 CREATE TABLE {name}.users (
                     user_id SERIAL PRIMARY KEY,

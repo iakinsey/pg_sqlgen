@@ -126,6 +126,7 @@ mod tests {
         let encoder_profile_json = to_string(&encoder_profile).unwrap();
         let instruct_profile_json = to_string(&instruct_profile).unwrap();
 
+        Spi::run(format!("CREATE SCHEMA {};", schema_name).as_str()).unwrap();
         Spi::run(format!("CREATE SCHEMA {};", secondary_schema_name).as_str()).unwrap();
 
         Spi::run_with_args(

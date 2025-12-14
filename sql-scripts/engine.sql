@@ -62,6 +62,8 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    PERFORM sqlgen_internal.assert_schemas_exist(schema_names);
+
     INSERT INTO sqlgen_internal.engine (
         engine_name,
         schema_names,
