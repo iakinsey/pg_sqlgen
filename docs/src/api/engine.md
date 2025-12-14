@@ -55,13 +55,13 @@ Create an engine.
 - __Optional__: `false`
 
 <div style="font-size: 110%">
-<code>schema_name</code>
+<code>schema_names</code>
 </div>
 
-- __Description__: Name of database schema that model operates on.
-- __Type__: `TEXT`
+- __Description__: Names of database schemas that model operates on.
+- __Type__: `TEXT[]`
 - __Optional__: `true`
-- __Default__: [`current_schema()`](https://www.postgresql.org/docs/7.3/functions-misc.html)
+- __Default__: [`ARRAY[current_schema()`](https://www.postgresql.org/docs/7.3/functions-misc.html)
 
 <div style="font-size: 110%">
 <code>table_filter_type</code>
@@ -157,6 +157,14 @@ Create an engine.
 
 ```sql
 SELECT create_engine('my_engine', 'my_llm', 'my_encoder');
+
+SELECT sqlgen.create_engine(
+    name => 'stub_engine',
+    instruct_model => 'stub_model',
+    encoder_model => 'stub_model',
+    schema_names => ARRAY['public', 'analytics'],
+    table_filter_type => 'quick'
+);
 ```
 
 ---

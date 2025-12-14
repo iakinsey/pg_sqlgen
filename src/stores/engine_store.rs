@@ -107,12 +107,11 @@ mod tests {
         },
     };
 
-    // TODO test multiple schemas
-
     #[pg_test]
     fn test_engine_crud() {
         let name = "test_engine_name";
         let schema_name = "test_schema_name";
+        let secondary_schema_name = "secondary_schema";
         let table_filter_type = "smart";
         let encoder_model_name = "test_encoder_model_name";
         let instruct_model_name = "test_instruct_model_name";
@@ -126,6 +125,8 @@ mod tests {
         let instruct_profile = ModelConfig::Stub(config);
         let encoder_profile_json = to_string(&encoder_profile).unwrap();
         let instruct_profile_json = to_string(&instruct_profile).unwrap();
+
+        Spi::run(format!("CREATE SCHEMA {};", secondary_schema_name).as_str()).unwrap();
 
         Spi::run_with_args(
             "SELECT sqlgen_internal.create_model($1, $2::JSONB);",
@@ -141,7 +142,7 @@ mod tests {
 
         EngineStore::create_engine(
             name,
-            &[schema_name],
+            &[schema_name, secondary_schema_name],
             encoder_model_name,
             instruct_model_name,
             table_filter_type,
@@ -160,7 +161,10 @@ mod tests {
         let engine = EngineStore::get_engine(name).unwrap();
 
         assert_eq!(name, engine.name);
-        assert_eq!(vec![schema_name], engine.schema_names);
+        assert_eq!(
+            vec![schema_name, secondary_schema_name],
+            engine.schema_names
+        );
         assert_eq!(encoder_model_name, engine.encoder_model);
         assert_eq!(instruct_model_name, engine.instruct_model);
         assert_eq!(table_filter_type, engine.filter_type.to_str());
