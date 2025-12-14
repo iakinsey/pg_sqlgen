@@ -3,6 +3,8 @@ DROP EXTENSION IF EXISTS sqlgen CASCADE;
 CREATE EXTENSION sqlgen;
 DROP TABLE IF EXISTS s;
 DROP TABLE IF EXISTS t;
+DROP SCHEMA IF EXISTS secondary_schema CASCADE;
+DROP SCHEMA IF EXISTS tertiary_schema CASCADE;
 
 -- Create model.
 SELECT sqlgen.add_model(
