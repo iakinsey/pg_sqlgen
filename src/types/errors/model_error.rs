@@ -1,4 +1,3 @@
-use hf_hub::api::sync::ApiError;
 use std::sync::PoisonError;
 use thiserror::Error;
 
@@ -44,10 +43,6 @@ pub enum SqlgenError {
     TryFromIntError(#[from] std::num::TryFromIntError),
     #[error(transparent)]
     TeraError(#[from] tera::Error),
-    #[error(transparent)]
-    ApiError(#[from] ApiError),
-    #[error(transparent)]
-    TokenizerError(#[from] tokenizers::Error),
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]

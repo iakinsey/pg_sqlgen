@@ -40,6 +40,7 @@ CREATE TABLE s (x INT);
 CREATE SCHEMA IF NOT EXISTS secondary_schema;
 CREATE SCHEMA IF NOT EXISTS tertiary_schema;
 CREATE TABLE secondary_schema.example_table_1 (x INT);
+ERROR:  relation "example_table_1" already exists
 -- Create engine.
 SELECT sqlgen.create_engine(
     name => 'stub_engine',
@@ -68,6 +69,7 @@ SELECT sqlgen.add_schema_to_engine('stub_engine', 'tertiary_schema');
 (1 row)
 
 CREATE TABLE tertiary_schema.example_table_2 (x INT);
+ERROR:  relation "example_table_2" already exists
 -- Verify new schema added
 SELECT * FROM sqlgen.engines; -- noqa: AM04
  engine_name |               schema_names                | encoder_model | instruct_model | column_filter_limit | error_correction_rounds | system_prompt_template | user_prompt_template | relevant_ddls_template | similar_queries_template | filter_ddls_template | syntax_correction_template | explain_query_template | table_filter_type 
