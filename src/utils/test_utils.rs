@@ -23,6 +23,9 @@ pub(crate) fn create_engine(
     let instruct_profile = ModelConfig::Stub(config);
     let encoder_profile_json = to_string(&encoder_profile).unwrap();
     let instruct_profile_json = to_string(&instruct_profile).unwrap();
+    let secondary_schema_name = "secondary_schema";
+
+    Spi::run(format!("CREATE SCHEMA {}", secondary_schema_name).as_str()).unwrap();
 
     Spi::run_with_args(
         "SELECT sqlgen_internal.create_model($1, $2::JSONB);",
@@ -38,7 +41,7 @@ pub(crate) fn create_engine(
 
     EngineStore::create_engine(
         name,
-        &[schema_name],
+        &[schema_name, secondary_schema_name],
         encoder_model_name,
         instruct_model_name,
         table_filter_type,
