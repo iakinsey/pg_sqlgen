@@ -12,6 +12,8 @@ pub enum SqlgenError {
     #[error("{0}")]
     GenerateError(String),
     #[error("{0}")]
+    UnsafeError(String),
+    #[error("{0}")]
     UnsupportedScenario(&'static str),
     #[error("failed to fix query: {0}")]
     SyntaxCorrectionFailed(String),
@@ -47,6 +49,8 @@ pub enum SqlgenError {
     IoError(#[from] std::io::Error),
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
+    #[error(transparent)]
+    NulError(#[from] std::ffi::NulError),
     #[error("{0}")]
     ColumnParseFailed(String),
     #[error(transparent)]

@@ -1,7 +1,11 @@
+use std::ffi::CString;
+
 use uuid::Uuid;
 
 use pgrx::{
-    FromDatum, IntoDatum, PgTryBuilder, Spi, pg_sys::panic::CaughtError, spi::{SpiHeapTupleData, SpiTupleTable}
+    pg_sys::{panic::CaughtError, pg_parse_query, Node, NodeTag, RawStmt},
+    spi::{SpiHeapTupleData, SpiTupleTable},
+    FromDatum, IntoDatum, PgList, PgTryBuilder, Spi,
 };
 
 use crate::types::errors::SqlgenError;
@@ -68,7 +72,48 @@ pub fn get_caught_error_string(cause: CaughtError) -> String {
     }
 }
 
+fn get_node_tags(query: &str) -> Result<Vec<NodeTag>, SqlgenError> {
+    let cstr = CString::new(query)?;
+
+    PgTryBuilder::new(|| unsafe {
+        let raw_list = pg_parse_query(cstr.as_ptr());
+        let pg_list = PgList::<RawStmt>::from_pg(raw_list);
+        let mut tags = Vec::with_capacity(pg_list.len());
+
+        for raw_stmt in pg_list.iter_ptr() {
+            let node: *mut Node = (*raw_stmt).stmt;
+            tags.push((*node).type_);
+        }
+
+        Ok(tags)
+    })
+    .catch_others(|e| Err(SqlgenError::UnsafeError(get_caught_error_string(e))))
+    .execute()
+}
+
+pub fn can_validate_query_plan(query: &str) -> Result<bool, SqlgenError> {
+    let tags = get_node_tags(query)?;
+
+    if tags.len() != 1 {
+        return Ok(false);
+    }
+
+    match tags[0] {
+        NodeTag::T_SelectStmt
+        | NodeTag::T_InsertStmt
+        | NodeTag::T_UpdateStmt
+        | NodeTag::T_DeleteStmt => Ok(true),
+        _ => Ok(false),
+    }
+}
+
 pub fn get_prepare_error(query: String) -> Result<Option<String>, SqlgenError> {
+    match can_validate_query_plan(&query) {
+        Err(e) => return Ok(Some(e.to_string())),
+        Ok(false) => return Ok(None),
+        Ok(true) => {}
+    }
+
     let id = get_unique_prepared_statement_id();
     let prepare_query = format!("PREPARE {} AS {}", id, query);
     let prepare_query = match prepare_query.ends_with(";") {
