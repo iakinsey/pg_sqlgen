@@ -121,33 +121,13 @@ pub fn get_prepare_error(query: String) -> Result<Option<String>, SqlgenError> {
         false => format!("{};", prepare_query),
     };
 
-    let explain_query = format!("EXPLAIN {}", query);
-    let explain_query = match explain_query.ends_with(";") {
-        true => explain_query.to_string(),
-        false => format!("{};", explain_query),
-    };
-
-    let error: Option<String> = PgTryBuilder::new(|| {
+    Ok(PgTryBuilder::new(|| {
         Spi::run(&prepare_query).unwrap();
         None
     })
     .catch_others(|e| Some(get_caught_error_string(e)))
     .catch_rust_panic(|e| Some(get_caught_error_string(e)))
-    .execute();
-
-    if error.is_some() {
-        return Ok(error);
-    }
-
-    let error: Option<String> = PgTryBuilder::new(|| {
-        Spi::run(&explain_query).unwrap();
-        None
-    })
-    .catch_others(|e| Some(get_caught_error_string(e)))
-    .catch_rust_panic(|e| Some(get_caught_error_string(e)))
-    .execute();
-
-    Ok(error)
+    .execute())
 }
 
 #[cfg(test)]
