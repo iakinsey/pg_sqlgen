@@ -256,6 +256,7 @@ mod sqlgen_internal {
         filter_ddls_template: Option<&str>,
         syntax_correction_template: Option<&str>,
         explain_query_template: Option<&str>,
+        judge_query_template: Option<&str>,
     ) -> Result<(), SqlgenError> {
         let table_filter_type = match table_filter_type {
             Some(s) => TableFilterType::from_str(s)?,
@@ -291,6 +292,7 @@ mod sqlgen_internal {
             filter_ddls_template,
             syntax_correction_template,
             explain_query_template,
+            judge_query_template,
         )?;
 
         let rt = get_runtime();

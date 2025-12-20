@@ -68,6 +68,10 @@ Explain:
 {{explain}}
 "#;
 
+pub static DEFAULT_JUDGE_QUERY_TEMPLATE: &str = r#"
+Test
+"#;
+
 // Type of filtering used by `DDLFilterRunner`.
 #[derive(Eq, PartialEq, Clone)]
 pub enum TableFilterType {
@@ -112,6 +116,7 @@ pub struct TextToSqlEngine {
     pub filter_ddls_template: String,
     pub syntax_correction_template: String,
     pub explain_query_template: String,
+    pub judge_query_template: String,
     pub filter_type: TableFilterType,
     pub column_filter_limit: i32,
     pub error_correction_rounds: i32,
@@ -154,6 +159,11 @@ impl TextToSqlEngine {
                 Some(v) => v,
                 None => DEFAULT_EXPLAIN_QUERY_TEMPLATE.to_string(),
             };
+        let judge_query_template: String = match get_column_optional(&row, "judge_query_template")?
+        {
+            Some(v) => v,
+            None => DEFAULT_JUDGE_QUERY_TEMPLATE.to_string(),
+        };
 
         let name = get_column(&row, "engine_name")?;
         let schema_names = get_column(&row, "schema_names")?;
@@ -176,6 +186,7 @@ impl TextToSqlEngine {
             filter_ddls_template,
             syntax_correction_template,
             explain_query_template,
+            judge_query_template,
             filter_type,
             column_filter_limit,
             error_correction_rounds,

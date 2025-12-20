@@ -25,9 +25,10 @@ impl EngineStore {
         filter_ddls_template: Option<&str>,
         syntax_correction_template: Option<&str>,
         explain_query_template: Option<&str>,
+        judge_query_template: Option<&str>,
     ) -> Result<(), SqlgenError> {
         Spi::run_with_args(
-            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
             &[
                 engine_name.into(),
                 schema_names.into(),
@@ -43,6 +44,7 @@ impl EngineStore {
                 filter_ddls_template.into(),
                 syntax_correction_template.into(),
                 explain_query_template.into(),
+                judge_query_template.into(),
             ],
         )?;
 
@@ -165,6 +167,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -235,6 +238,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
     }
@@ -255,6 +259,7 @@ mod tests {
                 table_filter_type,
                 3,
                 128,
+                None,
                 None,
                 None,
                 None,
