@@ -12,6 +12,8 @@ pub enum SqlgenError {
     #[error("{0}")]
     GenerateError(String),
     #[error("{0}")]
+    JudgeError(String),
+    #[error("{0}")]
     UnsafeError(String),
     #[error("{0}")]
     UnsupportedScenario(&'static str),

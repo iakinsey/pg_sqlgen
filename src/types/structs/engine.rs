@@ -69,7 +69,23 @@ Explain:
 "#;
 
 pub static DEFAULT_JUDGE_QUERY_TEMPLATE: &str = r#"
-Test
+You are an impartial judge of PostgreSQL queries. Given an SQL query and related metadata,
+determine if the query sufficiently reflects the language query provided. If you think the
+SQL query does not adequately represent the language query provided, then provide a counter
+example. Think step-by-step and provide your reasoning.
+
+Language query:
+{{user_query}}
+
+SQL Query:
+{{sql_query}}
+
+Explain:
+{{explain}}
+
+{{relevant_ddls_block}}
+
+{{similar_queries_block}}
 "#;
 
 // Type of filtering used by `DDLFilterRunner`.

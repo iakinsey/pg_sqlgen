@@ -63,3 +63,24 @@ pub fn ddl_output_format_schema() -> Value {
         "required": ["ddls"]
     })
 }
+
+pub fn judge_output_format_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+             "reasoning": {
+                "type": "string",
+                "description": "Reasoning behind the query judgement."
+            },
+            "counter_example": {
+                "type": "string",
+                "description": "[Optional] A counter-example that better reflects the user query, if applicable."
+            },
+            "error": {
+                "type": "string",
+                "description": "Optional error message if judgement fails."
+            }
+        },
+        "required": ["query"]
+    })
+}
