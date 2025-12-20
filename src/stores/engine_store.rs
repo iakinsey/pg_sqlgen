@@ -18,6 +18,7 @@ impl EngineStore {
         table_filter_type: &str,
         column_filter_limit: i32,
         error_correction_rounds: i32,
+        enable_judge: bool,
         system_prompt_template: Option<&str>,
         user_prompt_template: Option<&str>,
         relevant_ddls_template: Option<&str>,
@@ -28,7 +29,7 @@ impl EngineStore {
         judge_query_template: Option<&str>,
     ) -> Result<(), SqlgenError> {
         Spi::run_with_args(
-            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
+            "SELECT sqlgen_internal.create_engine($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)",
             &[
                 engine_name.into(),
                 schema_names.into(),
@@ -37,6 +38,7 @@ impl EngineStore {
                 table_filter_type.into(),
                 column_filter_limit.into(),
                 error_correction_rounds.into(),
+                enable_judge.into(),
                 system_prompt_template.into(),
                 user_prompt_template.into(),
                 relevant_ddls_template.into(),
@@ -160,6 +162,7 @@ mod tests {
             table_filter_type,
             3,
             128,
+            true,
             None,
             None,
             None,
@@ -231,6 +234,7 @@ mod tests {
             table_filter_type,
             3,
             128,
+            true,
             None,
             None,
             None,
@@ -259,6 +263,7 @@ mod tests {
                 table_filter_type,
                 3,
                 128,
+                true,
                 None,
                 None,
                 None,

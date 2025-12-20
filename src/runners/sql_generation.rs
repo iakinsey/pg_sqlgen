@@ -63,7 +63,7 @@ impl SQLGenerationRunner {
         &self,
         user_query: &str,
         relevant_ddls: &[String],
-        similar_queries: Option<String>,
+        similar_queries: Option<&str>,
     ) -> Result<Vec<InstructMessage>, SqlgenError> {
         // Render relevant tables block
         let relevant_ddls_block = match relevant_ddls.is_empty() {
@@ -121,7 +121,7 @@ impl SQLGenerationRunner {
         &mut self,
         user_query: &str,
         relevant_ddls: &[String],
-        similar_queries: Option<String>,
+        similar_queries: Option<&str>,
     ) -> Result<String, SqlgenError> {
         let messages = self.get_messages(user_query, relevant_ddls, similar_queries)?;
         let payload = self.model.get_assistant_response(messages).await?;
@@ -179,11 +179,7 @@ mod tests {
 
         let engine = SQLGenerationRunner::new(&engine).unwrap();
         let messages = engine
-            .get_messages(
-                user_query,
-                &relevant_ddls,
-                Some(similar_queries.to_string()),
-            )
+            .get_messages(user_query, &relevant_ddls, Some(similar_queries))
             .unwrap();
         let user_prompt = messages[1].message.clone();
 
@@ -244,7 +240,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", &vec!["".to_string()], Some("".to_string()))
+                .generate_query("test_query", &vec!["".to_string()], Some(""))
                 .await
                 .unwrap_err()
         });
@@ -268,7 +264,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", &vec!["".to_string()], Some("".to_string()))
+                .generate_query("test_query", &vec!["".to_string()], Some(""))
                 .await
                 .unwrap_err()
         });
@@ -299,7 +295,7 @@ mod tests {
                 .unwrap();
             let mut engine = SQLGenerationRunner::new(&engine).unwrap();
             engine
-                .generate_query("test_query", &vec!["".to_string()], Some("".to_string()))
+                .generate_query("test_query", &vec!["".to_string()], Some(""))
                 .await
                 .unwrap_err()
         });

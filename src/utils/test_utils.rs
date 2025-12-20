@@ -48,6 +48,7 @@ pub(crate) fn create_engine(
         table_filter_type,
         128,
         3,
+        true,
         None,
         None,
         None,

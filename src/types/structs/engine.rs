@@ -136,6 +136,7 @@ pub struct TextToSqlEngine {
     pub filter_type: TableFilterType,
     pub column_filter_limit: i32,
     pub error_correction_rounds: i32,
+    pub enable_judge: bool,
 }
 
 impl TextToSqlEngine {
@@ -189,6 +190,7 @@ impl TextToSqlEngine {
         let filter_type = TableFilterType::from_str(filter_type_str)?;
         let column_filter_limit = get_column(&row, "column_filter_limit")?;
         let error_correction_rounds = get_column(&row, "error_correction_rounds")?;
+        let enable_judge = get_column(&row, "enable_judge")?;
 
         Ok(Self {
             name,
@@ -206,6 +208,7 @@ impl TextToSqlEngine {
             filter_type,
             column_filter_limit,
             error_correction_rounds,
+            enable_judge,
         })
     }
 

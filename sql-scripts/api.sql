@@ -44,13 +44,15 @@ CREATE OR REPLACE FUNCTION sqlgen.create_engine(
     table_filter_type TEXT DEFAULT 'smart',
     column_filter_limit INTEGER DEFAULT NULL,
     error_correction_rounds INTEGER DEFAULT NULL,
+    enable_judge BOOLEAN DEFAULT FALSE,
     system_prompt_template TEXT DEFAULT NULL,
     user_prompt_template TEXT DEFAULT NULL,
     relevant_ddls_template TEXT DEFAULT NULL,
     similar_queries_template TEXT DEFAULT NULL,
     filter_ddls_template TEXT DEFAULT NULL,
     syntax_correction_template TEXT DEFAULT NULL,
-    explain_query_template TEXT DEFAULT NULL
+    explain_query_template TEXT DEFAULT NULL,
+    judge_query_template TEXT DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE sql
@@ -62,6 +64,7 @@ AS $$
         COALESCE(schema_names, ARRAY[]::TEXT[]),
         table_filter_type,
         error_correction_rounds,
+        enable_judge,
         column_filter_limit,
         system_prompt_template,
         user_prompt_template,
@@ -69,7 +72,8 @@ AS $$
         similar_queries_template,
         filter_ddls_template,
         syntax_correction_template,
-        explain_query_template
+        explain_query_template,
+        judge_query_template
     );
 $$;
 

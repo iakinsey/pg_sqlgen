@@ -63,7 +63,7 @@ impl<'a> QueryJudgeRunner<'a> {
         sql_query: &str,
         explain: &str,
         relevant_ddls: &[String],
-        similar_queries: Option<String>,
+        similar_queries: Option<&str>,
     ) -> Result<Vec<InstructMessage>, SqlgenError> {
         // Render relevant tables block
         let relevant_ddls_block = match relevant_ddls.is_empty() {
@@ -115,7 +115,7 @@ impl<'a> QueryJudgeRunner<'a> {
         user_query: &str,
         sql_query: &str,
         relevant_ddls: &[String],
-        similar_queries: Option<String>,
+        similar_queries: Option<&str>,
     ) -> Result<Option<String>, SqlgenError> {
         let explain_query = format!("EXPLAIN (VERBOSE, FORMAT JSON) {}", sql_query);
         let explain_query = match explain_query.ends_with(";") {

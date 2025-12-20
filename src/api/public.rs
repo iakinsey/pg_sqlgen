@@ -26,7 +26,7 @@ mod sqlgen {
     use crate::{
         api::public::get_engine,
         runners::{
-            ddl_filter::DDLFilterRunner, explain::ExplainQueryRunner,
+            ddl_filter::DDLFilterRunner, explain::ExplainQueryRunner, judge::QueryJudgeRunner,
             sql_generation::SQLGenerationRunner, syntax_correction::SyntaxCorrectionRunner,
         },
         stores::{
@@ -79,11 +79,27 @@ mod sqlgen {
             // TODO provide a config option
             let similar_queries =
                 CertifyStore::get_formatted_certified_queries(&engine.name, query_vector, 3)?;
-            let query = text_to_sql_runner
-                .generate_query(user_query, &ddls, similar_queries)
+            let mut query = text_to_sql_runner
+                .generate_query(user_query, &ddls, similar_queries.as_deref())
                 .await?;
 
-            syntax_correction_runner.correct(query, &ddls).await
+            query = syntax_correction_runner.correct(query, &ddls).await?;
+
+            if engine.enable_judge {
+                let mut judge_runner = QueryJudgeRunner::new(&engine)?;
+
+                let counter_example = judge_runner
+                    .judge_query(user_query, &query, &ddls, similar_queries.as_deref())
+                    .await?;
+
+                if let Some(counter_example) = counter_example {
+                    query = syntax_correction_runner
+                        .correct(counter_example, &ddls)
+                        .await?;
+                }
+            }
+
+            Ok(query)
         })
     }
 
