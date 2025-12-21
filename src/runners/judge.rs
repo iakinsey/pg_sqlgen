@@ -32,14 +32,13 @@ pub static SIMILAR_QUERIES_VAR_KEY: &str = "similar_queries";
 pub static RELEVANT_DDLS_BLOCK_KEY: &str = "relevant_ddls_block";
 pub static SIMILAR_QUERIES_BLOCK_KEY: &str = "similar_queries_block";
 
-pub struct QueryJudgeRunner<'a> {
-    engine: &'a TextToSqlEngine,
+pub struct QueryJudgeRunner {
     model: Box<dyn TextInstructDriver>,
     tera: Tera,
 }
 
-impl<'a> QueryJudgeRunner<'a> {
-    pub fn new(engine: &'a TextToSqlEngine) -> Result<Self, SqlgenError> {
+impl QueryJudgeRunner {
+    pub fn new(engine: &TextToSqlEngine) -> Result<Self, SqlgenError> {
         let mut tera = Tera::default();
         tera.add_raw_template(JUDGE_PROMPT_TEMPLATE_KEY, &engine.judge_query_template)?;
         tera.add_raw_template(RELEVANT_DDLS_TEMPLATE_KEY, &engine.relevant_ddls_template)?;
@@ -50,11 +49,7 @@ impl<'a> QueryJudgeRunner<'a> {
 
         let model = ModelStore::get_text_instruct_model(&engine.instruct_model)?;
 
-        Ok(Self {
-            engine,
-            tera,
-            model,
-        })
+        Ok(Self { tera, model })
     }
 
     fn get_messages(
