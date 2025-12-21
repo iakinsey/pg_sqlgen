@@ -112,13 +112,8 @@ impl QueryJudgeRunner {
         relevant_ddls: &[String],
         similar_queries: Option<&str>,
     ) -> Result<Option<String>, SqlgenError> {
-        let explain_query = format!("EXPLAIN (VERBOSE, FORMAT JSON) {}", sql_query);
-        let explain_query = match explain_query.ends_with(";") {
-            true => explain_query.to_string(),
-            false => format!("{};", explain_query),
-        };
         let explain = PgTryBuilder::new(|| {
-            let result = Spi::explain(&explain_query)?;
+            let result = Spi::explain(&sql_query)?;
 
             Ok(to_string(&result.0)?)
         })
@@ -148,5 +143,124 @@ impl QueryJudgeRunner {
                 None => Ok(None),
             },
         }
+    }
+}
+
+#[cfg(any(test, feature = "pg_test"))]
+#[pgrx::pg_schema]
+mod tests {
+    use pgrx::pg_test;
+    use serde_json::to_string;
+
+    use crate::{
+        runners::judge::QueryJudgeRunner,
+        types::structs::judge_response::JudgeResponse,
+        utils::{globals::get_runtime, test_utils::create_engine},
+    };
+
+    #[pg_test]
+    fn test_judge_success() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let user_query = "Select the number 1";
+        let sql_query = "SELECT 2;";
+        let similar_queries = "similar queries";
+        let counter_example = "SELECT 1";
+        let response = JudgeResponse {
+            counter_example: Some(counter_example.to_string()),
+            error: None,
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let mut judge = QueryJudgeRunner::new(&engine).unwrap();
+        let rt = get_runtime();
+        let result = rt.block_on(async {
+            judge
+                .judge_query(&user_query, &sql_query, &[], Some(&similar_queries))
+                .await
+                .unwrap()
+                .unwrap()
+        });
+
+        assert_eq!(result, counter_example);
+    }
+
+    #[pg_test]
+    fn test_judge_error_response() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let user_query = "Select the number 1";
+        let sql_query = "SELECT 2;";
+        let similar_queries = "similar queries";
+        let judge_error = "this is a judge error";
+        let response = JudgeResponse {
+            counter_example: None,
+            error: Some(judge_error.to_string()),
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let mut judge = QueryJudgeRunner::new(&engine).unwrap();
+        let rt = get_runtime();
+        let result = rt.block_on(async {
+            judge
+                .judge_query(&user_query, &sql_query, &[], Some(&similar_queries))
+                .await
+                .unwrap_err()
+        });
+
+        assert_eq!(result.to_string(), judge_error);
+    }
+
+    #[pg_test]
+    fn test_judge_no_response() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let user_query = "Select the number 1";
+        let sql_query = "SELECT 2;";
+        let similar_queries = "similar queries";
+        let response = JudgeResponse {
+            counter_example: None,
+            error: None,
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let mut judge = QueryJudgeRunner::new(&engine).unwrap();
+        let rt = get_runtime();
+        let result = rt.block_on(async {
+            judge
+                .judge_query(&user_query, &sql_query, &[], Some(&similar_queries))
+                .await
+                .unwrap()
+        });
+
+        assert!(result.is_none())
+    }
+
+    #[pg_test]
+    fn test_judge_error() {
+        let schema_name = "test_example";
+        let engine_name = "test_engine";
+        let user_query = "Select the number 1";
+        let sql_query = "SELECT 2a;";
+        let similar_queries = "similar queries";
+        let response = JudgeResponse {
+            counter_example: None,
+            error: None,
+        };
+        let response_str = to_string(&response).unwrap();
+        let engine = create_engine(engine_name, schema_name, "smart", &response_str);
+        let mut judge = QueryJudgeRunner::new(&engine).unwrap();
+        let rt = get_runtime();
+        let result = rt.block_on(async {
+            judge
+                .judge_query(&user_query, &sql_query, &[], Some(&similar_queries))
+                .await
+                .unwrap_err()
+        });
+
+        assert_eq!(
+            result.to_string(),
+            "ERRCODE_SYNTAX_ERROR: trailing junk after numeric literal at or near \"2a\""
+        );
     }
 }
