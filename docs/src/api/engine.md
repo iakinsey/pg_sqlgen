@@ -91,6 +91,16 @@ Create an engine.
 - __Default__: `3`
 
 <div style="font-size: 110%">
+<code>enable_judge</code>
+</div>
+
+- __Description__: Enables the [query judge](../internals.md#query-judge).
+- __Type__: `BOOLEAN`
+- __Optional__: `true`
+- __Default__: `FALSE`
+
+
+<div style="font-size: 110%">
 <code>system_prompt_template</code>
 </div>
 

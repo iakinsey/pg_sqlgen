@@ -26,17 +26,25 @@ can be used too.
 
 ## RAG workflow {#rag-workflow}
 
-The rag workflow for text-to-sql generation works as follows:
-- Get DDLs relevant to the user query. The process will vary depending on the
-engine's `table_filter_type` value:
-    - `smart` - The instruct model is asked to filter for DDLs relevant to the
-    user query.
+### Generation
+
+- Get DDLs relevant to the user query. The process will vary depending on the engine's `table_filter_type` value:
+    - `smart` - The instruct model is asked to filter for DDLs relevant to the user query.
     - `quick` - DDLs are filtedetects available CPU features and leverages SIMD instructions when supported.red via cosine similarity through pgvector.
 - Provide the user query, DDLs, and relevant instructions to the instruct model.
+
+### Error correction {#error-correction}
+
 - The resulting query run against a `PREPARE` statement to check if it's valid.
     - If it's valid, return the query to the user.
-    - If the query is not valid, the instruct model is asked to fix the query. 
-    The new query is returned to the user.
+    - If the query is not valid, the instruct model is asked to fix the query. The new query is returned to the user.
+
+### Query Judge {#query-judge}
+
+- If enabled, after error correction, the language model judges whether or not the generated SQL query accurately reflects the natural language query.
+  - If it doesn't, then it provides a counter-example that it believes more accurately reflects the natural language query.
+  - The counter-example will run through a final [error correction](#error-correction) pass.
+
 
 ## Metadata triggers {#metadata-triggers}
 
